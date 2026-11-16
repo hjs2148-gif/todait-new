@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Icon } from './Icon.tsx'
 import { addDays, diffDays, fmtDate, fmtDur, todayISO } from './date.ts'
 import { isExpired, sumDone, type Task } from './logic.ts'
 import { actions, useStore, type State } from './store.ts'
@@ -122,12 +123,12 @@ export function Today({ nav }: { nav: Nav }) {
     <div className="page">
       <header className="hero">
         <div className="date-nav">
-          <button onClick={() => setDate(addDays(date, -1))} aria-label="이전 날">‹</button>
+          <button onClick={() => setDate(addDays(date, -1))} aria-label="이전 날"><Icon name="left" /></button>
           <div>
             <strong>{fmtDate(date)}</strong>
             {date !== today && <button className="link" onClick={() => setDate(today)}>오늘로</button>}
           </div>
-          <button onClick={() => setDate(addDays(date, 1))} aria-label="다음 날">›</button>
+          <button onClick={() => setDate(addDays(date, 1))} aria-label="다음 날"><Icon name="right" /></button>
         </div>
         <div className="hero-stats">
           <Ring rate={rate ?? 0} label={pct(rate)} />
@@ -189,13 +190,13 @@ export function Today({ nav }: { nav: Nav }) {
               <div className="card-actions">
                 {date <= today && (
                   <button className={`round${running ? ' on' : ''}`} onClick={() => (running ? actions.stopTimer() : actions.startTimer(task.id, date))} aria-label="스톱워치">
-                    {running ? '■' : '▶'}
+                    <Icon name={running ? 'stop' : 'play'} />
                   </button>
                 )}
                 {date > today ? null : task.type === 'check' ? (
-                  <button className={`round check${rec?.checked ? ' on' : ''}`} onClick={() => actions.toggleCheck(task.id, date)} aria-label="체크">✓</button>
+                  <button className={`round check${rec?.checked ? ' on' : ''}`} onClick={() => actions.toggleCheck(task.id, date)} aria-label="체크"><Icon name="check" /></button>
                 ) : task.type !== 'time' ? (
-                  <button className="round" onClick={() => setDoneFor(task.id)} aria-label="분량 입력">✎</button>
+                  <button className="round" onClick={() => setDoneFor(task.id)} aria-label="분량 입력"><Icon name="pencil" size={19} /></button>
                 ) : null}
               </div>
             </div>
@@ -217,7 +218,7 @@ export function Today({ nav }: { nav: Nav }) {
         </section>
       )}
 
-      <button className="fab" onClick={() => nav.editTask(null)} aria-label="새 계획">+</button>
+      <button className="fab" onClick={() => nav.editTask(null)} aria-label="새 계획"><Icon name="plus" size={28} /></button>
 
       {menuItem && !doneItem && (
         <TaskMenu s={s} item={menuItem} date={date} nav={nav} onClose={() => setMenu(null)} onDone={() => { setDoneFor(menuItem.task.id); setMenu(null) }} />

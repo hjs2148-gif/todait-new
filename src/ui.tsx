@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { Icon } from './Icon.tsx'
 import { DOW_KO } from './date.ts'
 import { loadPhoto } from './store.ts'
 
@@ -8,7 +9,7 @@ export function Sheet({ title, onClose, children }: { title: string; onClose: ()
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
         <div className="sheet-head">
           <h2>{title}</h2>
-          <button className="icon-btn" onClick={onClose} aria-label="닫기">✕</button>
+          <button className="icon-btn" onClick={onClose} aria-label="닫기"><Icon name="close" /></button>
         </div>
         <div className="sheet-body">{children}</div>
       </div>

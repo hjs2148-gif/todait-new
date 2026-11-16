@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Icon, type IconName } from './Icon.tsx'
 import { Calendar } from './Calendar.tsx'
 import { todayISO } from './date.ts'
 import { DiaryForm, DiaryPage, type Draft } from './Diary.tsx'
@@ -11,12 +12,12 @@ import { TaskForm } from './TaskForm.tsx'
 import { Today } from './Today.tsx'
 
 type Tab = 'today' | 'calendar' | 'stats' | 'diary' | 'more'
-const TABS: [Tab, string, string][] = [
-  ['today', '오늘', '☑'],
-  ['calendar', '캘린더', '▦'],
-  ['stats', '통계', '▮'],
-  ['diary', '일기', '✎'],
-  ['more', '더보기', '⋯'],
+const TABS: [Tab, string, IconName][] = [
+  ['today', '오늘', 'today'],
+  ['calendar', '캘린더', 'calendar'],
+  ['stats', '통계', 'chart'],
+  ['diary', '일기', 'pencil'],
+  ['more', '더보기', 'more'],
 ]
 
 export function App() {
@@ -55,7 +56,7 @@ export function App() {
       <nav className="tabs">
         {TABS.map(([id, label, icon]) => (
           <button key={id} className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>
-            <span>{icon}</span>
+            <Icon name={icon} />
             {label}
           </button>
         ))}

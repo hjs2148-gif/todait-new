@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Icon } from './Icon.tsx'
 import { addDays, dow, fmtDur, parse, todayISO, DOW_KO } from './date.ts'
 import { useStore } from './store.ts'
 import { Bar, Seg } from './ui.tsx'
@@ -51,9 +52,9 @@ export function Stats() {
   return (
     <div className="page">
       <header className="top">
-        <button onClick={() => setOffset(offset - 1)} aria-label="이전">‹</button>
+        <button onClick={() => setOffset(offset - 1)} aria-label="이전"><Icon name="left" /></button>
         <h1>{md(days[0])} ~ {md(end)}</h1>
-        <button onClick={() => setOffset(Math.min(0, offset + 1))} disabled={offset === 0} aria-label="다음">›</button>
+        <button onClick={() => setOffset(Math.min(0, offset + 1))} disabled={offset === 0} aria-label="다음"><Icon name="right" /></button>
       </header>
       <div className="pad"><Seg value={span} onChange={(v) => { setSpan(v); setOffset(0) }} options={[['week', '주간'], ['month', '월간']]} /></div>
 

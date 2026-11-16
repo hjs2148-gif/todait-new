@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Icon } from './Icon.tsx'
 import { addDays, dow, fmtDate, fmtDur, parse, toISO, todayISO, DOW_KO } from './date.ts'
 import { useStore } from './store.ts'
 import { Bar } from './ui.tsx'
@@ -25,9 +26,9 @@ export function Calendar({ goTo }: { goTo: (date: string) => void }) {
   return (
     <div className="page">
       <header className="top">
-        <button onClick={() => shift(-1)} aria-label="이전 달">‹</button>
+        <button onClick={() => shift(-1)} aria-label="이전 달"><Icon name="left" /></button>
         <h1>{y}년 {m}월</h1>
-        <button onClick={() => shift(1)} aria-label="다음 달">›</button>
+        <button onClick={() => shift(1)} aria-label="다음 달"><Icon name="right" /></button>
       </header>
       <div className="cal">
         {DOW_KO.map((d, i) => <div key={d} className={`cal-head${i === 0 ? ' sun' : ''}`}>{d}</div>)}

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Icon } from './Icon.tsx'
 import { fmtDate, todayISO } from './date.ts'
 import { actions, deletePhoto, savePhoto, uid, useStore, type Diary as DiaryT } from './store.ts'
 import { Field, Photo, Sheet } from './ui.tsx'
@@ -60,7 +61,7 @@ export function DiaryForm({ draft, onClose }: { draft: Draft; onClose: () => voi
         {photoIds.map((id) => (
           <div key={id} className="photo-wrap">
             <Photo id={id} />
-            <button onClick={() => setPhotoIds(photoIds.filter((p) => p !== id))} aria-label="사진 빼기">✕</button>
+            <button onClick={() => setPhotoIds(photoIds.filter((p) => p !== id))} aria-label="사진 빼기"><Icon name="close" size={14} /></button>
           </div>
         ))}
         <label className="photo add">
@@ -98,7 +99,7 @@ export function DiaryPage({ open }: { open: (d: Draft) => void }) {
           </article>
         )
       })}
-      <button className="fab" onClick={() => open({ date: todayISO(), taskId: null })} aria-label="일기 쓰기">✎</button>
+      <button className="fab" onClick={() => open({ date: todayISO(), taskId: null })} aria-label="일기 쓰기"><Icon name="pencil" size={24} /></button>
       {viewer && <div className="viewer" onClick={() => setViewer(null)}><Photo id={viewer} /></div>}
     </div>
   )

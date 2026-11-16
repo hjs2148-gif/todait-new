@@ -1,0 +1,16 @@
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import { App } from './App.tsx'
+import { startNotifier } from './notify.ts'
+import { loadState } from './store.ts'
+import './styles.css'
+
+const root = createRoot(document.getElementById('root')!)
+loadState()
+  .then(() => {
+    root.render(<StrictMode><App /></StrictMode>)
+    startNotifier()
+  })
+  .catch((e) => root.render(<p className="empty">저장소를 열지 못했습니다. 사생활 보호 모드에서는 동작하지 않을 수 있습니다.{'\n'}{String(e)}</p>))
+
+if ('serviceWorker' in navigator && import.meta.env.PROD) void navigator.serviceWorker.register('./sw.js')

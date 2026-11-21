@@ -5,18 +5,22 @@ import { todayISO } from './date.ts'
 import { DiaryForm, DiaryPage, type Draft } from './Diary.tsx'
 import type { Task } from './logic.ts'
 import { More } from './More.tsx'
+import { Progress } from './Progress.tsx'
 import { Stats } from './Stats.tsx'
 import { Stopwatch } from './Stopwatch.tsx'
-import { refreshForNewDay } from './store.ts'
-import { TaskForm } from './TaskForm.tsx'
+import { refreshForNewDay, useStore } from './store.ts'
+import { applyTheme } from './theme.ts'
+import { NewPlan } from './NewPlan.tsx'
+import { PlanEdit } from './PlanEdit.tsx'
+import { WidgetEdit } from './WidgetEdit.tsx'
 import { Today } from './Today.tsx'
 
-type Tab = 'today' | 'calendar' | 'stats' | 'diary' | 'more'
+type Tab = 'today' | 'progress' | 'calendar' | 'stats' | 'diary' | 'more'
 const TABS: [Tab, string, IconName][] = [
   ['today', '오늘', 'today'],
+  ['progress', '진도', 'flag'],
   ['calendar', '캘린더', 'calendar'],
   ['stats', '통계', 'chart'],
-  ['diary', '일기', 'pencil'],
   ['more', '더보기', 'more'],
 ]
 
@@ -25,6 +29,9 @@ export function App() {
   const [date, setDate] = useState(todayISO())
   const [form, setForm] = useState<{ task: Task | null } | null>(null)
   const [draft, setDraft] = useState<Draft | null>(null)
+  const [widgets, setWidgets] = useState(false)
+  const theme = useStore().settings.theme
+  useEffect(() => applyTheme(theme), [theme])
 
   // 자정이 지나면 지난 날 목표를 고정하고 오늘 화면으로 넘긴다
   useEffect(() => {
@@ -47,24 +54,26 @@ export function App() {
   const editTask = (task: Task | null) => setForm({ task })
   return (
     <>
-      {tab === 'today' && <Today nav={{ date, setDate, editTask, writeDiary: (d, taskId) => setDraft({ date: d, taskId }) }} />}
+      {tab === 'today' && <Today nav={{ date, setDate, editTask, writeDiary: (d, taskId) => setDraft({ date: d, taskId }), editWidgets: () => setWidgets(true), goProgress: () => setTab('progress') }} />}
+      {tab === 'progress' && <Progress editTask={editTask} />}
       {tab === 'calendar' && <Calendar goTo={(d) => { setDate(d); setTab('today') }} />}
       {tab === 'stats' && <Stats />}
       {tab === 'diary' && <DiaryPage open={setDraft} />}
-      {tab === 'more' && <More editTask={editTask} />}
+      {tab === 'more' && <More editTask={editTask} openDiary={() => setTab('diary')} />}
 
       <nav className="tabs">
         {TABS.map(([id, label, icon]) => (
-          <button key={id} className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>
+          <button key={id} className={tab === id || (id === 'more' && tab === 'diary') ? 'on' : ''} aria-current={tab === id ? 'page' : undefined} onClick={() => setTab(id)}>
             <Icon name={icon} />
             {label}
           </button>
         ))}
       </nav>
 
-      {form && <TaskForm task={form.task} onClose={() => setForm(null)} />}
+      {form && (form.task ? <PlanEdit task={form.task} onClose={() => setForm(null)} /> : <NewPlan onClose={() => setForm(null)} />)}
+      {widgets && <WidgetEdit onClose={() => setWidgets(false)} />}
       {draft && <DiaryForm draft={draft} onClose={() => setDraft(null)} />}
-      <Stopwatch />
+      <Stopwatch showStart={tab === 'today' && date === todayISO()} />
     </>
   )
 }

@@ -4,6 +4,11 @@ import { App } from './App.tsx'
 import { startNotifier } from './notify.ts'
 import { loadState } from './store.ts'
 import './styles.css'
+import './today.css'
+import './progress.css'
+import './stats.css'
+import './forms.css'
+import './moments.css'
 
 const root = createRoot(document.getElementById('root')!)
 loadState()

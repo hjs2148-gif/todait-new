@@ -13,10 +13,11 @@ const PATHS: Record<string, ReactNode> = {
   close: <path d="M6 6l12 12M18 6L6 18" />,
   left: <path d="M14.5 5l-7 7 7 7" />,
   right: <path d="M9.5 5l7 7-7 7" />,
+  flag: <><path d="M5 21V4" /><path d="M5 4h12l-2.5 4 2.5 4H5" /></>,
   plus: <path d="M12 5v14M5 12h14" strokeWidth="2.4" />,
 }
 
-export type IconName = 'today' | 'calendar' | 'chart' | 'pencil' | 'more' | 'play' | 'stop' | 'check' | 'close' | 'left' | 'right' | 'plus'
+export type IconName = 'today' | 'calendar' | 'chart' | 'pencil' | 'more' | 'play' | 'stop' | 'check' | 'close' | 'left' | 'right' | 'plus' | 'flag'
 
 export const Icon = ({ name, size = 22 }: { name: IconName; size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

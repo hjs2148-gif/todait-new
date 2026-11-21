@@ -1,15 +1,20 @@
 import { useState } from 'react'
+import { HistEdit } from './HistEdit.tsx'
 import { Icon } from './Icon.tsx'
-import { addDays, dow, fmtDate, fmtDur, parse, toISO, todayISO, DOW_KO } from './date.ts'
+import { addDays, dow, fmtDate, parse, toISO, todayISO, DOW_KO } from './date.ts'
 import { useStore } from './store.ts'
-import { Bar } from './ui.tsx'
-import { colorOf, dayRate, daySec, itemsOn, pct, progressLabel } from './view.ts'
+import { chapterStartsOn, dayGoals, dayRows, datesBetween, secOn } from './stats.ts'
+import { hm } from './todayData.ts'
+import { colorOf } from './view.ts'
 
 export function Calendar({ goTo }: { goTo: (date: string) => void }) {
   const s = useStore()
   const today = todayISO()
   const [month, setMonth] = useState(today.slice(0, 7))
   const [sel, setSel] = useState(today)
+  const [edit, setEdit] = useState<{ date: string; taskId: string } | null>(null)
+
+  if (edit) return <HistEdit date={edit.date} taskId={edit.taskId} onBack={() => setEdit(null)} onPick={(id) => setEdit({ ...edit, taskId: id })} />
 
   const first = `${month}-01`
   const shift = (n: number) => {
@@ -19,57 +24,81 @@ export function Calendar({ goTo }: { goTo: (date: string) => void }) {
   }
   const cells: (string | null)[] = Array(dow(first)).fill(null)
   for (let d = first; d.slice(0, 7) === month; d = addDays(d, 1)) cells.push(d)
-
-  const selItems = itemsOn(s, sel, today).active
+  const last = cells[cells.length - 1]!
   const [y, m] = month.split('-').map(Number)
+
+  // 월 요약: 공부 시간, 평균 달성(목표 개수 기준), 공부한 날
+  const days = datesBetween(first, last).filter((d) => d <= today)
+  const monthSec = days.reduce((a, d) => a + secOn(s, d), 0)
+  const studied = days.filter((d) => secOn(s, d) > 0).length
+  let gt = 0
+  let gd = 0
+  for (const d of days) { const g = dayGoals(s, d, today); gt += g.total; gd += g.done }
+
+  const rows = dayRows(s, sel, today)
+  const selGoals = dayGoals(s, sel, today)
+  const shown = rows.filter((r) => r.expect > 0 || r.done > 0 || r.sec > 0 || r.checked)
+  const main = shown.slice(0, 5)
+  const rest = shown.slice(5)
+  const text = (r: (typeof rows)[number]) =>
+    r.task.type === 'time' ? `${hm(r.sec)} / ${hm(r.expect)}` : r.task.type === 'check' ? (r.checked ? '끝' : '안 함') : sel > today ? `${r.expect}${r.task.unit}` : `${r.done} / ${r.expect}${r.task.unit}`
 
   return (
     <div className="page">
-      <header className="top">
-        <button onClick={() => shift(-1)} aria-label="이전 달"><Icon name="left" /></button>
+      <header className="th">
         <h1>{y}년 {m}월</h1>
-        <button onClick={() => shift(1)} aria-label="다음 달"><Icon name="right" /></button>
+        <div className="th-r">
+          {month !== today.slice(0, 7) && <button className="chip" onClick={() => { setMonth(today.slice(0, 7)); setSel(today) }}>오늘</button>}
+          <button className="sq" onClick={() => shift(-1)} aria-label="이전 달"><Icon name="left" size={18} /></button>
+          <button className="sq" onClick={() => shift(1)} aria-label="다음 달"><Icon name="right" size={18} /></button>
+        </div>
       </header>
-      <div className="cal">
-        {DOW_KO.map((d, i) => <div key={d} className={`cal-head${i === 0 ? ' sun' : ''}`}>{d}</div>)}
-        {cells.map((d, i) => {
-          if (!d) return <div key={i} />
-          const rate = dayRate(itemsOn(s, d, today).active)
-          const sec = daySec(s, d)
-          const past = d <= today
-          return (
-            <button key={d} className={`cal-cell${d === sel ? ' sel' : ''}${d === today ? ' today' : ''}`} onClick={() => setSel(d)}>
-              <span className={dow(d) === 0 ? 'sun' : ''}>{Number(d.slice(8))}</span>
-              {rate !== null && (
-                <i style={past ? { background: `rgba(0,210,177,${0.15 + rate * 0.85})`, color: rate > 0.5 ? '#fff' : '#05a388' } : undefined}>
-                  {past ? Math.round(rate * 100) : '·'}
-                </i>
-              )}
-              {sec > 0 && <small>{sec >= 3600 ? `${(sec / 3600).toFixed(1)}h` : `${Math.round(sec / 60)}m`}</small>}
-            </button>
-          )
-        })}
-      </div>
-
-      <section>
-        <h3>
-          {fmtDate(sel)}
-          <em onClick={() => goTo(sel)}>이 날로 이동</em>
-        </h3>
-        {selItems.length > 0 && (
-          <p className="hint">{sel <= today ? `성취율 ${pct(dayRate(selItems))} · 공부 ${fmtDur(daySec(s, sel))}` : '예정된 계획입니다. 진행 상황에 따라 분량이 달라질 수 있습니다.'}</p>
-        )}
-        {selItems.length === 0 && <p className="empty">계획이 없는 날입니다.</p>}
-        {selItems.map((item) => (
-          <div className="card" key={item.task.id} style={{ borderLeftColor: colorOf(s, item.task) }}>
-            <div className="card-main">
-              <strong>{item.task.name}</strong>
-              <small>{progressLabel(item)}</small>
-              {sel <= today && <Bar rate={item.rate} color={colorOf(s, item.task)} />}
-            </div>
+      <div className="tbody">
+        <section className="tcard cal2" aria-label="달력">
+          <div className="cal2-head">{DOW_KO.map((d) => <span key={d}>{d}</span>)}</div>
+          <div className="cal2-grid">
+            {cells.map((d, i) => {
+              if (!d) return <span key={i} />
+              const g = dayGoals(s, d, today)
+              const rate = g.total ? g.done / g.total : null
+              const rest = d in s.settings.restDays
+              const starts = chapterStartsOn(s, d)
+              return (
+                <button key={d} className={`c2${d === sel ? ' sel' : ''}${d === today ? ' now' : ''}`} onClick={() => setSel(d)} aria-label={`${fmtDate(d)}${rate !== null && d <= today ? ` 목표 ${g.done}/${g.total}` : ''}`} aria-pressed={d === sel}>
+                  <span className="n">{Number(d.slice(8))}</span>
+                  {rest ? <em>쉼</em> : d <= today && rate !== null ? <span className="cbar2"><i style={{ width: `${Math.max(rate * 100, 6)}%`, background: rate < 0.75 ? 'var(--mu)' : 'var(--ink)' }} /></span> : <span className="cbar2 empty" />}
+                  {starts.length > 0 && <u style={{ background: 'var(--rib)' }} aria-label="단원 시작" />}
+                </button>
+              )
+            })}
           </div>
-        ))}
-      </section>
+          <div className="cal2-leg"><span><i className="b" />막대 = 그날 목표 달성</span><span><i className="b gray" />75% 미만</span><span><u />단원 시작</span></div>
+        </section>
+        <div className="trio3">
+          <section className="tcard"><b>{hm(monthSec)}</b><small>{m}월 공부</small></section>
+          <section className="tcard"><b>{gt ? `${Math.round((gd / gt) * 100)}%` : '—'}</b><small>목표 달성 · 개수</small></section>
+          <section className="tcard"><b>{studied}일</b><small>공부한 날</small></section>
+        </div>
+        <div className="sec-h">
+          <h2>{fmtDate(sel)}</h2>
+          <small>{sel <= today ? `${hm(secOn(s, sel))} 공부${selGoals.total ? ` · 목표 ${selGoals.done}/${selGoals.total}` : ''}` : '예정'}</small>
+        </div>
+        <section className="tcard tight">
+          {main.length === 0 && <p className="empty tight">계획이 없는 날입니다.</p>}
+          {main.map((r) => (
+            <button key={r.task.id} className="rv full" disabled={sel > today} onClick={() => setEdit({ date: sel, taskId: r.task.id })}>
+              <i className="dot" style={{ background: colorOf(s, r.task) }} />
+              <span className="grow"><b className="blk ell">{r.task.name}</b><small className="blk ell">{r.task.type === 'time' ? `목표 ${hm(r.expect)}` : r.task.type === 'check' ? (r.task.kind === 'todo' ? '할 일' : '습관') : `목표 ${r.expect}${r.task.unit}`}</small></span>
+              <b className="stat">{text(r)}</b>
+              {sel <= today && <Icon name="right" size={16} />}
+            </button>
+          ))}
+          {rest.length > 0 && <p className="tc-sub more-line">그 밖에 {rest.length}개 · {rest.map((r) => r.task.name).join(', ')}</p>}
+        </section>
+        <div className="two-btn">
+          <button className="chip" onClick={() => goTo(sel)}>이 날 오늘 탭에서 보기</button>
+        </div>
+      </div>
     </div>
   )
 }

@@ -54,12 +54,12 @@ export function Ring({ rate, size = 76, label }: { rate: number; size?: number; 
   const c = 2 * Math.PI * r
   return (
     <svg width={size} height={size} className="ring">
-      <circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(255,255,255,.3)" strokeWidth="6" fill="none" />
+      <circle cx={size / 2} cy={size / 2} r={r} stroke="var(--trk)" strokeWidth="6" fill="none" />
       <circle
-        cx={size / 2} cy={size / 2} r={r} stroke="#fff" strokeWidth="6" fill="none" strokeLinecap="round"
+        cx={size / 2} cy={size / 2} r={r} stroke="var(--ink)" strokeWidth="6" fill="none" strokeLinecap="round"
         strokeDasharray={c} strokeDashoffset={c * (1 - Math.min(rate, 1))} transform={`rotate(-90 ${size / 2} ${size / 2})`}
       />
-      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" fill="#fff" fontSize="17" fontWeight="700">{label}</text>
+      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" fill="var(--ink)" fontSize="17" fontWeight="700">{label}</text>
     </svg>
   )
 }
@@ -99,3 +99,22 @@ export function Photo({ id, onClick }: { id: string; onClick?: () => void }) {
   }, [id])
   return url ? <img className="photo" src={url} alt="" onClick={onClick} /> : <div className="photo" />
 }
+
+/** 화면 전체를 덮는 입력 페이지 (취소 · 제목 · 저장) */
+export function FullPage({ title, onClose, action, actionLabel = '저장', actionDisabled, children }: { title: string; onClose: () => void; action?: () => void; actionLabel?: string; actionDisabled?: boolean; children: ReactNode }) {
+  return (
+    <div className="fullpage" role="dialog" aria-label={title}>
+      <header className="fp-h">
+        <button className="fp-b" onClick={onClose}>{action ? '취소' : <><Icon name="left" size={20} />뒤로</>}</button>
+        <h1>{title}</h1>
+        {action ? <button className="fp-b strong" disabled={actionDisabled} onClick={action}>{actionLabel}</button> : <span style={{ width: 56 }} />}
+      </header>
+      <div className="fp-body">{children}</div>
+    </div>
+  )
+}
+
+/** 항목 이름 + 오른쪽 내용 한 줄 */
+export const Row = ({ label, children }: { label: string; children: ReactNode }) => (
+  <div className="frow"><span className="fl">{label}</span><span className="fr">{children}</span></div>
+)

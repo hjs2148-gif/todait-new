@@ -1,7 +1,7 @@
 // 화면에서 공통으로 쓰는 계산.
 import { fmtDur, todayISO } from './date.ts'
 import { expectOn, rateOf, sumDone, type DayRec, type Task } from './logic.ts'
-import { planOf, type State } from './store.ts'
+import { offFor, planOf, subjectVar, type State } from './store.ts'
 
 export interface Item { task: Task; rec: DayRec | undefined; expect: number; rate: number }
 
@@ -16,7 +16,7 @@ export function itemsOn(s: State, date: string, today: string) {
     if (!visibleOn(task, date)) continue
     const recs = s.recs[task.id] ?? {}
     const rec = recs[date]
-    const expect = expectOn(task, recs, date, today, date > today ? planOf(s, task, today) : undefined)
+    const expect = expectOn(task, recs, date, today, date > today ? planOf(s, task, today) : undefined, offFor(s, task))
     const item = { task, rec, expect, rate: rateOf(task, rec, expect) }
     if (expect > 0 || (rec && (rec.done > 0 || rec.sec > 0 || rec.checked))) active.push(item)
     else resting.push(item)
@@ -55,5 +55,5 @@ export const progressLabel = ({ task, rec, expect }: Item) => {
 }
 
 export const categoryOf = (s: State, t: Task) => s.categories.find((c) => c.id === t.categoryId)
-export const colorOf = (s: State, t: Task) => categoryOf(s, t)?.color ?? '#aeaeae'
+export const colorOf = (s: State, t: Task) => subjectVar(categoryOf(s, t)?.color)
 export const pct = (rate: number | null) => (rate === null ? '-' : `${Math.round(rate * 100)}%`)

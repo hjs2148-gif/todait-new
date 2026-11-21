@@ -2,13 +2,54 @@
 // 원본 앱의 ByAmountTaskLogic(남은 분량을 남은 공부일에 올림 분배, 보충 요일, 분량 변경/쉬는 날)을 옮긴 것.
 import { addDays, diffDays, dow } from './date.ts'
 
+/** 배분 엔진이 쓰는 방식. 화면의 분류(kind)와 따로 둔다 */
 export type TaskType = 'amount' | 'daily' | 'time' | 'check'
+/** 앱 전체에서 쓰는 계획 분류 5가지: 책(책·문제집) · 인강 · 시간 · 습관 · 할 일 */
+export type TaskKind = 'book' | 'lecture' | 'time' | 'habit' | 'todo'
+/** 책을 나누는 방식: 목차(쪽) · 문제집(문항) · 분량만 */
+export type BookMode = 'toc' | 'workbook' | 'amount'
+/** 이해도 상·중·하 */
+export type Grade = 'high' | 'mid' | 'low'
+
+export interface Chapter {
+  id: string
+  name: string
+  /** 단원 범위 (쪽 또는 문항, 양 끝 포함) */
+  from: number
+  to: number
+  /** 단원을 끝낸 날 */
+  doneDate?: string
+  grade?: Grade
+  /** 복습한 날들 */
+  reviews?: string[]
+}
+
+export interface Lecture { title: string; min: number | null }
+
+/** 그 날을 쉬는 날로 볼지. 시험 전 비워 둘 날·전체 쉬는 날·멈춘 기간을 합쳐 넘긴다 */
+export type OffFn = (date: string) => boolean
 
 export interface Task {
   id: string
   name: string
   /** amount: 전체 분량을 기간에 나눠 하는 계획 / daily: 매일 일정 분량 / time: 매일 목표 시간 / check: 했는지만 체크 */
   type: TaskType
+  /** 화면 분류. 옛 기록은 migrate()가 type으로 채운다 */
+  kind: TaskKind
+  /** kind === 'book' 일 때 나누는 방식 */
+  bookMode?: BookMode
+  /** 목차·문제집 단원 */
+  chapters?: Chapter[]
+  /** 인강 강의 목록 (없으면 amount개의 이름 없는 강의) */
+  lectures?: Lecture[]
+  /** 목차 계획: 단원 순서대로(단원 끝에 맞춰 끊기) / 하루 쪽 수 같게 */
+  split?: 'chapter' | 'even'
+  /** 습관: 쉬는 날에도 한다 */
+  keepOnRest?: boolean
+  /** 할 일: 마감일 (없으면 하는 날 = 마감) */
+  due?: string | null
+  /** 잠깐 멈춘 기간. to가 null이면 지금 멈춘 상태 */
+  pauses?: { from: string; to: string | null }[]
   unit: string
   /** amount 전용: 범위 시작 값 (예: 31쪽부터면 31). 총 분량 방식이면 null */
   startPoint: number | null
@@ -30,6 +71,7 @@ export interface Task {
   notifyTime: string | null
   completed: boolean
   completedDate: string | null
+  /** 멈춘 계획 (계획 관리의 '멈춘 것') */
   archived: boolean
   order: number
   createdAt: number
@@ -41,6 +83,11 @@ export interface DayRec {
   done: number
   sec: number
   checked: boolean
+  /** 문제집: 맞은 수·틀린 수 */
+  right?: number
+  wrong?: number
+  /** 한 줄 메모 */
+  note?: string
 }
 export type Recs = Record<string, DayRec>
 
@@ -51,6 +98,36 @@ export const sumDone = (recs: Recs, before?: string) => {
 }
 
 const inPeriod = (t: Task, date: string) => date >= t.startDate && (!t.endDate || date <= t.endDate)
+
+/** 그 날의 분량 변경. 직접 바꾼 값이 우선이고, 쉬는 날(off)이면 0 */
+const customOf = (t: Task, date: string, off?: OffFn): number | undefined => {
+  const c = t.custom[date]
+  if (c !== undefined) return c
+  return off?.(date) ? 0 : undefined
+}
+
+/** 멈춘 기간에 들어가는 날인지 */
+export const isPausedOn = (t: Task, date: string) =>
+  !!t.pauses?.some((p) => date >= p.from && (p.to === null || date <= p.to))
+
+/** 목차 '단원 순서대로': 하루 끝이 단원 끝 근처(하루 분량의 절반 안)면 단원 끝에서 끊는다 */
+function snapToChapter(t: Task, recs: Recs, date: string, v: number, left: number) {
+  if (t.split !== 'chapter' || !t.chapters?.length || t.startPoint === null || v <= 0) return v
+  const pos = t.startPoint + sumDone(recs, date)
+  const end = pos + v - 1
+  const reach = Math.floor(v / 2)
+  let best = v
+  let bestGap = Infinity
+  for (const c of t.chapters) {
+    if (c.to < pos) continue
+    const gap = Math.abs(c.to - end)
+    if (gap <= reach && gap < bestGap) {
+      best = c.to - pos + 1
+      bestGap = gap
+    }
+  }
+  return Math.min(Math.max(best, 1), left)
+}
 
 /** 보충 요일 기준으로 "이번 주"가 시작된 뒤 date 전까지 밀린 분량 */
 function delayedThisWeek(recs: Recs, date: string, sup: number) {
@@ -71,9 +148,9 @@ function nextSupplementDate(date: string, sup: number, end: string | null) {
 }
 
 /** date 시점에 계산한 그 날의 목표. 지난 날짜의 기록(recs)만 참고한다 */
-export function liveExpect(t: Task, recs: Recs, date: string): number {
+export function liveExpect(t: Task, recs: Recs, date: string, off?: OffFn): number {
   if (!inPeriod(t, date)) return 0
-  const custom = t.custom[date]
+  const custom = customOf(t, date, off)
 
   if (t.type !== 'amount') {
     if (custom !== undefined) return custom
@@ -88,7 +165,7 @@ export function liveExpect(t: Task, recs: Recs, date: string): number {
   if (sup !== null && wd !== sup && delayed > 0) {
     // 밀린 분량은 다가오는 보충 요일 몫으로 떼어 둔다
     const ns = nextSupplementDate(date, sup, t.endDate)
-    if (ns && t.custom[ns] === undefined) {
+    if (ns && customOf(t, ns, off) === undefined) {
       delayed = Math.min(delayed, left)
       left -= delayed
     }
@@ -96,28 +173,30 @@ export function liveExpect(t: Task, recs: Recs, date: string): number {
   if (custom !== undefined) return Math.min(custom, left)
   if (sup !== null && wd === sup) return Math.min(delayed, left)
   if (!t.week[wd]) return 0
-  if (!t.endDate) return Math.min(t.perDay, left)
+  if (!t.endDate) return snapToChapter(t, recs, date, Math.min(t.perDay, left), left)
 
   // 남은 분량(분량 변경한 날 몫 제외)을 남은 공부일 수로 올림 분배
   let customSum = 0
   let days = 0
   for (let d = date; d <= t.endDate; d = addDays(d, 1)) {
-    const c = t.custom[d]
+    const c = customOf(t, d, off)
     if (c !== undefined) customSum += c
     else if (t.week[dow(d)] && dow(d) !== sup) days++
   }
   const rest = Math.max(left - customSum, 0)
-  return Math.min(days > 0 ? Math.ceil(rest / days) : 0, left)
+  const v = Math.min(days > 0 ? Math.ceil(rest / days) : 0, left)
+  // 마지막 공부일엔 남은 분량을 그대로 둔다
+  return days > 1 ? snapToChapter(t, recs, date, v, left) : v
 }
 
 /** 지난 날짜들의 목표를 고정한다. 바뀐 게 없으면 같은 객체를 돌려준다 */
-export function rollForward(t: Task, recs: Recs, today: string): Recs {
+export function rollForward(t: Task, recs: Recs, today: string, off?: OffFn): Recs {
   let out = recs
   const last = t.endDate && t.endDate < today ? t.endDate : addDays(today, -1)
   for (let d = t.startDate; d <= last; d = addDays(d, 1)) {
     if (t.completedDate && d > t.completedDate) break
     if (out[d]?.expect !== undefined) continue
-    const e = liveExpect(t, out, d)
+    const e = liveExpect(t, out, d, off)
     if (e <= 0 && !out[d]) continue
     if (out === recs) out = { ...recs }
     out[d] = { ...(out[d] ?? { done: 0, sec: 0, checked: false }), expect: e }
@@ -126,13 +205,13 @@ export function rollForward(t: Task, recs: Recs, today: string): Recs {
 }
 
 /** 오늘 이후 날짜별 예상 목표 (매일 목표를 채운다고 가정) */
-export function futurePlan(t: Task, recs: Recs, today: string): Record<string, number> {
+export function futurePlan(t: Task, recs: Recs, today: string, off?: OffFn): Record<string, number> {
   const plan: Record<string, number> = {}
   if (t.type !== 'amount' || t.completed) return plan
   const sim: Recs = { ...recs }
   const last = t.endDate ?? addDays(today, 365)
   for (let d = today < t.startDate ? t.startDate : today; d <= last; d = addDays(d, 1)) {
-    const e = liveExpect(t, sim, d)
+    const e = liveExpect(t, sim, d, off)
     plan[d] = e
     const cur = sim[d]
     sim[d] = { done: Math.max(e, cur?.done ?? 0), sec: 0, checked: false, expect: e }
@@ -142,10 +221,10 @@ export function futurePlan(t: Task, recs: Recs, today: string): Record<string, n
 }
 
 /** 화면에 보여줄 그 날의 목표 */
-export function expectOn(t: Task, recs: Recs, date: string, today: string, plan?: Record<string, number>): number {
+export function expectOn(t: Task, recs: Recs, date: string, today: string, plan?: Record<string, number>, off?: OffFn): number {
   if (date < today) return recs[date]?.expect ?? 0
-  if (t.type !== 'amount' || date === today) return liveExpect(t, recs, date)
-  return (plan ?? futurePlan(t, recs, today))[date] ?? 0
+  if (t.type !== 'amount' || date === today) return liveExpect(t, recs, date, off)
+  return (plan ?? futurePlan(t, recs, today, off))[date] ?? 0
 }
 
 /** 0~1 달성률 */
@@ -163,3 +242,65 @@ export const isExpired = (t: Task, recs: Recs, today: string) =>
 /** 기간이 끝나 자연히 종료된 반복 계획 */
 export const isFinished = (t: Task, today: string) =>
   t.completed || (t.type !== 'amount' && !!t.endDate && t.endDate < today)
+
+// ── 밀린 분량 정리 ─────────────────────────────────────────
+
+/** from(포함)부터 today 전까지 목표에 못 미친 양 */
+export function missedSince(recs: Recs, from: string, today: string) {
+  let m = 0
+  for (const d in recs) if (d >= from && d < today) m += Math.max((recs[d].expect ?? 0) - recs[d].done, 0)
+  return m
+}
+
+/** 밀리지 않았다면 오늘 목표가 얼마였을지 (from~어제를 목표만큼 했다고 보고 계산) */
+export function expectIfOnTrack(t: Task, recs: Recs, from: string, today: string, off?: OffFn) {
+  const sim: Recs = { ...recs }
+  for (const d in sim) if (d >= from && d < today) sim[d] = { ...sim[d], done: Math.max(sim[d].done, sim[d].expect ?? 0) }
+  return liveExpect(t, sim, today, off)
+}
+
+/** '끝나는 날 늦추기': 오늘 목표가 target 이하가 되는 가장 이른 종료일 (1년 안에 없으면 null) */
+export function extendEnd(t: Task, recs: Recs, today: string, target: number, off?: OffFn): string | null {
+  if (t.type !== 'amount' || !t.endDate) return null
+  for (let k = 0; k <= 366; k++) {
+    const end = addDays(t.endDate, k)
+    if (liveExpect({ ...t, endDate: end }, recs, today, off) <= target) return end
+  }
+  return null
+}
+
+/** 남은 공부일 하루 평균 (미리보기의 "하루 7.2쪽") */
+export function avgPerDay(plan: Record<string, number>) {
+  const v = Object.values(plan).filter((x) => x > 0)
+  return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0
+}
+
+// ── 진도 계산 ─────────────────────────────────────────────
+
+/** 한 단위(쪽·문항·강)에 드는 예상 시간(초). 기록이 쌓이면 실제 속도를 쓴다 */
+export function secPerUnit(t: Task, recs: Recs): number {
+  let done = 0
+  let sec = 0
+  for (const d in recs) if (recs[d].done > 0 && recs[d].sec > 0) { done += recs[d].done; sec += recs[d].sec }
+  if (done >= 5 && sec > 0) return sec / done
+  if (t.kind === 'lecture') {
+    const mins = (t.lectures ?? []).map((l) => l.min).filter((m): m is number => !!m)
+    return mins.length ? (mins.reduce((a, b) => a + b, 0) / mins.length) * 60 : 30 * 60
+  }
+  if (t.bookMode === 'workbook') return 2 * 60
+  return 3 * 60
+}
+
+/** 지금까지 한 범위가 [from, to] 범위와 겹치는 양 */
+export function doneInRange(t: Task, recs: Recs, from: number, to: number) {
+  const start = t.startPoint ?? 1
+  const doneTo = start + sumDone(recs) - 1
+  return Math.max(Math.min(doneTo, to) - Math.max(start, from) + 1, 0)
+}
+
+/** 지금 하고 있는 단원 (다 끝났으면 null) */
+export function currentChapter(t: Task, recs: Recs): Chapter | null {
+  if (!t.chapters?.length || t.startPoint === null) return null
+  const pos = t.startPoint + sumDone(recs)
+  return t.chapters.find((c) => c.to >= pos) ?? null
+}

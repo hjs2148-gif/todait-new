@@ -46,7 +46,7 @@ function check() {
   const todo = itemsOn(s, today, today).active.filter((i) => i.rate < 1)
 
   if (due(s.settings.dailyNotifyTime) && once('daily', today)) {
-    const dday = s.ddays.find((d) => d.selected)
+    const dday = s.exams.find((d) => d.selected)
     const n = dday ? diffDays(today, dday.date) : null
     const ddayText = dday && n !== null && n >= 0 ? `${dday.name} ${n === 0 ? 'D-DAY' : `D-${n}`} · ` : ''
     void show('오늘 계획', `${ddayText}${todo.length ? `남은 계획 ${todo.length}개: ${todo.map((i) => i.task.name).join(', ')}` : '오늘 계획을 모두 마쳤습니다!'}`, 'daily')

@@ -1,0 +1,59 @@
+/* 오늘 탭의 때에 따른 카드 · 단원 끝 시트 · 하루 마무리 */
+.ribc { color: var(--rib); }
+.ink { color: var(--ink); }
+.linkbtn { color: var(--ink); text-decoration: underline; font-weight: 700; padding: 0; }
+.notice { gap: 10px; }
+.nt-t b { display: block; font-size: 15px; }
+.nt-t small { display: block; font-size: 13px; line-height: 18px; color: var(--mu); margin-top: 2px; }
+.notice .two .chip, .weekcard .two .chip, .restcard .two .chip, .tcard .two .chip { flex: 1; justify-content: center; height: 40px; }
+.tcard .two { display: flex; gap: 8px; }
+.weekcard { gap: 10px; }
+.wk-h { font-size: 22px; line-height: 30px; margin-top: -4px; }
+.wk-last { border-radius: 14px; background: var(--bg); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.wk-nums { display: grid; grid-template-columns: 1fr 1fr; }
+.wk-nums b { display: block; font-size: 20px; line-height: 26px; }
+.wk-nums small { font-size: 13px; color: var(--mu); }
+.wk-sub { font-size: 14px; }
+.wk-targets > div { display: flex; align-items: center; gap: 8px; min-height: 38px; font-size: 14px; border-bottom: 1px solid var(--hl); }
+.wk-targets > div:last-child { border-bottom: 0; }
+.wk-targets small { color: var(--mu); font-size: 13px; white-space: nowrap; }
+.wk-targets b { width: 64px; text-align: right; font-size: 14px; white-space: nowrap; }
+.restcard { align-items: center; text-align: center; gap: 6px; padding: 20px 16px; }
+.restcard h2 { font-size: 22px; line-height: 30px; }
+.restcard .two { width: 100%; margin-top: 8px; }
+.emptycard { align-items: center; text-align: center; gap: 8px; padding: 28px 20px; }
+.emptycard h2 { font-size: 20px; line-height: 28px; }
+.emptycard .primary, .emptycard .ghost { width: 100%; margin: 0; }
+.emptycard .primary { margin-top: 8px; }
+.emptycard .ghost { background: var(--chip); border-radius: 16px; height: 50px; font-weight: 600; }
+.dc-hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding-top: 4px; }
+.dc-hero h2 { font-size: 22px; line-height: 30px; margin-top: 10px; }
+.dc-hero small { color: var(--mu); font-size: 13px; line-height: 18px; }
+.dc-book { position: relative; width: 64px; height: 76px; border-radius: 6px 12px 12px 6px; box-shadow: inset 5px 0 0 rgba(0,0,0,.15); }
+.dc-book i { position: absolute; right: 14px; top: -5px; width: 13px; height: 42px; background: var(--rib); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%); }
+.dc-book b { position: absolute; left: 14px; bottom: 12px; font-size: 22px; line-height: 26px; color: #fff; }
+.trio3.flat { background: var(--bg); border-radius: 16px; padding: 12px 0; gap: 0; margin: 12px 0; }
+.trio3.flat > div { text-align: center; min-width: 0; }
+.trio3.flat > div + div { box-shadow: inset 1px 0 0 var(--hl); }
+.trio3.flat b { display: block; font-size: 18px; line-height: 24px; }
+.trio3.flat small { display: block; font-size: 12px; line-height: 16px; color: var(--mu); }
+.dc-bar { margin-bottom: 8px; }
+.strongq { font-weight: 700; }
+.gradeBig { display: flex; gap: 8px; margin: 8px 0; }
+.gradeBig button { flex: 1; min-width: 0; height: 76px; border-radius: 16px; background: var(--bg); color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 0 4px; }
+.gradeBig button.on { background: var(--ink); color: var(--bg); }
+.gradeBig b { font-size: 18px; line-height: 22px; }
+.gradeBig small { font-size: 12px; line-height: 16px; opacity: .8; text-align: center; word-break: keep-all; }
+.dc-next { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 16px; background: var(--cur); font-size: 14px; line-height: 20px; margin: 4px 0 10px; }
+.de-title small { font-size: 13px; color: var(--mu); }
+.de-title h2 { font-size: 24px; line-height: 32px; margin-top: 2px; }
+.de-sum { display: flex; align-items: center; gap: 16px; }
+.de-grid { flex: 1; min-width: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+.de-grid b { display: block; font-size: 20px; line-height: 26px; white-space: nowrap; }
+.de-grid small { font-size: 13px; line-height: 18px; color: var(--mu); }
+.tline { position: relative; height: 28px; border-radius: 6px; background: var(--trk); overflow: hidden; margin-top: 12px; }
+.tline span { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
+.tline-l { position: relative; height: 16px; margin-top: 4px; font-size: 12px; line-height: 14px; color: var(--mu); }
+.tline-l span { position: absolute; white-space: nowrap; }
+.legend.wide { grid-template-columns: repeat(2, auto); gap: 4px 14px; margin-top: 8px; font-size: 13px; }
+.nbar { width: 3px; align-self: stretch; border-radius: 2px; flex: none; }

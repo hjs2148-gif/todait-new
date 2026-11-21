@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Catchup } from './TodayCatchup.tsx'
 import { EntrySheet } from './Entry.tsx'
 import { Icon } from './Icon.tsx'
@@ -9,6 +9,7 @@ import { behindOf, dayStats, habitDays, hm, KIND_TABS, KIND_NAME } from './today
 import { Field, Num, Sheet } from './ui.tsx'
 import { colorOf, type Item } from './view.ts'
 import { Widgets } from './widgets.tsx'
+import { BookCard, KindHead, LectureCard, MiniBar } from './BookCards.tsx'
 import { DayEnd } from './DayEnd.tsx'
 import { DoneChapterSheet } from './DoneChapter.tsx'
 import { BackupCard, DoneDayCard, EmptyCard, NewWeekCard, RestView } from './TodayCards.tsx'
@@ -106,12 +107,16 @@ function behindText(s: State, task: Task, today: string) {
   return b > 0 ? (task.kind === 'todo' ? '마감 지남' : `${b}${task.unit} 밀림`) : task.type === 'amount' ? '예정대로' : ''
 }
 
+/** 행 오른쪽: 한 양 / 목표 */
+const amountText = ({ task, rec, expect }: Item) =>
+  task.type === 'time' ? `${hm(rec?.sec ?? 0)} / ${hm(expect)}` : task.type === 'check' ? (rec?.checked ? '끝' : '') : `${rec?.done ?? 0} / ${expect}${task.unit}`
+
 function goalText(s: State, { task, rec, expect }: Item, date: string) {
   const recs = s.recs[task.id] ?? {}
   if (task.kind === 'time') return `목표 ${hm(expect)} · ${hm(rec?.sec ?? 0)} 함`
   if (task.type === 'check') return task.kind === 'todo' ? (task.due ? `${MD(task.due)}까지` : '오늘') : '오늘 체크'
   const startAt = task.startPoint !== null && task.type === 'amount' ? task.startPoint + sumDone(recs, date) : null
-  const range = startAt !== null && expect > 0 ? `${startAt}~${startAt + expect - 1}${task.unit}` : `${expect}${task.unit}`
+  const range = startAt !== null && expect > 1 ? `${startAt}~${startAt + expect - 1}${task.unit}` : startAt !== null && expect === 1 ? `${startAt}${task.unit}` : `${expect}${task.unit}`
   return `목표 ${range}${rec?.done ? ` · ${rec.done}${task.unit} 함` : ''}`
 }
 
@@ -125,8 +130,8 @@ function AllRows({ s, items, date, today, goTab, onEntry }: { s: State; items: I
     return (
       <div key={i.task.id} className="prow" role="button" tabIndex={0} onClick={() => goTab(i.task.kind)} onKeyDown={(e) => e.key === 'Enter' && goTab(i.task.kind)}>
         <div className="prow-main">
-          <div className="prow-1"><i className="dot" style={{ background: colorOf(s, i.task) }} /><span className="prow-name">{i.task.name}</span><b>{pctOf(i.rate)}<small>%</small></b></div>
-          <div className="prow-2">{goalText(s, i, date)}{b && <> · <span className={b.includes('밀림') || b.includes('지남') ? 'strong' : ''}>{b}</span></>}</div>
+          <div className="prow-1"><span className="prow-name">{i.task.name}</span><b>{pctOf(i.rate)}<small>%</small></b></div>
+          <div className="prow-2"><span className="ell">{goalText(s, i, date).replace(/ · .*함$/, '')}{b && b !== '예정대로' && <> · <span className={b.includes('밀림') || b.includes('지남') ? 'late-t' : ''}>{b}</span></>}</span><span className="prow-n">{amountText(i)}</span></div>
           <div className="track" aria-hidden="true"><div style={{ width: `${pctOf(i.rate)}%`, background: colorOf(s, i.task) }} /></div>
         </div>
         <RowAction s={s} item={i} date={date} today={today} onEntry={() => onEntry(i.task.id)} />
@@ -135,7 +140,7 @@ function AllRows({ s, items, date, today, goTab, onEntry }: { s: State; items: I
   }
   return (
     <>
-      <div className="sec-h"><h2>오늘 목표 {items.length}개 중 <b>{done.length}개</b> 끝</h2></div>
+      <div className="sec-h"><h2>오늘 목표 {items.length}개 중 <b>{done.length}개</b> 끝</h2><small>밀린 것부터</small></div>
       <section className="plist">{open.map(row)}{open.length === 0 && items.length > 0 && <p className="empty tight">목표를 모두 채웠어요</p>}</section>
       {done.length > 0 && (
         <>
@@ -156,110 +161,6 @@ function CardHead({ s, item, right, onMenu }: { s: State; item: Item; right: str
       <span className="ch-r">{right}</span>
       <button className="more" aria-label={`${item.task.name} 메뉴`} onClick={onMenu}><Icon name="more" size={18} /></button>
     </div>
-  )
-}
-
-function BookCard({ s, item, date, today, onEntry, onMenu }: { s: State; item: Item; date: string; today: string; onEntry: () => void; onMenu: () => void }) {
-  const { task, rec, expect } = item
-  const recs = s.recs[task.id] ?? {}
-  const color = colorOf(s, task)
-  const before = sumDone(recs, date)
-  const doneAll = sumDone(recs)
-  const start = task.startPoint ?? 1
-  const from = start + before
-  const to = from + Math.max(expect, 1) - 1
-  const posNow = start + doneAll - 1
-  let past = 0
-  for (const d in recs) if (d < today) past += recs[d].expect ?? 0
-  const planned = Math.min(past / Math.max(task.amount, 1), 1)
-  const circles = task.bookMode === 'workbook' && task.amount <= 40
-  const showCells = task.startPoint !== null && !circles && expect > 0 && expect <= 14
-  const chapters = task.chapters ?? []
-  const b = behindText(s, task, today)
-  return (
-    <section className="tcard" aria-label={task.name}>
-      <CardHead s={s} item={item} right={`${pctOf(item.rate)}%`} onMenu={onMenu} />
-      <div className="tc-sub">{goalText(s, item, date)}{b && date === today && <> · <span className={b.includes('밀림') ? 'strong' : ''}>{b}</span></>}</div>
-      {showCells && (
-        <div className="cells ro" role="img" aria-label={`오늘 ${from}~${to}쪽 중 ${rec?.done ?? 0}쪽 함`}>
-          {Array.from({ length: to - from + 1 }, (_, i) => from + i).map((n) => <span key={n} className={n < from + (rec?.done ?? 0) ? 'on' : ''} style={n < from + (rec?.done ?? 0) ? { background: color } : undefined}>{n}</span>)}
-          <span className="rib" style={{ left: `${Math.min((rec?.done ?? 0) / (to - from + 1), 1) * 100}%` }} aria-hidden="true" />
-        </div>
-      )}
-      {circles && (
-        <div className="qs" role="img" aria-label={`전체 ${task.amount}문항 중 ${doneAll}문항`}>
-          {Array.from({ length: task.amount }, (_, i) => <i key={i} className={i < doneAll ? 'on' : ''} style={i < doneAll ? { background: color } : undefined} />)}
-        </div>
-      )}
-      <div className="cbar" role="img" aria-label={`전체 ${task.amount}${task.unit} 중 ${doneAll}${task.unit}`}>
-        {chapters.length > 0 ? chapters.map((c) => {
-          const len = c.to - c.from + 1
-          const f = Math.max(0, Math.min(1, (posNow - c.from + 1) / len))
-          return <span key={c.id} style={{ flexGrow: len }}><span style={{ width: `${f * 100}%`, background: color }} /></span>
-        }) : <span style={{ flexGrow: 1 }}><span style={{ width: `${Math.min(doneAll / task.amount, 1) * 100}%`, background: color }} /></span>}
-        <i className="tick-exp" style={{ left: `${planned * 100}%` }} aria-hidden="true" />
-      </div>
-      <div className="tc-meta"><span>{doneAll} / {task.amount}{task.unit}</span><span>{task.endDate ? `${MD(task.endDate)} 끝 예정` : ''}</span></div>
-      {chapters.length > 0 && (
-        <ul className="chlist">
-          {chapters.map((c, i) => {
-            const cur = !c.doneDate && posNow >= c.from - 1 && posNow < c.to
-            const done = c.doneDate !== undefined
-            const grade = c.grade === 'high' ? '상' : c.grade === 'mid' ? '중' : c.grade === 'low' ? '하' : ''
-            return (
-              <li key={c.id} className={cur ? 'cur' : ''}>
-                <span className={`cn${done ? ' on' : ''}${cur ? ' now' : ''}`} style={done ? { background: color } : cur ? { background: `conic-gradient(${color} 0 ${Math.round(((posNow - c.from + 1) / (c.to - c.from + 1)) * 100)}%, var(--trk) 0)` } : undefined}>{done && <Icon name="check" size={12} />}</span>
-                <span className="cl-name"><small>{i + 1}</small> {c.name}</span>
-                <span className="cl-meta">{done ? `${MD(c.doneDate!)} 끝${grade ? ` · 이해 ${grade}` : ''}` : cur ? `${posNow - c.from + 1} / ${c.to - c.from + 1}${task.unit}` : `${c.from}~${c.to}${task.unit}`}</span>
-              </li>
-            )
-          })}
-        </ul>
-      )}
-      <div className="tc-actions">
-        <RowAction s={s} item={item} date={date} today={today} onEntry={onEntry} />
-        <button className="chip" onClick={onEntry}>분량 입력</button>
-      </div>
-    </section>
-  )
-}
-
-function LectureCard({ s, item, date, today, onEntry, onMenu }: { s: State; item: Item; date: string; today: string; onEntry: () => void; onMenu: () => void }) {
-  const { task, expect } = item
-  const recs = s.recs[task.id] ?? {}
-  const color = colorOf(s, task)
-  const doneAll = sumDone(recs)
-  const before = sumDone(recs, date)
-  const lectures = task.lectures ?? Array.from({ length: task.amount }, (_, i) => ({ title: `${(task.startPoint ?? 1) + i}${task.unit || '강'}`, min: null }))
-  const b = behindText(s, task, today)
-  const around = lectures.slice(Math.max(doneAll - 1, 0), Math.max(doneAll - 1, 0) + 5)
-  const first = Math.max(doneAll - 1, 0)
-  return (
-    <section className="tcard" aria-label={task.name}>
-      <CardHead s={s} item={item} right={`${doneAll} / ${task.amount}${task.unit || '강'}`} onMenu={onMenu} />
-      <div className="tc-sub">{goalText(s, item, date)}{b && date === today && <> · <span className={b.includes('밀림') ? 'strong' : ''}>{b}</span></>}</div>
-      <div className="cbar thick" role="img" aria-label={`${task.amount}강 중 ${doneAll}강 끝`}><span style={{ flexGrow: 1 }}><span style={{ width: `${Math.min(doneAll / task.amount, 1) * 100}%`, background: color }} /></span></div>
-      {task.amount <= 60 && (
-        <div className="lec" role="img" aria-label="강의 칸">
-          {lectures.map((_, i) => <i key={i} className={i < doneAll ? 'on' : ''} style={{ ...(i < doneAll ? { background: color } : {}), ...(i >= before && i < before + expect ? { boxShadow: `inset 0 0 0 2px ${color}` } : {}) }} />)}
-        </div>
-      )}
-      <ul className="chlist">
-        {around.map((l, i) => {
-          const idx = first + i
-          const done = idx < doneAll
-          const cur = idx === doneAll
-          return (
-            <li key={idx} className={cur ? 'cur' : ''}>
-              <span className={`cn${done ? ' on' : ''}${cur ? ' now' : ''}`} style={done ? { background: color } : undefined}>{done && <Icon name="check" size={12} />}</span>
-              <span className="cl-name"><small>{idx + 1}</small> {l.title}</span>
-              <span className="cl-meta">{done ? '끝' : cur ? '진행 중' : '예정'}</span>
-            </li>
-          )
-        })}
-      </ul>
-      <div className="tc-actions"><RowAction s={s} item={item} date={date} today={today} onEntry={onEntry} /><button className="chip" onClick={onEntry}>강의 입력</button></div>
-    </section>
   )
 }
 
@@ -370,6 +271,15 @@ export function Today({ nav }: { nav: Nav }) {
   const title = new Date(date.replace(/-/g, '/')).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })
   const ratePct = stats.timeRate === null ? null : Math.round(stats.timeRate * 100)
   const isRest = date in s.settings.restDays
+  // 탭 줄이 화면 위에 붙었는지 (붙었을 때만 날짜·진행 줄을 보인다)
+  const stickRef = useRef<HTMLDivElement>(null)
+  const [stuck, setStuck] = useState(false)
+  useEffect(() => {
+    const onScroll = () => { const el = stickRef.current; if (el) setStuck(el.getBoundingClientRect().top <= 0.5 && window.scrollY > 0) }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [isRest])
   const allDone = date === today && stats.goalsTotal > 0 && stats.goalsDone === stats.goalsTotal
 
   const body = () => {
@@ -402,9 +312,9 @@ export function Today({ nav }: { nav: Nav }) {
         </>
       )
     const list = kindItems(tab)
-    const head = (
-      <div className="sec-h"><h2>{KIND_NAME[tab]} <small>{list.length}</small></h2></div>
-    )
+    const avg = list.length ? list.reduce((a, i) => a + i.rate, 0) / list.length : 0
+    const doneN = list.filter((i) => i.rate >= 1).length
+    const head = <KindHead kind={tab} count={list.length} right={tab === 'habit' || tab === 'todo' ? <><b>{doneN} / {list.length}</b> 끝</> : <MiniBar rate={avg} />} />
     if (list.length === 0) return <>{head}<p className="empty">{KIND_NAME[tab]} 계획이 오늘은 없어요</p></>
     const common = { s, date, today }
     return (
@@ -425,7 +335,6 @@ export function Today({ nav }: { nav: Nav }) {
         <h1>{title}</h1>
         <div className="th-r">
           {date !== today && <button className="chip" onClick={() => setDate(today)}>오늘로</button>}
-          {isRest && <><button className="sq" onClick={() => setDate(addDays(date, -1))} aria-label="이전 날"><Icon name="left" size={18} /></button><button className="sq" onClick={() => setDate(addDays(date, 1))} aria-label="다음 날"><Icon name="right" size={18} /></button></>}
           <button className="chip" onClick={nav.editWidgets}>편집</button>
           <button className="sq ink" onClick={() => nav.editTask(null)} aria-label="새 계획"><Icon name="plus" size={18} /></button>
         </div>
@@ -440,8 +349,8 @@ export function Today({ nav }: { nav: Nav }) {
 
       {isRest && <div className="tbody"><RestView s={s} date={date} today={today} /></div>}
 
-      {!isRest && <div className="sticky-bar">
-        <div className="sb-1"><span className="sb-d"><button className="sq sm" onClick={() => setDate(addDays(date, -1))} aria-label="이전 날"><Icon name="left" size={16} /></button><b>{new Date(date.replace(/-/g, '/')).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}</b><button className="sq sm" onClick={() => setDate(addDays(date, 1))} aria-label="다음 날"><Icon name="right" size={16} /></button></span>
+      {!isRest && <div ref={stickRef} className={`sticky-bar${stuck ? ' stuck' : ''}`}>
+        <div className="sb-1" aria-hidden={!stuck}><b>{new Date(date.replace(/-/g, '/')).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}</b>
           <span>{stats.target > 0 ? `${date === today ? '오늘' : '그날'} ${hm(stats.sec)} / ${hm(stats.target)}${ratePct === null ? '' : ` · ${ratePct}%`}` : `공부 ${fmtDur(stats.sec)}`}</span></div>
         <div role="tablist" aria-label="계획 유형" className="segs">
           {KIND_TABS.map(([k, label]) => (

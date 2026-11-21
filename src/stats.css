@@ -3,20 +3,23 @@
 .cal2-head, .cal2-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
 .cal2-head span { text-align: center; font-size: 12px; line-height: 16px; color: var(--mu); padding: 2px 0 6px; }
 .cal2-grid { row-gap: 2px; }
-.c2 { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0 8px; min-height: 52px; border-radius: 12px; }
-.c2 .n { font-size: 14px; line-height: 20px; }
-.c2.now .n { font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
-.c2.sel { background: var(--cur); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.c2 { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 6px 0 10px; min-height: 58px; border-radius: 12px; }
+.c2 .n { font-size: 15px; line-height: 30px; width: 30px; height: 30px; border-radius: 15px; text-align: center; }
+.c2.sun .n, .cal2-head .sun { color: var(--bad); }
+.c2.future .n { color: var(--mu); }
+.c2.now .n { background: var(--ink); color: var(--bg); font-weight: 700; }
+.c2.sel .n { box-shadow: 0 0 0 2px var(--ink); }
+.c2.now.sel .n { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ink); }
 .c2 em { font-style: normal; font-size: 12px; line-height: 6px; color: var(--mu); height: 6px; display: flex; align-items: center; }
-.cbar2 { width: 70%; max-width: 30px; height: 5px; border-radius: 3px; background: var(--trk); overflow: hidden; }
+.cbar2 { width: 72%; max-width: 32px; height: 4px; border-radius: 2px; background: transparent; overflow: hidden; }
 .cbar2 i { display: block; height: 100%; border-radius: 3px; }
 .cbar2.empty { background: transparent; }
-.c2 u { position: absolute; top: 5px; right: 8px; width: 5px; height: 5px; border-radius: 3px; text-decoration: none; }
+.c2 u { width: 6px; height: 6px; border-radius: 3px; text-decoration: none; }
 .cal2-leg { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; line-height: 16px; color: var(--mu); margin-top: 4px; }
 .cal2-leg span { display: inline-flex; align-items: center; gap: 6px; }
 .cal2-leg .b { width: 14px; height: 5px; border-radius: 3px; background: var(--ink); display: inline-block; }
 .cal2-leg .b.gray { background: var(--mu); }
-.cal2-leg u { width: 6px; height: 6px; border-radius: 3px; background: var(--rib); display: inline-block; }
+.cal2-leg u { width: 6px; height: 6px; border-radius: 3px; background: var(--s-m); display: inline-block; }
 .trio3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .trio3 .tcard { padding: 12px 14px; gap: 0; min-width: 0; }
 .trio3 b { font-size: 20px; line-height: 26px; white-space: nowrap; }
@@ -42,20 +45,22 @@
 .ghost.wide { width: 100%; height: 48px; border-radius: 14px; background: var(--chip); font-weight: 600; }
 
 /* 통계 */
-.sbars { position: relative; display: flex; align-items: flex-end; gap: 3px; height: 140px; border-bottom: 1px solid var(--hl); }
+.sbars { position: relative; display: flex; align-items: flex-end; gap: 6px; height: 150px; padding-right: 40px; margin-top: 8px; }
 .sbars .ax { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--hl); }
-.sbars .axl { position: absolute; left: 0; font-size: 12px; line-height: 14px; color: var(--mu); transform: translateY(50%); background: var(--sf); padding-right: 4px; }
-.sb { flex: 1; min-width: 0; height: 100%; display: flex; align-items: flex-end; }
-.stk { width: 100%; display: flex; flex-direction: column-reverse; border-radius: 4px 4px 0 0; overflow: hidden; min-height: 0; }
-.stk i { display: block; width: 100%; }
-.sbl { margin-top: 2px; }
+.sbars .ax b { position: absolute; right: 0; top: -8px; font-size: 12px; line-height: 14px; font-weight: 400; color: var(--mu); }
+.sb { flex: 1; min-width: 0; height: 100%; display: flex; align-items: flex-end; justify-content: center; position: relative; z-index: 1; }
+.stk { width: 62%; max-width: 30px; display: flex; flex-direction: column-reverse; gap: 2px; min-height: 0; }
+.stk i { display: block; width: 100%; border-radius: 3px; min-height: 2px; }
+.stk i:last-child { border-radius: 5px 5px 3px 3px; }
+.sbl { margin-top: 4px; padding-right: 40px; gap: 6px; }
 .sbl span { min-width: 0; font-size: 12px; white-space: nowrap; }
 .ringrow { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
 .ringrow .wd-num { margin: 0; }
 .split { display: flex; gap: 3px; height: 12px; }
 .split i { display: block; border-radius: 3px; min-width: 3px; }
-.splist > div { display: flex; align-items: center; gap: 8px; min-height: 32px; font-size: 14px; }
-.splist small { color: var(--mu); width: 36px; text-align: right; }
+.splist { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; margin-top: 8px; }
+.splist > div { display: flex; align-items: center; gap: 6px; min-height: 26px; font-size: 13px; min-width: 0; }
+.splist b { width: 34px; text-align: right; font-size: 13px; }
 .heat { display: grid; grid-template-columns: 28px repeat(6, 1fr); gap: 3px; align-items: center; }
 .heat small { font-size: 12px; line-height: 14px; color: var(--mu); text-align: center; }
 .heat small.hl { text-align: left; }
@@ -77,3 +82,19 @@
 .endrow > b, .endrow > small { width: 82px; text-align: right; flex: none; font-size: 14px; }
 .endrow.head small { font-size: 12px; color: var(--mu); }
 .endrow .dot { margin-right: 4px; }
+
+.cal-title { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.cal-title h1 { margin-right: 6px; }
+.arrow { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; color: var(--ink); }
+.mbar { width: 48px; height: 5px; border-radius: 3px; background: var(--trk); overflow: hidden; flex: none; }
+.mbar span { display: block; height: 100%; border-radius: 3px; }
+.rv .stat { min-width: 64px; text-align: right; }
+
+.pnav { display: flex; align-items: center; justify-content: space-between; padding: 2px 0; }
+.pnav b { font-size: 15px; }
+.pnav .arrow:disabled { opacity: .3; }
+.st-big { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.st-big b { font-size: 34px; line-height: 40px; letter-spacing: -0.03em; }
+.st-big span { font-size: 13px; font-weight: 700; }
+.ringrow { justify-content: space-between; }
+.split { gap: 3px; }

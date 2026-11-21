@@ -4,7 +4,8 @@ import { diffDays, fmtDate, todayISO } from './date.ts'
 import { sumDone, type Task } from './logic.ts'
 import { examProgress, fitPreview, isProgressTask } from './progress.ts'
 import { actions, uid, useStore, type Exam, type ExamScope } from './store.ts'
-import { FullPage, Num, Row, Sheet } from './ui.tsx'
+import { DateText, FullPage, Num, Row, Sheet } from './ui.tsx'
+import { Icon } from './Icon.tsx'
 import { colorOf } from './view.ts'
 
 const md = (iso: string) => { const [, m, d] = iso.split('-'); return `${Number(m)}.${Number(d)}` }
@@ -39,10 +40,11 @@ export function ExamEdit({ examId, onClose }: { examId: string | null; onClose: 
   const set = (p: Partial<Exam>) => { setE({ ...e, ...p }); setError('') }
 
   const cands = s.tasks.filter((t) => !t.archived && !t.completed && (isProgressTask(t) || t.kind === 'time'))
-  const scoped = (id: string) => e.scope.find((x) => x.taskId === id)
+  const eff: ExamScope[] = e.scope.length ? e.scope : cands.filter(isProgressTask).map((t) => ({ taskId: t.id, from: null, to: null }))
+  const scoped = (id: string) => eff.find((x) => x.taskId === id)
   const toggle = (t: Task) => {
     if (!isProgressTask(t)) return
-    set({ scope: scoped(t.id) ? e.scope.filter((x) => x.taskId !== t.id) : [...e.scope, { taskId: t.id, from: null, to: null }] })
+    set({ scope: scoped(t.id) ? eff.filter((x) => x.taskId !== t.id) : [...eff, { taskId: t.id, from: null, to: null }] })
   }
   const n = diffDays(today, e.date)
   const ep = examProgress(s, e, today)
@@ -72,13 +74,14 @@ export function ExamEdit({ examId, onClose }: { examId: string | null; onClose: 
       </section>
       <section className="fcard">
         <Row label="이름"><input value={e.name} onChange={(ev) => set({ name: ev.target.value })} placeholder="예) 기말고사" aria-label="이름" /></Row>
-        <Row label="날짜"><input type="date" value={e.date} onChange={(ev) => ev.target.value && set({ date: ev.target.value })} aria-label="날짜" /></Row>
+        <Row label="날짜"><DateText value={e.date} onChange={(v) => v && set({ date: v })} label="날짜" weekday /><Icon name="right" size={16} /></Row>
         <Row label="비워 둘 날">
-          <span className="two-in">
+          <span className="two-in grow-in">
             <small className="mu">복습만</small>
-            <button className="sq" aria-label="줄이기" disabled={e.blankDays <= 0} onClick={() => set({ blankDays: e.blankDays - 1 })}>−</button>
+            <span className="grow" />
+            <button className="sq" aria-label="줄이기" disabled={e.blankDays <= 0} onClick={() => set({ blankDays: e.blankDays - 1 })}><Icon name="minus" size={18} /></button>
             <b className="nm">{e.blankDays}<small>일</small></b>
-            <button className="sq" aria-label="늘리기" disabled={e.blankDays >= 14} onClick={() => set({ blankDays: e.blankDays + 1 })}>+</button>
+            <button className="sq" aria-label="늘리기" disabled={e.blankDays >= 14} onClick={() => set({ blankDays: e.blankDays + 1 })}><Icon name="plus" size={18} /></button>
           </span>
         </Row>
       </section>
@@ -91,13 +94,13 @@ export function ExamEdit({ examId, onClose }: { examId: string | null; onClose: 
           const can = isProgressTask(t)
           return (
             <div key={t.id} className={`frow scope${can ? '' : ' dim'}`}>
-              <button className={`chk${sc ? ' on' : ''}`} role="checkbox" aria-checked={!!sc} disabled={!can} aria-label={`${t.name} 범위에 넣기`} onClick={() => toggle(t)}>{sc && '✓'}</button>
+              <button className={`chk${sc ? ' on' : ''}`} role="checkbox" aria-checked={!!sc} disabled={!can} aria-label={`${t.name} 범위에 넣기`} onClick={() => toggle(t)}>{sc && <Icon name="check" size={15} stroke={3.2} />}</button>
               <i className="dot" style={{ background: colorOf(s, t) }} />
               <button className="grow sc-main" disabled={!sc} onClick={() => setRange(t.id)}>
                 <b className="blk ell">{t.name}</b>
-                <small className="blk ell mu">{can ? (sc ? rangeLabel(t, sc) : `${md(t.startDate)} 시작`) : '시간 계획은 범위가 없어요'}</small>
+                <small className="blk ell mu">{can ? (sc ? rangeLabel(t, sc) : t.startDate > today ? `${md(t.startDate)} 시작` : '범위에 안 넣음') : '시간 계획은 범위가 없어요'}</small>
               </button>
-              {sc && <small className="nowrap">{leftOf(t)}{t.unit} 남음</small>}
+              {sc && <><small className="nowrap ink">{leftOf(t)}{t.unit} 남음</small><Icon name="right" size={16} /></>}
             </div>
           )
         })}
@@ -128,7 +131,7 @@ export function ExamEdit({ examId, onClose }: { examId: string | null; onClose: 
       {range && (() => {
         const t = s.tasks.find((x) => x.id === range)
         const sc = scoped(range)
-        return t && sc ? <RangeSheet task={t} scope={sc} onClose={() => setRange(null)} onSave={(x) => set({ scope: e.scope.map((y) => (y.taskId === x.taskId ? x : y)) })} /> : null
+        return t && sc ? <RangeSheet task={t} scope={sc} onClose={() => setRange(null)} onSave={(x) => set({ scope: eff.map((y) => (y.taskId === x.taskId ? x : y)) })} /> : null
       })()}
     </FullPage>
   )

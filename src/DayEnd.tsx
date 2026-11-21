@@ -4,6 +4,7 @@ import { actions, subjectVar, useStore } from './store.ts'
 import { dayTimeline, secOn } from './stats.ts'
 import { dayStats, hm, streakInfo, subjectSecs } from './todayData.ts'
 import { FullPage } from './ui.tsx'
+import { Icon } from './Icon.tsx'
 import { colorOf, itemsOn } from './view.ts'
 
 const clock = (ms: number) => { const d = new Date(ms); return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}` }
@@ -62,7 +63,7 @@ export function DayEnd({ date, today, onClose, goTomorrow }: { date: string; tod
       <div className="fp-h2 fsplit"><h2>오늘 한 것</h2><small>{stats.goalsTotal}개 중 {stats.goalsDone}개</small></div>
       <section className="tcard tight">
         {stats.active.length === 0 && <p className="empty tight">오늘 목표가 없었어요</p>}
-        {done.map((i) => <div key={i.task.id} className="rv"><span className="cn on" style={{ background: colorOf(s, i.task), width: 22, height: 22, borderRadius: 11 }}>✓</span><span className="grow ell"><b>{i.task.name}</b></span><small>{i.task.type === 'time' ? hm(i.rec?.sec ?? 0) : i.task.type === 'check' ? '끝' : `${i.rec?.done ?? 0} / ${i.expect}${i.task.unit}`}</small></div>)}
+        {done.map((i) => <div key={i.task.id} className="rv"><span className="cn on" style={{ background: colorOf(s, i.task), width: 22, height: 22, borderRadius: 11 }}><Icon name="check" size={13} stroke={3.2} /></span><span className="grow ell"><b>{i.task.name}</b></span><small>{i.task.type === 'time' ? hm(i.rec?.sec ?? 0) : i.task.type === 'check' ? '끝' : `${i.rec?.done ?? 0} / ${i.expect}${i.task.unit}`}</small></div>)}
         {open.map((i) => (
           <div key={i.task.id} className="rv">
             <span className="cn" style={{ borderColor: 'var(--bad)', borderStyle: 'solid', width: 22, height: 22, borderRadius: 11 }} />

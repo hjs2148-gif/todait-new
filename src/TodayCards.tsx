@@ -5,10 +5,9 @@ import { liveExpect } from './logic.ts'
 import { backupDue, isoWeek } from './model.ts'
 import { bestDaySecBefore, lastWeekSummary, weekTargets } from './stats.ts'
 import { actions, downloadBackup, importBackup, offFor, type State } from './store.ts'
-import { hm, streakInfo, type DayStats } from './todayData.ts'
-import { RowAction } from './Today.tsx'
+import { examProgress, habitDays, hm, streakInfo, type DayStats } from './todayData.ts'
+import { Icon } from './Icon.tsx'
 import { colorOf } from './view.ts'
-import { ExamWidget, StreakWidget } from './widgets.tsx'
 
 const md = (iso: string) => { const [, m, d] = iso.split('-'); return `${Number(m)}월 ${Number(d)}일` }
 
@@ -92,51 +91,58 @@ export function RestView({ s, date, today }: { s: State; date: string; today: st
     .filter((t) => t.type === 'amount' && !t.archived && !t.completed)
     .map((t) => {
       const recs = s.recs[t.id] ?? {}
-      const was = s.settings.restMoves[date]?.[t.id] ?? 0
+      const was = s.settings.restMoves[date]?.[t.id] ?? liveExpect(t, recs, date)
       const nowTom = liveExpect(t, recs, tomorrow, offFor(s, t))
-      return { t, was, nowTom, before: way === 'tomorrow' ? nowTom - was : nowTom }
+      return { t, was, nowTom, before: way === 'tomorrow' ? nowTom - (s.settings.restMoves[date]?.[t.id] ?? 0) : nowTom }
     })
-    .filter((x) => (way === 'tomorrow' ? x.was > 0 : liveExpect(x.t, s.recs[x.t.id] ?? {}, date) > 0))
+    .filter((x) => x.was > 0)
   const heavy = moved.find((x) => way === 'tomorrow' && x.before > 0 && x.nowTom >= x.before * 2)
   const habits = s.tasks.filter((t) => t.kind === 'habit' && t.keepOnRest && !t.archived)
-  const rec = (id: string) => s.recs[id]?.[date]
+  const st = streakInfo(s, today, s.settings.streakMinSec)
+  const exam = s.exams.find((e) => e.selected)
+  const ep = exam ? examProgress(s, exam, today) : null
+  const n = exam ? diffDays(today, exam.date) : 0
   return (
     <>
       <section className="tcard restcard" role="region" aria-label="쉬는 날">
-        <svg width="96" height="84" viewBox="0 0 96 84" aria-hidden="true">
-          <rect x="22" y="14" width="52" height="62" rx="6" fill="var(--s-m)" /><rect x="22" y="14" width="7" height="62" rx="3" fill="rgba(0,0,0,.18)" />
-          <path d="M56 4h12v36l-6-5-6 5z" fill="var(--rib)" /><rect x="36" y="54" width="30" height="4" rx="2" fill="rgba(255,255,255,.5)" />
-        </svg>
-        <h2>{date === today ? '오늘은 쉬는 날' : `${md(date)}은 쉬는 날`}</h2>
-        <p className="tc-sub">책갈피를 끼워 뒀어요.{moved.length > 0 ? ` 계획 ${moved.length}개를 옮겼어요.` : ''}</p>
+        <div className="rest-top">
+          <span className="rest-book" aria-hidden="true"><i /></span>
+          <span className="grow"><h2>{date === today ? '오늘은 쉬는 날' : `${md(date)}은 쉬는 날`}</h2><small className="mu">책갈피를 끼워 뒀어요.{moved.length > 0 ? ` 계획 ${moved.length}개를 옮겼어요.` : ''}</small></span>
+        </div>
         <div className="two">
           <button className="chip" onClick={() => actions.setRestDay(date, null)}>쉬는 날 취소</button>
           <button className="chip" onClick={() => actions.setRestDay(date, way === 'tomorrow' ? 'spread' : 'tomorrow')}>옮긴 방법 바꾸기</button>
         </div>
       </section>
-      <div className="wd-grid"><StreakWidget s={s} today={today} /><ExamWidget s={s} today={today} /></div>
+      <div className="wd-grid">
+        <section className="wd"><div className="wd-t">연속 공부</div><div className="wd-num">{st.count}<small>일</small></div><div className="wd-sub">쉬는 날은 끊기지 않아요</div></section>
+        <section className="wd">
+          <div className="wd-row"><span className="wd-t">{exam?.name ?? '시험'}</span>{exam && <b>{n === 0 ? 'D-DAY' : n > 0 ? `D-${n}` : `D+${-n}`}</b>}</div>
+          {ep ? <><div className="wd-num">{Math.round(ep.done * 100)}<small>%</small></div><div className="rest-bar" aria-hidden="true"><span style={{ width: `${ep.done * 100}%` }} /><i style={{ left: `${ep.planned * 100}%` }} /></div></> : <div className="wd-sub">시험을 추가하면 보여요</div>}
+        </section>
+      </div>
       <div className="sec-h"><h2>{way === 'tomorrow' ? '내일로 옮긴 분량' : '남은 날에 나눈 분량'}</h2><small>{way === 'tomorrow' ? '내일 분량에 더함' : '자동으로 나눔'}</small></div>
       <section className="tcard tight">
         {moved.length === 0 && <p className="empty tight">옮길 분량이 없어요</p>}
         {moved.map((x) => (
           <div key={x.t.id} className="rv">
             <i className="dot" style={{ background: colorOf(s, x.t) }} />
-            <span className="grow"><b className="blk ell">{x.t.name}</b><small className="blk">{way === 'tomorrow' ? `내일 ${x.before}${x.t.unit} → ${x.nowTom}${x.t.unit}으로 늘어남` : '다음 공부일에 조금씩 더해요'}</small></span>
-            <b>{way === 'tomorrow' ? x.was : liveExpect(x.t, s.recs[x.t.id] ?? {}, date)}{x.t.unit}</b>
+            <span className="grow"><b className="blk ell">{x.t.name}</b><small className={`blk${heavy?.t.id === x.t.id ? ' bad' : ''}`}>{way === 'tomorrow' ? `내일 ${x.before}${x.t.unit} → ${x.nowTom}${x.t.unit}으로 늘어남` : '다음 공부일에 조금씩 더해요'}</small></span>
+            <b>{x.was}{x.t.unit}</b>
           </div>
         ))}
+        {heavy && <p className="tip in">내일 {heavy.t.name}이 두 배라 무거워요. <button className="linkbtn" onClick={() => actions.setRestDay(date, 'spread')}>나눠서 옮기기</button>로 바꾸면 남은 날에 조금씩 더해요.</p>}
       </section>
-      {heavy && <p className="fnote"><b>내일 {heavy.t.name}이 두 배라 무거워요.</b> <button className="linkbtn" onClick={() => actions.setRestDay(date, 'spread')}>나눠서 옮기기</button>로 바꾸면 남은 날에 조금씩 더해요.</p>}
       {habits.length > 0 && (
         <>
           <div className="sec-h"><h2>쉬는 날에도 하는 습관</h2><small>원하면</small></div>
           <section className="tcard tight">
             {habits.map((t) => {
-              const item = { task: t, rec: rec(t.id), expect: 1, rate: rec(t.id)?.checked ? 1 : 0 }
+              const checked = !!s.recs[t.id]?.[date]?.checked
               return (
                 <div key={t.id} className="todo">
-                  <RowAction s={s} item={item} date={date} today={today} onEntry={() => {}} />
-                  <span className="grow">{t.name}</span><small className="mu">연속 {Object.values(s.recs[t.id] ?? {}).filter((r) => r.checked).length}일</small>
+                  <button className={`ring-check${checked ? ' on' : ''}`} role="checkbox" aria-checked={checked} aria-label={`${t.name} 체크`} style={{ borderColor: colorOf(s, t), background: checked ? colorOf(s, t) : undefined }} onClick={() => actions.toggleCheck(t.id, date)}>{checked && <Icon name="check" size={13} stroke={3.2} />}</button>
+                  <span className="grow">{t.name}</span><small className="mu">연속 {habitDays(s, t, date, 1).streak}일</small>
                 </div>
               )
             })}

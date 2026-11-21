@@ -33,6 +33,7 @@ export function Stopwatch({ showStart }: { showStart: boolean }) {
   const [now, setNow] = useState(Date.now())
   const [open, setOpen] = useState(true)
   const [ended, setEnded] = useState<Stopped | null>(null)
+  const [picking, setPicking] = useState(false)
   const startedAt = timer?.startedAt
 
   // 새로 시작하면 전체 화면으로 연다
@@ -60,7 +61,8 @@ export function Stopwatch({ showStart }: { showStart: boolean }) {
   }
 
   if (!timer) {
-    const next = showStart ? nextStudy(s, today) : null
+    // 쉬는 날에는 다음 공부를 권하지 않는다
+    const next = showStart && !(today in s.settings.restDays) ? nextStudy(s, today) : null
     if (!next) return null
     const color = colorOf(s, next.item.task)
     return (
@@ -84,15 +86,17 @@ export function Stopwatch({ showStart }: { showStart: boolean }) {
   }
   const toggle = () => (running ? actions.pauseTimer() : actions.resumeTimer())
 
+  const miniItem = itemsOn(s, timer.date, today).active.find((i) => i.task.id === task.id)
+  const miniGoal = (miniItem ? targetSec(s, miniItem) : 0) - before - elapsed
+  const mmssMini = (sec: number) => { const x = Math.floor(sec); const h = Math.floor(x / 3600); const m = Math.floor((x % 3600) / 60); const r = x % 60; return h ? `${h}:${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}` : `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}` }
   if (!open)
     return (
       <div className="dock mini" role="region" aria-label="스톱워치">
         <button className="dock-open" onClick={() => setOpen(true)} aria-label="스톱워치 열기">
-          <span className="dock-bar" style={{ background: color }} />
-          <span className="dock-t"><small>{task.name}</small><b className="clk">{fmtClock(elapsed)}</b></span>
+          <span className="dock-t"><small><i className="dot" style={{ background: color }} /> {task.name}{miniGoal > 0 ? ` · 목표까지 ${Math.ceil(miniGoal / 60)}분` : running ? '' : ' · 멈춤'}</small><b className="clk">{mmssMini(elapsed)}</b></span>
         </button>
-        <button className="chip" onClick={toggle}>{running ? '멈춤' : '이어서'}</button>
-        <button className="chip dark" onClick={end}>끝내기</button>
+        <button className="mini-b" onClick={toggle} aria-label={running ? '잠깐 멈춤' : '이어서'}><Icon name={running ? 'pause' : 'play'} size={18} /></button>
+        <button className="mini-b end" onClick={end} aria-label="끝내고 기록"><Icon name="stop" size={18} /></button>
       </div>
     )
 
@@ -112,13 +116,24 @@ export function Stopwatch({ showStart }: { showStart: boolean }) {
   }
   const dayTotal = dayStats(s, timer.date, today)
   const startClock = new Date(timer.startedAt)
+  const hhmm = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  const mmss = (sec: number) => { const t = Math.floor(sec); const h = Math.floor(t / 3600); const m = Math.floor((t % 3600) / 60); const x = t % 60; return h ? `${h}:${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}` : `${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}` }
+  const leftToGoal = goal - before - elapsed
+  const dayNow = dayTotal.sec + elapsed
+  const others = itemsOn(s, timer.date, today).active.filter((i) => i.task.id !== task.id && i.task.kind !== 'todo' && i.task.kind !== 'habit')
   return (
-    <div className="stopwatch" role="dialog" aria-label="스톱워치">
-      <button className="sw-down" onClick={() => setOpen(false)} aria-label="내리기"><Icon name="left" size={20} /></button>
-      <small>{running ? '공부 중' : '멈춤'} · {task.name}</small>
+    <div className="stopwatch sw2" role="dialog" aria-label="스톱워치">
+      <div className="sw-top">
+        <button className="sq" onClick={() => setOpen(false)} aria-label="내리기"><Icon name="left" size={18} /></button>
+        <span className="sw-awake"><Icon name="phone" size={16} stroke={1.9} />화면 켜 둠</span>
+      </div>
+      <button className="sw-plan" onClick={() => setPicking(!picking)} aria-expanded={picking}><i className="dot" style={{ background: color }} />{task.name}{others.length > 0 && <Icon name="right" size={14} />}</button>
+      {picking && others.length > 0 && (
+        <div className="sw-pick">{others.map((i) => <button key={i.task.id} className="chip" onClick={() => { actions.switchTimerTask(i.task.id); setPicking(false) }}><i className="dot" style={{ background: colorOf(s, i.task) }} />{i.task.name}</button>)}</div>
+      )}
       <div className="ringwrap">
         <svg width="260" height="260" viewBox="0 0 260 260" aria-hidden="true">
-          <g transform="rotate(-90 130 130)" fill="none" strokeWidth="14" strokeLinecap="round">
+          <g transform="rotate(-90 130 130)" fill="none" strokeWidth="16" strokeLinecap="butt">
             {Array.from({ length: n }, (_, i) => {
               const base = { d: `${(seg - gap).toFixed(1)} ${C.toFixed(1)}`, o: -(i * seg) }
               const p = arc(i, 0, before)
@@ -133,16 +148,22 @@ export function Stopwatch({ showStart }: { showStart: boolean }) {
             })}
           </g>
         </svg>
-        <div className="clock">{fmtClock(elapsed)}</div>
+        <div className="sw-in">
+          <small>{running ? '이번 공부' : '멈춤'} · {hhmm(startClock)} 시작</small>
+          <b className="sw-clock">{mmss(elapsed)}</b>
+          <small>오늘 <b>{hm(before + elapsed)}</b>{goal > 0 ? ` / ${hm(goal)}` : ''}</small>
+        </div>
       </div>
-      <p>{`${String(startClock.getHours()).padStart(2, '0')}:${String(startClock.getMinutes()).padStart(2, '0')}에 시작 · 이 계획 오늘 ${hm(before + elapsed)}`}</p>
-      <div className="trk-day" role="img" aria-label="오늘 전체"><span style={{ width: `${Math.min(((dayTotal.sec + elapsed) / Math.max(dayTotal.target, dayTotal.sec + elapsed, 1)) * 100, 100)}%` }} /></div>
-      <small>오늘 전체 {hm(dayTotal.sec + elapsed)}{dayTotal.target > 0 ? ` / ${hm(dayTotal.target)}` : ''}</small>
-      <div className="sw-btns">
-        <button className="ghost" onClick={toggle}>{running ? '멈춤' : '이어서'}</button>
-        <button className="primary" onClick={end}>끝내기</button>
+      <b className="sw-goal">{goal <= 0 ? '오늘 목표 시간이 없어요' : leftToGoal > 0 ? `목표까지 ${Math.ceil(leftToGoal / 60)}분` : '목표를 채웠어요'}</b>
+      <div className="sw-leg"><span><i style={{ background: color, opacity: 0.45 }} />앞서 한 {hm(before)}</span><span><i style={{ background: color }} />지금 {hm(elapsed)}</span></div>
+      <section className="tcard sw-day" aria-label="오늘 전체">
+        <div className="tc-meta"><span>오늘 전체</span><b>{hm(dayNow)}{dayTotal.target > 0 ? ` / ${hm(dayTotal.target)} · ${Math.round((dayNow / dayTotal.target) * 100)}%` : ''}</b></div>
+        <div className="trk-day"><span style={{ width: `${Math.min((dayNow / Math.max(dayTotal.target, dayNow, 1)) * 100, 100)}%` }} /></div>
+      </section>
+      <div className="sw-btns2">
+        <button onClick={toggle} aria-label={running ? '잠깐 멈춤' : '이어서'}><span className="rb"><Icon name={running ? 'pause' : 'play'} size={24} /></span>{running ? '잠깐 멈춤' : '이어서'}</button>
+        <button onClick={end} aria-label="끝내고 기록"><span className="rb ink"><Icon name="stop" size={24} /></span>끝내고 기록</button>
       </div>
-      <small>화면이 꺼지지 않게 켜 둬요</small>
     </div>
   )
 }

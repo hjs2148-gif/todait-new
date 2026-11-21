@@ -57,3 +57,17 @@
 .tline-l span { position: absolute; white-space: nowrap; }
 .legend.wide { grid-template-columns: repeat(2, auto); gap: 4px 14px; margin-top: 8px; font-size: 13px; }
 .nbar { width: 3px; align-self: stretch; border-radius: 2px; flex: none; }
+
+/* 쉬는 날 (RRest) */
+.restcard { align-items: stretch; text-align: left; gap: 14px; padding: 16px; }
+.rest-top { display: flex; align-items: center; gap: 14px; }
+.rest-top h2 { font-size: 20px; line-height: 28px; }
+.rest-book { position: relative; width: 52px; height: 64px; border-radius: 4px 10px 10px 4px; background: var(--pg); box-shadow: inset 4px 0 0 var(--hl), 0 1px 2px var(--shd); flex: none; }
+.rest-book i { position: absolute; left: 10px; top: -4px; width: 11px; height: 30px; background: var(--rib); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%); }
+.restcard .two { margin-top: 0; }
+.rest-bar { position: relative; height: 8px; border-radius: 4px; background: var(--trk); margin-top: auto; }
+.rest-bar span { display: block; height: 100%; border-radius: 4px; background: var(--ink); }
+.rest-bar i { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--ink); }
+.tip.in { margin: 0 0 12px; }
+.ring-check { width: 26px; height: 26px; border-radius: 13px; border: 2px solid; display: inline-flex; align-items: center; justify-content: center; color: var(--bg); flex: none; }
+small.bad { color: var(--bad); }

@@ -64,7 +64,7 @@ export function App() {
       <nav className="tabs">
         {TABS.map(([id, label, icon]) => (
           <button key={id} className={tab === id || (id === 'more' && tab === 'diary') ? 'on' : ''} aria-current={tab === id ? 'page' : undefined} onClick={() => setTab(id)}>
-            <Icon name={icon} />
+            <Icon name={icon} size={24} stroke={1.9} />
             {label}
           </button>
         ))}

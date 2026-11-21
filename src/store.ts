@@ -281,6 +281,8 @@ export const actions = {
       lastStopped = sec > 0 ? { id, taskId, date, sec } : null
       return { ...next, timer: null, histories: sec > 0 ? [...s.histories, { id, taskId, date, startedAt, endedAt }] : s.histories }
     }),
+  /** 재고 있는 시간을 다른 계획으로 (시작 시각은 그대로) */
+  switchTimerTask: (taskId: string) => setState((s) => (s.timer ? { ...s, timer: { ...s.timer, taskId } } : s)),
   pauseTimer: () => setState((s) => (s.timer && s.timer.pausedAt === undefined ? { ...s, timer: { ...s.timer, pausedAt: Date.now() } } : s)),
   resumeTimer: () =>
     setState((s) => {

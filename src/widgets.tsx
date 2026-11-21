@@ -190,7 +190,7 @@ function QuickStartWidget({ s, today }: { s: State; today: string }) {
   )
 }
 
-function renderWidget(slot: WidgetSlot, s: State, date: string, today: string, stats: DayStats) {
+export function renderWidget(slot: WidgetSlot, s: State, date: string, today: string, stats: DayStats) {
   switch (slot.id) {
     case 'today': return <TodayWidget key={slot.id} s={s} date={date} stats={stats} />
     case 'left': return <LeftWidget key={slot.id} stats={stats} isToday={date === today} />

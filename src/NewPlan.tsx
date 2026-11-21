@@ -3,13 +3,21 @@ import { useState } from 'react'
 import { addDays, DOW_KO, todayISO } from './date.ts'
 import type { BookMode, TaskKind } from './logic.ts'
 import { buildTask, emptyForm, parseToc, previewPlan, type PlanForm } from './planForm.ts'
-import { actions, uid, useStore } from './store.ts'
+import { actions, subjectVar, uid, useStore } from './store.ts'
 import { FullPage, Num, Row, WeekPicker } from './ui.tsx'
+import { Icon } from './Icon.tsx'
 
 const KINDS: [TaskKind, string, string][] = [
   ['book', '책', '책 · 문제집'], ['lecture', '인강', '강의 수로'], ['time', '시간', '매일 몇 분'], ['habit', '습관', '매일 체크'], ['todo', '할 일', '한 번만'],
 ]
-const KIND_ICON: Record<TaskKind, string> = { book: '▤', lecture: '▶', time: '◔', habit: '↻', todo: '☑' }
+/** 종류 타일 위 작은 그림: 오늘 탭의 진행 그림을 줄인 것 */
+function KindArt({ kind }: { kind: TaskKind }) {
+  if (kind === 'book') return <span className="ka">{[1, 1, 1, 0, 0].map((on, i) => <i key={i} className={on ? 'on m' : ''} style={i === 2 ? { boxShadow: '3px 0 0 -1px var(--rib)' } : undefined} />)}</span>
+  if (kind === 'lecture') return <span className="ka lec"><b /><span><span /></span></span>
+  if (kind === 'time') return <span className="ka">{[1, 1, 1, 0, 0].map((on, i) => <i key={i} className={on ? 'on c wide' : 'wide'} />)}</span>
+  if (kind === 'habit') return <span className="ka sq">{[1, 1, 0, 1, 1].map((on, i) => <i key={i} className={on ? 'on e' : ''} />)}</span>
+  return <span className="ka"><Icon name="today" size={18} stroke={2} /></span>
+}
 const MODES: [BookMode, string][] = [['toc', '목차 (쪽)'], ['workbook', '문제집 (문항)'], ['amount', '분량만']]
 const md = (iso: string) => { const [, m, d] = iso.split('-'); return `${Number(m)}.${Number(d)}` }
 
@@ -18,6 +26,7 @@ export function NewPlan({ onClose }: { onClose: () => void }) {
   const today = todayISO()
   const [f, setF] = useState<PlanForm>(() => ({ ...emptyForm(today), categoryId: s.categories[0]?.id ?? '' }))
   const [error, setError] = useState('')
+  const [pasting, setPasting] = useState(false)
   const set = (p: Partial<PlanForm>) => { setF({ ...f, ...p }); setError('') }
   const exam = s.exams.find((e) => e.id === f.examId)
   const built = buildTask(f, 'preview', 0, 0)
@@ -46,19 +55,19 @@ export function NewPlan({ onClose }: { onClose: () => void }) {
   const repeating = f.kind === 'time' || f.kind === 'habit'
 
   return (
-    <FullPage title="새 계획" onClose={onClose} action={save} actionLabel="만들기">
+    <FullPage title="새 계획" onClose={onClose} cancelLabel="취소">
       <h2 className="fp-h2">무엇으로 공부하나요</h2>
       <div className="kinds" role="radiogroup" aria-label="계획 종류">
         {KINDS.map(([k, name, sub]) => (
           <button key={k} role="radio" aria-checked={f.kind === k} className={f.kind === k ? 'on' : ''} onClick={() => pickKind(k)}>
-            <i aria-hidden="true">{KIND_ICON[k]}</i><b>{name}</b><small>{sub}</small>
+            <KindArt kind={k} /><span><b>{name}</b><small>{sub}</small></span>
           </button>
         ))}
       </div>
 
       {f.kind === 'book' && (
         <>
-          <h2 className="fp-h2">책은 어떻게 나눌까요?</h2>
+          <p className="fp-q">책은 어떻게 나눌까요?</p>
           <div className="seg" role="radiogroup" aria-label="나누는 방식">
             {MODES.map(([m, l]) => <button key={m} role="radio" aria-checked={f.bookMode === m} className={f.bookMode === m ? 'on' : ''} onClick={() => pickMode(m)}>{l}</button>)}
           </div>
@@ -69,10 +78,13 @@ export function NewPlan({ onClose }: { onClose: () => void }) {
       <section className="fcard">
         <Row label="이름"><input value={f.name} onChange={(e) => set({ name: e.target.value })} placeholder="예) 수학의 정석" aria-label="이름" /></Row>
         <Row label="과목">
-          <select value={f.categoryId} onChange={(e) => set({ categoryId: e.target.value })} aria-label="과목">
-            <option value="">없음</option>
-            {s.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          <span className="subj" role="radiogroup" aria-label="과목">
+            {[...s.categories, { id: '', name: '기타', color: '' }].map((c) => (
+              <button key={c.id || 'none'} role="radio" aria-checked={f.categoryId === c.id} className={f.categoryId === c.id ? 'on' : ''} onClick={() => set({ categoryId: c.id })}>
+                <i style={{ background: c.id ? subjectVar(c.color) : 'var(--s-g)' }} />{c.name}
+              </button>
+            ))}
+          </span>
         </Row>
         {(f.kind === 'book' || f.kind === 'lecture') && s.exams.length > 0 && (
           <Row label="시험">
@@ -99,12 +111,19 @@ export function NewPlan({ onClose }: { onClose: () => void }) {
         <>
           <div className="fp-h2 fsplit"><h2>목차</h2><small>{toc.chapters.length ? `${toc.chapters.length}단원 · ${toc.chapters.reduce((a, c) => a + c.to - c.from + 1, 0)}${f.unit || '쪽'}` : ''}</small></div>
           <section className="fcard">
-            <textarea className="toc-in" rows={5} value={f.toc} onChange={(e) => set({ toc: e.target.value })} aria-label="목차" placeholder={'한 줄에 단원 하나씩 붙여넣으세요\n수열의 극한 1~28\n급수 29~52'} />
-            {toc.chapters.length > 0 && (
+            {toc.chapters.length > 0 && !pasting ? (
               <ul className="toc-list">
-                {toc.chapters.slice(0, 5).map((c, i) => <li key={c.id}><b>{i + 1}</b><span className="grow ell">{c.name}</span><small>{c.from}~{c.to}쪽</small></li>)}
-                {toc.chapters.length > 5 && <li className="mu">…외 {toc.chapters.length - 5}단원</li>}
+                {toc.chapters.slice(0, 4).map((c, i) => <li key={c.id}><b>{i + 1}</b><span className="grow ell">{c.name}</span><small>{c.from}~{c.to}쪽</small></li>)}
+                <li className="toc-more">
+                  <span className="grow mu">{toc.chapters.length > 4 ? `${toc.chapters.length > 5 ? `5~${toc.chapters.length}` : 5}단원 · ${toc.chapters.length - 4}개 더` : ''}</span>
+                  <button className="chip" onClick={() => setPasting(true)}>붙여넣기</button>
+                </li>
               </ul>
+            ) : (
+              <>
+                <textarea className="toc-in" rows={5} value={f.toc} onChange={(e) => set({ toc: e.target.value })} aria-label="목차" placeholder={'한 줄에 단원 하나씩 붙여넣으세요\n수열의 극한 1~28\n급수 29~52'} autoFocus={pasting} />
+                {toc.chapters.length > 0 && <div className="toc-more"><span className="grow mu">{toc.chapters.length}단원 읽음</span><button className="chip dark" onClick={() => setPasting(false)}>다 됐어요</button></div>}
+              </>
             )}
             {toc.bad.length > 0 && <p className="error pad">읽지 못한 줄: {toc.bad.join(' / ')}</p>}
           </section>
@@ -138,7 +157,7 @@ export function NewPlan({ onClose }: { onClose: () => void }) {
             )}
             {repeating && f.repeat === 'day'
               ? <Row label="며칠마다"><Num value={f.every} onChange={(v) => set({ every: v })} min={2} placeholder="3" /></Row>
-              : <div className="frow col"><span className="fl">요일</span><WeekPicker value={f.week} onChange={(week) => set({ week })} /></div>}
+              : <Row label="요일"><span className="week-in"><WeekPicker value={f.week} onChange={(week) => set({ week })} /></span></Row>}
             {f.kind === 'habit' && (
               <Row label="쉬는 날에도"><input type="checkbox" className="switch" checked={f.keepOnRest} onChange={(e) => set({ keepOnRest: e.target.checked })} aria-label="쉬는 날에도 하기" /></Row>
             )}
@@ -169,6 +188,7 @@ export function NewPlan({ onClose }: { onClose: () => void }) {
         </section>
       )}
       {error && <p className="error pad" role="alert">{error}</p>}
+      <button className="primary" onClick={save}>계획 만들기</button>
     </FullPage>
   )
 }

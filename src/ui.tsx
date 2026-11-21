@@ -3,13 +3,14 @@ import { Icon } from './Icon.tsx'
 import { DOW_KO } from './date.ts'
 import { loadPhoto } from './store.ts'
 
-export function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+export function Sheet({ title, dot, label, lead, sub, onClose, children }: { title: string; dot?: string; label?: string; lead?: ReactNode; sub?: string; onClose: () => void; children: ReactNode }) {
   return (
     <div className="backdrop" onClick={onClose}>
-      <div className="sheet" onClick={(e) => e.stopPropagation()}>
+      <div className="sheet" role="dialog" aria-label={label ?? title} onClick={(e) => e.stopPropagation()}>
         <div className="sheet-head">
-          <h2>{title}</h2>
-          <button className="icon-btn" onClick={onClose} aria-label="닫기"><Icon name="close" /></button>
+          {lead}
+          <span className="sh-t"><h2>{dot && <i className="sh-dot" style={{ background: dot }} />}{title}</h2>{sub && <small>{sub}</small>}</span>
+          <button className="icon-btn" onClick={onClose} aria-label="닫기"><Icon name="close" size={18} stroke={2.4} /></button>
         </div>
         <div className="sheet-body">{children}</div>
       </div>
@@ -101,11 +102,11 @@ export function Photo({ id, onClick }: { id: string; onClick?: () => void }) {
 }
 
 /** 화면 전체를 덮는 입력 페이지 (취소 · 제목 · 저장) */
-export function FullPage({ title, onClose, action, actionLabel = '저장', actionDisabled, children }: { title: string; onClose: () => void; action?: () => void; actionLabel?: string; actionDisabled?: boolean; children: ReactNode }) {
+export function FullPage({ title, onClose, action, actionLabel = '저장', actionDisabled, cancelLabel, children }: { title: string; onClose: () => void; action?: () => void; actionLabel?: string; actionDisabled?: boolean; cancelLabel?: string; children: ReactNode }) {
   return (
     <div className="fullpage" role="dialog" aria-label={title}>
       <header className="fp-h">
-        <button className="fp-b" onClick={onClose}>{action ? '취소' : <><Icon name="left" size={20} />뒤로</>}</button>
+        <button className="fp-b" onClick={onClose}>{action || cancelLabel ? cancelLabel ?? '취소' : <><Icon name="left" size={20} />뒤로</>}</button>
         <h1>{title}</h1>
         {action ? <button className="fp-b strong" disabled={actionDisabled} onClick={action}>{actionLabel}</button> : <span style={{ width: 56 }} />}
       </header>
@@ -118,3 +119,14 @@ export function FullPage({ title, onClose, action, actionLabel = '저장', actio
 export const Row = ({ label, children }: { label: string; children: ReactNode }) => (
   <div className="frow"><span className="fl">{label}</span><span className="fr">{children}</span></div>
 )
+
+/** 날짜를 "11월 1일"처럼 보여 주고, 누르면 기기 날짜 고르기가 열린다 */
+export function DateText({ value, onChange, label, min, empty = '', weekday }: { value: string; onChange: (v: string) => void; label: string; min?: string; empty?: string; weekday?: boolean }) {
+  const [, m, d] = value ? value.split('-') : []
+  return (
+    <span className="datetext">
+      <span className={value ? '' : 'mu'}>{value ? `${Number(m)}월 ${Number(d)}일${weekday ? ` ${DOW_KO[new Date(value.replace(/-/g, '/')).getDay()]}요일` : ''}` : empty}</span>
+      <input type="date" value={value} min={min} onChange={(e) => onChange(e.target.value)} aria-label={label} />
+    </span>
+  )
+}

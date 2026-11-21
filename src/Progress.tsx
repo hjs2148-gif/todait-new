@@ -35,7 +35,7 @@ const vsExamText = (d: string, exam: Exam) => {
 }
 
 /** 단원으로 나뉜 막대 + 리본(지금 위치) + 예정 세로선. 인강은 강의 칸 */
-function PlanBar({ s, p, tall }: { s: State; p: PlanProgress; tall?: boolean }) {
+export function PlanBar({ s, p, tall }: { s: State; p: PlanProgress; tall?: boolean }) {
   const t = p.task
   const color = colorOf(s, t)
   const start = t.startPoint ?? 1
@@ -62,8 +62,8 @@ function PlanBar({ s, p, tall }: { s: State; p: PlanProgress; tall?: boolean }) 
         <i className="pline" style={{ left: `${plannedX}%` }} />
         {p.done > 0 && p.done < t.amount && <i className="prib" style={{ left: `${ribX}%`, height: h + 10 }} />}
       </div>
-      {tall && t.chapters?.length ? (
-        <div className="pnums">{t.chapters.map((c, i) => <span key={c.id} style={{ flex: c.to - c.from + 1 }}>{i + 1}</span>)}</div>
+      {t.chapters?.length ? (
+        <div className="pnums">{t.chapters.map((c, i) => <span key={c.id} style={{ flex: c.to - c.from + 1 }}>{/^[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+/.exec(c.name)?.[0] ?? i + 1}</span>)}</div>
       ) : null}
     </>
   )
@@ -248,16 +248,16 @@ function Detail({ s, taskId, exam, today, onBack, editTask }: { s: State; taskId
     <div className="page">
       <header className="nav-h">
         <button className="back" onClick={onBack}><Icon name="left" size={20} />진도</button>
-        <button className="text-btn" onClick={() => editTask(t)}>편집</button>
+        <button className="chip" onClick={() => editTask(t)}>편집</button>
       </header>
       <div className="tbody">
         <div className="dt-title">
-          <h1>{t.name}</h1>
+          <h1><i className="dot" style={{ background: color }} />{t.name}</h1>
           <p>{[cat?.name, `${t.amount}${u}`, t.chapters?.length ? `${t.chapters.length}단원` : '', exam && p.vsExam ? `${exam.name} 범위` : ''].filter(Boolean).join(' · ')}</p>
         </div>
         <section className="tcard">
           <div className="ex-big"><b>{p.done} <small>/ {t.amount}{u}</small></b><span className="push">{pct(p.rate)}</span></div>
-          <div className="tc-sub">예정 {p.planned}{u} · {p.behind > 0 ? `${p.behind}${u} 늦음` : p.behind < 0 ? `${-p.behind}${u} 앞섬` : '예정대로'}</div>
+          <div className="tc-sub">예정 {p.planned}{u} · {p.behind > 0 ? <b className="bad">{p.behind}{u} 늦음</b> : p.behind < 0 ? `${-p.behind}${u} 앞섬` : '예정대로'}</div>
           <PlanBar s={s} p={p} tall />
         </section>
         <div className="wd-grid">
@@ -266,26 +266,29 @@ function Detail({ s, taskId, exam, today, onBack, editTask }: { s: State; taskId
         </div>
         <section className="tcard">
           <div className="tc-meta"><b className="big16">언제 끝날까</b>{paceGap !== null && exam && p.paceEnd && <span className={paceGap > 0 ? 'bad strong' : ''}>{vsExamText(p.paceEnd, exam)}</span>}</div>
-          <div className="tl" role="img" aria-label={marks.map((m) => `${m.k} ${md(m.d)}`).join(', ')}>
-            <div className="tl-line" />
-            <div className="tl-done" style={{ width: `${x(today)}%`, background: color }} />
-            {marks.map((m) => (
-              <span key={m.k} className={`tl-m ${m.cls}`} style={{ left: `${Math.min(Math.max(x(m.d), 0), 100)}%` }}><i /></span>
-            ))}
+          <div className="tl2" role="img" aria-label={marks.map((m) => `${m.k} ${md(m.d)}`).join(', ')}>
+            {marks.map((m, i) => {
+              const xx = Math.min(Math.max(x(m.d), 0), 100)
+              const row = m.k === '오늘' || m.k === '계획' ? 'up' : m.k === '시험' ? 'down1' : 'down2'
+              const shift = xx < 12 ? '0' : xx > 88 ? '-100%' : '-50%'
+              return <span key={i} className={`tl-lab ${row} ${m.cls}`} style={{ left: `${xx}%`, transform: `translateX(${shift})` }}>{m.k === '오늘' ? '오늘' : `${m.k} ${mdS(m.d)}`}</span>
+            })}
+            <div className="tl-track">
+              <div className="tl-done" style={{ width: `${x(today)}%`, background: color }} />
+              <div className="tl-rest" style={{ left: `${x(today)}%`, right: 0, borderColor: p.paceEnd && deadline && p.paceEnd > deadline ? 'var(--bad)' : 'var(--mu)' }} />
+              {marks.map((m) => <span key={m.k} className={`tl-m ${m.cls}`} style={{ left: `${Math.min(Math.max(x(m.d), 0), 100)}%` }}><i /></span>)}
+            </div>
+            <span className="tl-start">{mdS(lo)}</span>
           </div>
-          <div className="tl-ends"><span>{mdS(lo)} 시작</span><span>{mdS(hi)}</span></div>
-          <div className="tl-legend">
-            {marks.map((m) => <span key={m.k} className={`tl-m ${m.cls}`}><i /><small>{m.k}</small><b>{mdS(m.d)}</b></span>)}
-          </div>
-          {fix && <p className="tc-sub">하루 {fix.more}{u}만 더 하면 {md(fix.end)}{exam && fix.end <= examDeadline(exam) ? ', 시험 전에' : '에'} 끝나요.</p>}
+          {fix && <p className="tip">하루 <b>{fix.more}{u}만 더</b> 하면 {md(fix.end)}{exam && fix.end <= examDeadline(exam) ? ', 시험 전에' : '에'} 끝나요.</p>}
         </section>
         <section className="tcard">
-          <div className="tc-meta"><b>최근 14일 하루 {u} 수</b><span>{goal > 0 ? `목표 ${goal}${u}` : ''}</span></div>
+          <div className="tc-meta"><b className="big16">최근 14일</b><span>하루 {u} 수{goal > 0 ? ` · 목표 ${goal}${u}` : ''}</span></div>
           <div className="wbars b14" role="img" aria-label="최근 14일 하루 분량">
-            {goal > 0 && <span className="goal" style={{ bottom: `${(goal / max14) * 100}%` }} />}
-            {days14.map((d) => d.rest ? <em key={d.d}>쉼</em> : <i key={d.d} style={{ height: `${Math.max((d.done / max14) * 100, d.done ? 4 : 1)}%`, background: d.exp > 0 && d.done >= d.exp ? color : `color-mix(in srgb, ${color} 45%, var(--trk))` }} />)}
+            {goal > 0 && <span className="goal red" style={{ bottom: `${(goal / max14) * 100}%` }}><b>{goal}{u}</b></span>}
+            {days14.map((d) => d.rest ? <em key={d.d}>쉼</em> : <i key={d.d} style={{ height: `${Math.max((d.done / max14) * 100, d.done ? 4 : 1)}%`, background: d.d === today ? `repeating-linear-gradient(135deg, ${color} 0 3px, color-mix(in srgb, ${color} 55%, transparent) 3px 6px)` : d.exp > 0 && d.done >= d.exp ? color : `color-mix(in srgb, ${color} 45%, var(--trk))` }} />)}
           </div>
-          <div className="wlab">{days14.map((d, i) => <span key={d.d}>{i % 2 ? Number(d.d.slice(8)) : ''}</span>)}</div>
+          <div className="wlab b14l">{days14.map((d, i) => <span key={d.d} className={d.d === today ? 'on' : ''}>{i % 2 ? Number(d.d.slice(8)) : ''}</span>)}</div>
         </section>
         {spans.length > 0 && (
           <>

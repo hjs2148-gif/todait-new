@@ -31,13 +31,15 @@ function DayBars({ s, p }: { s: State; p: Period }) {
     for (const d of g) for (const [k, v] of Object.entries(secByDaySubject(s, d))) by[k] = (by[k] ?? 0) + v
     return { g, by, sum: Object.values(by).reduce((a, b) => a + b, 0) }
   })
-  const max = Math.max(...data.map((x) => x.sum), 1)
+  const rawMax = Math.max(...data.map((x) => x.sum), 1)
+  const stepH = Math.max(1, Math.ceil(rawMax / 3600 / 2))
+  const max = Math.max(stepH * 2 * 3600, rawMax)
   const today = todayISO()
   const colorFor = (k: string) => subjectVar(s.categories.find((c) => c.id === k)?.color)
   return (
     <>
       <div className="sbars" role="img" aria-label={`공부 시간 합계 ${hm(data.reduce((a, x) => a + x.sum, 0))}`}>
-        <span className="ax" style={{ bottom: '50%' }} /><span className="axl" style={{ bottom: '50%' }}>{hm(max / 2)}</span>
+        {[1, 2].map((k) => <span key={k} className="ax" style={{ bottom: `${((stepH * k * 3600) / max) * 100}%` }}><b>{stepH * k}시간</b></span>)}
         {data.map((x) => (
           <span key={x.g[0]} className="sb" title={`${mdS(x.g[0])} ${hm(x.sum)}`}>
             <span className="stk" style={{ height: `${(x.sum / max) * 100}%` }}>
@@ -60,10 +62,12 @@ export function Stats() {
   const today = todayISO()
   const [kind, setKind] = useState<PeriodKind>('week')
   const [more, setMore] = useState(false)
+  const [back, setBack] = useState(0)
   if (more) return <StatsMore s={s} today={today} onBack={() => setMore(false)} />
 
   const first = firstRecord(s, today)
-  const p = periodOf(kind, today, first)
+  const p0 = periodOf(kind, today, first)
+  const p: Period = kind === 'exam' || back === 0 ? p0 : { from: addDays(p0.from, -p0.days * back), to: addDays(p0.to, -p0.days * back), days: p0.days }
   const prev = prevPeriod(p)
   const total = totalSec(s, p)
   const diff = kind === 'exam' ? null : total - totalSec(s, prev)
@@ -93,19 +97,24 @@ export function Stats() {
       </header>
       <div className="tbody">
         <div role="tablist" aria-label="기간" className="segs">
-          {KINDS.map(([k, l]) => <button key={k} role="tab" aria-selected={kind === k} className={kind === k ? 'on' : ''} onClick={() => setKind(k)}>{l}</button>)}
+          {KINDS.map(([k, l]) => <button key={k} role="tab" aria-selected={kind === k} className={kind === k ? 'on' : ''} onClick={() => { setKind(k); setBack(0) }}>{l}</button>)}
+        </div>
+        <div className="pnav">
+          <button className="arrow" aria-label="이전 기간" disabled={kind === 'exam'} onClick={() => setBack(back + 1)}><Icon name="left" size={20} /></button>
+          <b>{md(p.from)} ~ {p.from.slice(0, 7) === p.to.slice(0, 7) ? `${Number(p.to.slice(8))}일` : md(p.to)}</b>
+          <button className="arrow" aria-label="다음 기간" disabled={back === 0} onClick={() => setBack(back - 1)}><Icon name="right" size={20} /></button>
         </div>
         <section className="tcard" aria-label="공부 시간">
-          <div className="tc-meta"><span>{mdS(p.from)} ~ {mdS(p.to)}</span></div>
-          <div className="ex-big"><b>{hm(total)}</b><span>{kind === 'week' ? '이번 주 공부' : kind === 'month' ? '이번 달 공부' : '시험까지 공부'}</span>{diff !== null && <small>{kind === 'week' ? '지난주' : '지난달'}보다 {diff >= 0 ? '' : '−'}{hm(Math.abs(diff))}</small>}</div>
+          <div className="wd-t">{back > 0 ? '이 기간 공부' : kind === 'week' ? '이번 주 공부' : kind === 'month' ? '이번 달 공부' : '시험까지 공부'}</div>
+          <div className="st-big"><b>{hm(total)}</b>{diff !== null && <span>{diff >= 0 ? '↑' : '↓'} {kind === 'week' ? '지난주' : '지난달'}보다 {hm(Math.abs(diff))}</span>}</div>
           <DayBars s={s} p={p} />
         </section>
         <div className="wd-grid">
           <section className="wd" aria-label="목표 달성">
             <div className="wd-t">목표 달성 · 개수</div>
             <div className="ringrow">
-              <svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true"><g transform="rotate(-90 28 28)" fill="none" strokeWidth="6" strokeLinecap="round"><circle cx="28" cy="28" r={R} stroke="var(--trk)" /><circle cx="28" cy="28" r={R} stroke="var(--ink)" strokeDasharray={`${(C * (goals.rate ?? 0)).toFixed(1)} ${C.toFixed(1)}`} /></g></svg>
               <b className="wd-num">{pctS(goals.rate)}<small>%</small></b>
+              <svg width="52" height="52" viewBox="0 0 56 56" aria-hidden="true"><g transform="rotate(-90 28 28)" fill="none" strokeWidth="7" strokeLinecap="round"><circle cx="28" cy="28" r={R} stroke="var(--trk)" /><circle cx="28" cy="28" r={R} stroke="var(--ink)" strokeDasharray={`${(C * (goals.rate ?? 0)).toFixed(1)} ${C.toFixed(1)}`} /></g></svg>
             </div>
             <div className="wd-sub">목표 {goals.total}개 중 {goals.done}개</div>
           </section>
@@ -133,7 +142,7 @@ export function Stats() {
                 {split.map((x) => <i key={x.key} style={{ flexGrow: x.sec, background: subjectVar(x.color) }} />)}
               </div>
               <div className="splist">
-                {split.map((x) => <div key={x.key}><i className="dot" style={{ background: subjectVar(x.color) }} /><span className="grow">{x.name}</span><b>{hm(x.sec)}</b><small>{Math.round((x.sec / total) * 100)}%</small></div>)}
+                {split.map((x) => <div key={x.key}><i className="dot" style={{ background: subjectVar(x.color) }} /><span className="grow">{x.name}</span><span className="mu">{hm(x.sec)}</span><b>{Math.round((x.sec / total) * 100)}%</b></div>)}
               </div>
             </>
           )}

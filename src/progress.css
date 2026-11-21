@@ -99,3 +99,23 @@
 .cm-r b { color: var(--ink); }
 .grades.big { gap: 8px; margin: 6px 0 10px; }
 .grades.big button { flex: 1; height: 48px; font-size: 17px; border-radius: 14px; }
+
+.dt-title h1 { display: flex; align-items: center; gap: 8px; }
+.dt-title h1 .dot { width: 10px; height: 10px; border-radius: 5px; }
+.tl2 { position: relative; height: 92px; margin: 6px 4px 0; font-size: 12px; line-height: 14px; }
+.tl-lab { position: absolute; white-space: nowrap; color: var(--mu); }
+.tl-lab.up { top: 6px; } .tl-lab.down1 { top: 50px; } .tl-lab.down2 { top: 66px; }
+.tl-lab.now { color: var(--ink); font-weight: 700; } .tl-lab.exam { color: var(--ink); font-weight: 700; } .tl-lab.bad { color: var(--bad); font-weight: 700; }
+.tl-track { position: absolute; left: 0; right: 0; top: 30px; height: 12px; }
+.tl-track .tl-done { position: absolute; left: 0; top: 4px; height: 4px; border-radius: 2px; }
+.tl-rest { position: absolute; top: 5px; height: 0; border-top: 3px dashed; opacity: .7; }
+.tl-track .tl-m { position: absolute; top: 0; bottom: 0; width: 0; }
+.tl-track .tl-m i { position: absolute; left: -6px; top: 0; }
+.tl-start { position: absolute; left: 0; top: 50px; color: var(--mu); }
+.tip { padding: 10px 12px; border-radius: 12px; background: var(--cur); font-size: 13px; line-height: 18px; }
+.b14 { gap: 6px; }
+.b14 i { border-radius: 4px 4px 0 0; max-width: 18px; margin: 0 auto; width: 100%; }
+.b14l { gap: 6px; }
+.wbars .goal.red { border-top: 1.5px dashed var(--bad); }
+.wbars .goal.red b { position: absolute; right: 0; top: -16px; font-size: 12px; color: var(--bad); }
+.wbars .goal.red { z-index: 2; } .wbars .goal.red b { background: var(--sf); padding: 0 2px 0 4px; }

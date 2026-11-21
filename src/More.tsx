@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { ExamEdit } from './ExamEdit.tsx'
-import { Icon } from './Icon.tsx'
+import { Icon, type IconName } from './Icon.tsx'
 import { diffDays, fmtDate, todayISO } from './date.ts'
 import { isFinished, type Task } from './logic.ts'
 import { notifySupported, requestNotify } from './notify.ts'
@@ -66,15 +66,16 @@ function StreakSheet({ onClose }: { onClose: () => void }) {
   )
 }
 
-const Item = ({ label, value, onClick, children }: { label: string; value?: ReactNode; onClick?: () => void; children?: ReactNode }) => (
+const Item = ({ icon, label, value, onClick, children }: { icon?: IconName; label: string; value?: ReactNode; onClick?: () => void; children?: ReactNode }) => (
   <div className={`mrow${onClick ? ' tap' : ''}`} role={onClick ? 'button' : undefined} tabIndex={onClick ? 0 : undefined} onClick={onClick} onKeyDown={(e) => onClick && e.key === 'Enter' && onClick()}>
-    <span className="grow"><b className="blk">{label}</b>{children && <small className="blk mu">{children}</small>}</span>
+    {icon && <Icon name={icon} size={20} stroke={1.9} />}
+    <span className="grow"><span className="blk mlabel">{label}</span>{children && <small className="blk mu">{children}</small>}</span>
     {value !== undefined && <span className="mv">{value}</span>}
     {onClick && <Icon name="right" size={16} />}
   </div>
 )
 
-type Page = 'plans' | 'widgets' | 'rest' | 'streak' | null
+type Page = 'plans' | 'widgets' | 'rest' | 'streak' | 'subjects' | 'exams' | null
 
 export function More({ editTask, openDiary }: { editTask: (t: Task) => void; openDiary: () => void }) {
   const s = useStore()
@@ -117,63 +118,76 @@ export function More({ editTask, openDiary }: { editTask: (t: Task) => void; ope
       <div className="tbody">
         {msg && <p className="preview" role="status" onClick={() => setMsg('')}>{msg}</p>}
         <section className="tcard tight" aria-label="계획">
-          <Item label="계획 관리" value={`${active}개`} onClick={() => setPage('plans')} />
-          <Item label="끝낸 계획" value={`${done}개`} onClick={() => setPage('plans')} />
-          <Item label="시험과 D-day" value={selected ? `${selected.name} ${selected.date.slice(5).replace('-', '.')}` : '없음'} onClick={() => setExam(selected?.id ?? 'new')} />
-          <Item label="오늘 위젯 편집" value={`${s.settings.widgets.length}개`} onClick={() => setPage('widgets')} />
-          <Item label="과목과 색" value={`${s.categories.length}개`} onClick={() => setCat('new')}>새 과목 추가</Item>
-          <Item label="쉬는 날" value={restN ? `${restN}일` : '없음'} onClick={() => setPage('rest')} />
-          <Item label="연속 공부 기준" value={`하루 ${Math.round(s.settings.streakMinSec / 60)}분 이상`} onClick={() => setPage('streak')} />
+          <Item icon="list" label="계획 관리" value={`${active}개`} onClick={() => setPage('plans')} />
+          <Item icon="archive" label="끝낸 계획" value={`${done}개`} onClick={() => setPage('plans')} />
+          <Item icon="target" label="시험과 D-day" value={selected ? `${selected.name} ${selected.date.slice(5).replace('-', '.')}` : '추가하기'} onClick={() => (s.exams.length ? setPage('exams') : setExam('new'))} />
         </section>
-
-        {s.exams.length > 1 && (
-          <section className="tcard tight" aria-label="시험 목록">
-            {s.exams.map((e) => {
-              const n = diffDays(today, e.date)
-              return <Item key={e.id} label={e.name} value={n === 0 ? 'D-DAY' : n > 0 ? `D-${n}` : `D+${-n}`} onClick={() => setExam(e.id)} />
-            })}
-          </section>
-        )}
-        {s.categories.length > 0 && (
-          <section className="tcard tight" aria-label="과목">
-            {s.categories.map((c) => (
-              <div key={c.id} className="mrow tap" role="button" tabIndex={0} onClick={() => setCat(c)} onKeyDown={(e) => e.key === 'Enter' && setCat(c)}>
-                <i className="dot" style={{ background: subjectVar(c.color) }} /><span className="grow"><b>{c.name}</b></span><small className="mu">{s.tasks.filter((t) => t.categoryId === c.id).length}개</small><Icon name="right" size={16} />
-              </div>
-            ))}
-          </section>
-        )}
-
-        <section className="tcard" aria-label="화면 모드">
-          <div className="tc-meta"><b className="big16">화면 모드</b></div>
-          <div className="segs" role="group" aria-label="화면 모드">
-            {([['system', '기기 설정'], ['light', '라이트'], ['dark', '다크']] as const).map(([v, l]) => (
-              <button key={v} className={s.settings.theme === v ? 'on' : ''} aria-pressed={s.settings.theme === v} onClick={() => actions.setSettings({ theme: v })}>{l}</button>
-            ))}
+        <section className="tcard tight" aria-label="설정">
+          <Item icon="grid" label="오늘 위젯 편집" value={`${s.settings.widgets.length}개`} onClick={() => setPage('widgets')} />
+          <Item icon="palette" label="과목과 색" value={`${s.categories.length}개`} onClick={() => setPage('subjects')} />
+          <Item icon="restday" label="쉬는 날" value={restN ? `${restN}일` : '없음'} onClick={() => setPage('rest')} />
+          <Item icon="target" label="연속 공부 기준" value={`하루 ${Math.round(s.settings.streakMinSec / 60)}분 이상`} onClick={() => setPage('streak')} />
+        </section>
+        <section className="tcard tight" aria-label="화면과 알림">
+          <div className="mrow col">
+            <span className="mrow-in"><Icon name="moon" size={20} stroke={1.9} /><span className="grow mlabel">화면 모드</span></span>
+            <div className="segs" role="group" aria-label="화면 모드">
+              {([['system', '기기 설정'], ['light', '라이트'], ['dark', '다크']] as const).map(([v, l]) => (
+                <button key={v} className={s.settings.theme === v ? 'on' : ''} aria-pressed={s.settings.theme === v} onClick={() => actions.setSettings({ theme: v })}>{l}</button>
+              ))}
+            </div>
           </div>
+          <div className="mrow">
+            <Icon name="bell" size={20} stroke={1.9} />
+            <span className="grow"><span className="blk mlabel">남은 공부 알림</span><small className="blk mu">{perm === 'unsupported' ? '이 브라우저는 알림을 지원하지 않아요' : `${s.settings.dailyNotifyTime ?? '시각 없음'} · 앱이 열려 있을 때만`}</small></span>
+            <input type="checkbox" className="switch" aria-label="알림 받기" checked={s.settings.notifyOn} disabled={perm === 'unsupported'} onChange={() => void toggleNotify()} />
+          </div>
+          {s.settings.notifyOn && (
+            <div className="mrow"><span className="micon" /><span className="grow mlabel">알림 시각</span>
+              <input type="time" className="tin" value={s.settings.dailyNotifyTime ?? ''} onChange={(e) => actions.setSettings({ dailyNotifyTime: e.target.value || null })} aria-label="알림 시각" /></div>
+          )}
         </section>
-
-        <section className="tcard tight" aria-label="알림">
-          <div className="mrow"><span className="grow"><b className="blk">남은 공부 알림</b><small className="blk mu">{perm === 'unsupported' ? '이 브라우저는 알림을 지원하지 않아요' : '앱이 열려 있을 때만 울려요'}</small></span>
-            <input type="checkbox" className="switch" aria-label="알림 받기" checked={s.settings.notifyOn} disabled={perm === 'unsupported'} onChange={() => void toggleNotify()} /></div>
-          <div className="mrow"><span className="grow"><b className="blk">알림 시각</b></span>
-            <input type="time" className="tin" value={s.settings.dailyNotifyTime ?? ''} onChange={(e) => actions.setSettings({ dailyNotifyTime: e.target.value || null })} aria-label="알림 시각" /></div>
-        </section>
-
         <section className="tcard tight" aria-label="데이터">
-          <Item label="백업 내보내기" value={lastBackup ? `${lastBackup.getMonth() + 1}월 ${lastBackup.getDate()}일` : '아직 안 함'} onClick={() => void download()} />
-          <label className="mrow tap"><span className="grow"><b className="blk">백업 불러오기</b></span><Icon name="right" size={16} /><input type="file" accept="application/json,.json" hidden onChange={(e) => { void restore(e.target.files?.[0]); e.target.value = '' }} /></label>
-          <Item label="기록 보호" value={persisted === undefined ? '확인 중' : persisted === null ? '알 수 없음' : persisted ? '켜짐' : '꺼짐'}>{persisted ? '브라우저가 이 기록을 함부로 지우지 않아요' : '홈 화면에 추가하고 자주 열면 지워질 가능성이 줄어요. 백업을 꼭 해 두세요'}</Item>
-          <Item label="지난 공부일기" onClick={openDiary}>사진과 글은 그대로 남아 있어요</Item>
-          <div className="mrow tap" role="button" tabIndex={0} onClick={() => confirm('모든 계획·기록·일기를 지웁니다. 되돌릴 수 없습니다. 계속할까요?') && void resetAll()}><span className="grow"><b className="bad">데이터 초기화</b></span></div>
+          <Item icon="upload" label="백업 내보내기" value={lastBackup ? `${lastBackup.getMonth() + 1}월 ${lastBackup.getDate()}일` : '아직 안 함'} onClick={() => void download()} />
+          <label className="mrow tap"><Icon name="download" size={20} stroke={1.9} /><span className="grow mlabel">백업 불러오기</span><Icon name="right" size={16} /><input type="file" accept="application/json,.json" hidden onChange={(e) => { void restore(e.target.files?.[0]); e.target.value = '' }} /></label>
+          <Item icon="shield" label="기록 보호" value={persisted === undefined ? '확인 중' : persisted === null ? '알 수 없음' : persisted ? '켜짐' : '꺼짐'}>{persisted ? '브라우저가 이 기록을 함부로 지우지 않아요' : '홈 화면에 추가하고 자주 열면 지워질 가능성이 줄어요'}</Item>
+          <Item icon="pencil" label="지난 공부일기" onClick={openDiary} />
+          <div className="mrow tap" role="button" tabIndex={0} onClick={() => confirm('모든 계획·기록·일기를 지웁니다. 지우기 전 기록은 이 기기에 한 칸 남겨 둡니다. 계속할까요?') && void resetAll()}><Icon name="trash" size={20} stroke={1.9} /><span className="grow mlabel bad">데이터 초기화</span></div>
         </section>
-        <p className="fnote">기록은 이 폰 브라우저에만 저장돼요. 브라우저 데이터를 지우기 전에 백업을 내보내 두세요.</p>
+        <p className="fnote mnote"><Icon name="lock" size={16} stroke={1.9} />기록은 이 폰 브라우저에만 저장돼요. 브라우저 데이터를 지우기 전에 백업을 내보내 두세요.</p>
       </div>
 
       {page === 'plans' && <Plans onClose={() => setPage(null)} edit={editTask} />}
       {page === 'widgets' && <WidgetEdit onClose={() => setPage(null)} />}
       {page === 'rest' && <RestSheet onClose={() => setPage(null)} />}
       {page === 'streak' && <StreakSheet onClose={() => setPage(null)} />}
+      {page === 'subjects' && (
+        <Sheet title="과목과 색" onClose={() => setPage(null)}>
+          <div className="menu">
+            {s.categories.map((c) => (
+              <button key={c.id} className="msheet-row" onClick={() => { setCat(c); setPage(null) }}>
+                <i className="dot" style={{ background: subjectVar(c.color) }} /><span className="grow">{c.name}</span><small>{s.tasks.filter((t) => t.categoryId === c.id).length}개</small>
+              </button>
+            ))}
+          </div>
+          <button className="primary" onClick={() => { setCat('new'); setPage(null) }}>새 과목</button>
+        </Sheet>
+      )}
+      {page === 'exams' && (
+        <Sheet title="시험과 D-day" onClose={() => setPage(null)}>
+          <div className="menu">
+            {s.exams.map((e) => {
+              const n = diffDays(today, e.date)
+              return (
+                <button key={e.id} className="msheet-row" onClick={() => { setExam(e.id); setPage(null) }}>
+                  <span className="grow">{e.name}{e.selected && <small> · 오늘 탭에 표시</small>}</span><b>{n === 0 ? 'D-DAY' : n > 0 ? `D-${n}` : `D+${-n}`}</b>
+                </button>
+              )
+            })}
+          </div>
+          <button className="primary" onClick={() => { setExam('new'); setPage(null) }}>새 시험</button>
+        </Sheet>
+      )}
       {cat && <CategorySheet cat={cat === 'new' ? null : cat} onClose={() => setCat(null)} />}
       {exam && <ExamEdit examId={exam === 'new' ? null : exam} onClose={() => setExam(null)} />}
     </div>

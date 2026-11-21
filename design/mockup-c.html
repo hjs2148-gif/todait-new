@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Todait 시안 C. 심야 독서실</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<style>
+:root{
+  --bg:#12151C; --surface:#1B1F29; --raise:#2A2F3B; --ink:#ECE7DC; --sub:#8D93A1; --line:#2A2F3B;
+  --amber:#E8B04A; --dim:#6F7585;
+  --c-math:#8FA3C7; --c-eng:#8FB09A; --c-kor:#C79A8F;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; padding:40px 32px 56px; background:#0A0B0E; color:var(--ink);
+  font-family:'Pretendard Variable',Pretendard,-apple-system,'Malgun Gothic',sans-serif;
+  font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased;
+}
+.page-head{max-width:1700px;margin:0 auto 32px;display:flex;align-items:baseline;gap:16px}
+.page-head h1{margin:0;font-size:20px;font-weight:500;letter-spacing:-.01em}
+.page-head span{font-size:14px;color:var(--sub)}
+.row-wrap{display:flex;flex-wrap:wrap;gap:48px 40px;max-width:1700px;margin:0 auto}
+figure{margin:0;width:390px}
+figcaption{margin-top:16px;font-size:14px;color:var(--sub)}
+
+.phone{width:390px;height:844px;overflow:hidden;position:relative;background:var(--bg);border-radius:36px;
+  box-shadow:0 0 0 1px #20242F;display:flex;flex-direction:column}
+.status{height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px;font-size:14px;font-weight:500}
+.ic{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.sm{width:20px;height:20px}
+.side{padding:0 20px}
+.lbl{font-size:12px;color:var(--sub);line-height:16px}
+.n{font-weight:200;letter-spacing:-.02em;line-height:1.1}
+.unit{font-size:14px;color:var(--sub);font-weight:400}
+
+/* tab bar */
+.tabbar{flex:none;height:84px;background:var(--surface);display:grid;grid-template-columns:repeat(5,1fr);padding:8px 8px 0}
+.tab{display:flex;flex-direction:column;align-items:center;gap:4px;height:48px;justify-content:center;color:var(--sub);font-size:12px;line-height:16px}
+.tab.on{color:var(--amber)}
+
+/* ---------- 오늘 ---------- */
+.t-head{display:flex;justify-content:space-between;align-items:flex-end;padding:8px 20px 20px}
+.t-head .d{font-size:20px;font-weight:500;line-height:28px}
+.t-head .dd{text-align:right}
+.t-head .dd b{display:block;font-size:20px;font-weight:500;color:var(--amber);line-height:28px}
+.hero{margin:0 20px;background:var(--surface);border-radius:16px;padding:20px;display:flex;align-items:center;gap:24px}
+.ring{position:relative;width:128px;height:128px;flex:none}
+.ring svg{position:absolute;inset:0}
+.ring .c{position:absolute;inset:0;display:flex;align-items:baseline;justify-content:center;padding-top:42px}
+.ring .c .n{font-size:48px}
+.ring .c .unit{margin-left:2px;font-size:14px}
+.hstats{flex:1;display:flex;flex-direction:column;gap:20px}
+.hstats .v{display:flex;align-items:baseline;gap:2px;margin-top:4px}
+.hstats .v .n{font-size:32px}
+.hstats .v .unit{margin-right:4px}
+.sec{display:flex;justify-content:space-between;align-items:baseline;padding:24px 20px 4px}
+.sec b{font-size:14px;font-weight:500}
+.plans{padding:0 20px}
+.plan{display:grid;grid-template-columns:1fr auto;column-gap:16px;align-items:center;min-height:72px;padding:12px 0;border-bottom:1px solid var(--line)}
+.plan:last-child{border-bottom:0}
+.plan .nm{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:500;line-height:24px}
+.dot{width:6px;height:6px;border-radius:50%;flex:none}
+.dot.m{background:var(--c-math)}.dot.e{background:var(--c-eng)}.dot.k{background:var(--c-kor)}
+.dot.o{border:1.5px solid var(--dim);width:6px;height:6px}
+.plan .sb{font-size:12px;color:var(--sub);line-height:16px;margin:2px 0 0 14px}
+.plan .rt{text-align:right;min-width:92px}
+.plan .rt .v{font-size:16px;font-weight:500;color:var(--amber);line-height:24px}
+.plan .rt .v i{font-style:normal;color:var(--sub);font-weight:400}
+.bar{height:2px;background:var(--line);border-radius:1px;margin-top:8px;position:relative}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--amber);border-radius:1px}
+.plan.done .nm{color:var(--dim);text-decoration:line-through;text-decoration-thickness:1px}
+.plan.done .sb{color:var(--dim)}
+.plan.done .rt{display:flex;align-items:center;justify-content:flex-end;gap:8px;color:var(--dim);font-size:14px}
+.acts{margin-top:auto;display:flex;gap:12px;padding:0 20px 16px}
+.btn{height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:16px;font-weight:500}
+.btn.pri{background:var(--amber);color:#12151C;flex:1}
+.btn.sec2{background:var(--surface);color:var(--ink);width:120px}
+
+/* ---------- 새 계획 ---------- */
+.f-head{height:48px;display:flex;align-items:center;padding:0 8px;flex:none}
+.f-head .x{width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--sub)}
+.f-head b{font-size:20px;font-weight:500;margin-left:4px}
+.form{padding:8px 20px 24px;display:flex;flex-direction:column;gap:16px;flex:1}
+.box{background:var(--surface);border-radius:12px;height:56px;padding:8px 16px;display:flex;flex-direction:column;justify-content:center}
+.box .v{font-size:16px;line-height:24px}
+.box .v.ph{font-weight:500}
+.grid3{display:grid;grid-template-columns:1fr 1fr 88px;gap:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fl{display:flex;flex-direction:column;gap:8px}
+.seg{display:grid;gap:4px;background:var(--surface);border-radius:12px;padding:4px}
+.seg.c4{grid-template-columns:repeat(4,1fr)}
+.seg > div{height:44px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--sub)}
+.seg > div.on{background:var(--raise);color:var(--amber);font-weight:500}
+.wk{display:grid;grid-template-columns:repeat(7,44px);justify-content:space-between}
+.wk div{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:14px;background:var(--surface);color:var(--ink)}
+.wk div.off{background:transparent;color:var(--dim);box-shadow:inset 0 0 0 1px var(--line)}
+.wk div.mk{box-shadow:inset 0 0 0 1.5px var(--amber);color:var(--amber);background:transparent}
+.prev{background:var(--surface);border-radius:12px;height:52px;padding:0 16px;display:flex;align-items:center;font-size:16px;color:var(--sub)}
+.prev b{font-weight:500;color:var(--ink);margin:0 0 0 .3em}
+.prev b.a{color:var(--amber)}
+.cats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.cats div{height:44px;border-radius:12px;background:var(--surface);display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;color:var(--sub)}
+.cats div.on{background:var(--raise);color:var(--ink);font-weight:500}
+.save{margin-top:auto}
+
+/* ---------- 통계 ---------- */
+.s-head{display:flex;justify-content:space-between;align-items:center;padding:4px 20px 0;height:52px}
+.s-head b{font-size:20px;font-weight:500}
+.tg{display:flex;background:var(--surface);border-radius:12px}
+.tg div{width:56px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--sub)}
+.tg div.on{background:var(--raise);color:var(--ink);font-weight:500}
+.per{display:flex;justify-content:space-between;align-items:center;padding:4px 8px 0 20px;height:48px;font-size:16px}
+.per .arr{display:flex;color:var(--sub)}
+.per .arr div{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
+.tot{padding:8px 20px 16px}
+.tot .big{display:flex;align-items:baseline;gap:4px;margin-top:8px}
+.tot .big .n{font-size:56px}
+.tot .big .unit{font-size:20px;margin-right:8px}
+.two{margin:0 20px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr}
+.two > div{padding:12px 0 0}
+.two > div + div{padding-left:20px;border-left:1px solid var(--line)}
+.two .v{font-size:20px;margin-top:4px;line-height:28px}
+.two .v .unit{font-size:14px}
+.chart{margin:24px 20px 0}
+.chart .top{display:flex;justify-content:space-between;align-items:baseline}
+.chart .top b{font-size:14px;font-weight:500}
+.plot{position:relative;height:120px;margin-top:16px;display:grid;grid-template-columns:repeat(7,1fr);align-items:end}
+.plot .b{justify-self:center;width:24px;border-radius:4px 4px 0 0;background:#3A4252}
+.plot .b.t{background:var(--amber)}
+.avg{position:absolute;left:0;right:0;bottom:84px;border-top:1px dashed #4A5263}
+.avg span{position:absolute;left:0;top:-18px;font-size:12px;color:var(--sub);line-height:16px}
+.base{border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(7,1fr);padding-top:8px}
+.base div{text-align:center;font-size:12px;line-height:16px;color:var(--sub)}
+.base div b{display:block;font-weight:400;color:var(--ink);font-size:14px;line-height:20px;margin-bottom:0}
+.base div.t b{color:var(--amber);font-weight:500}
+.share{margin:24px 20px 0}
+.stack{display:flex;gap:2px;height:8px;margin-top:12px}
+.stack i{display:block;border-radius:4px}
+.sr{display:grid;grid-template-columns:1fr auto 52px;column-gap:12px;align-items:center;height:40px;border-bottom:1px solid var(--line);font-size:16px}
+.sr:last-child{border-bottom:0}
+.sr .nm{display:flex;align-items:center;gap:8px}
+.sr .tm{font-size:14px;color:var(--sub)}
+.sr .pc{text-align:right;font-weight:500}
+
+/* ---------- 스톱워치 ---------- */
+.w-top{height:48px;display:flex;align-items:center;padding:0 8px;flex:none;color:var(--sub)}
+.w-top div{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
+.w-title{padding:8px 20px 0}
+.w-title b{display:block;font-size:20px;font-weight:500;line-height:28px}
+.w-title span{display:block;font-size:14px;color:var(--sub);margin-top:4px}
+.dial{position:relative;width:300px;height:300px;margin:28px auto 0}
+.dial svg{position:absolute;inset:0}
+.dial .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.dial .tm{font-size:56px;font-weight:200;letter-spacing:-.02em;line-height:1.1}
+.dial .lbl{margin-top:8px}
+.w-rows{margin:32px 20px 0}
+.w-rows div{display:flex;justify-content:space-between;align-items:baseline;height:56px;align-items:center;border-top:1px solid var(--line)}
+.w-rows div:last-child{border-bottom:1px solid var(--line)}
+.w-rows span{font-size:14px;color:var(--sub)}
+.w-rows b{font-size:20px;font-weight:300}
+.w-acts{margin-top:auto;display:flex;gap:12px;padding:0 20px 32px}
+.w-acts .btn{height:60px;border-radius:16px}
+.w-acts .p{background:var(--surface);color:var(--ink);width:128px}
+.w-acts .s{background:var(--amber);color:#12151C;flex:1}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-today" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3.5"/><path d="M4 10h16M8 3v4M16 3v4"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 20v-9M12 20V5M19 20v-6"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M6 4h11a2 2 0 0 1 2 2v13a1 1 0 0 1-1 1H6z"/><path d="M6 4v16M10 8.5h5"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-chevl" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></symbol>
+    <symbol id="i-chevr" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
+    <symbol id="i-chevd" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></symbol>
+    <symbol id="i-batt" viewBox="0 0 24 24"><rect x="3" y="8" width="16" height="9" rx="2.5"/><path d="M21.5 11v3"/></symbol>
+  </defs>
+</svg>
+
+<div class="page-head">
+  <h1>C. 심야 독서실</h1>
+  <span>Todait 시안 · 먹남색 바탕, 호박색 한 가지 강조</span>
+</div>
+
+<div class="row-wrap">
+
+<!-- ============ 오늘 ============ -->
+<figure>
+<div class="phone">
+  <div class="status"><span>21:40</span><svg class="ic sm" viewBox="0 0 24 24"><use href="#i-batt"/></svg></div>
+
+  <div class="t-head">
+    <div class="d">11월 16일 월요일</div>
+    <div class="dd"><span class="lbl">기말고사</span><b>D-24</b></div>
+  </div>
+
+  <div class="hero">
+    <div class="ring">
+      <svg viewBox="0 0 128 128">
+        <circle cx="64" cy="64" r="58" fill="none" stroke="#2A2F3B" stroke-width="2"/>
+        <circle cx="64" cy="64" r="58" fill="none" stroke="#E8B04A" stroke-width="3" stroke-linecap="round"
+          stroke-dasharray="225.9 364.4" transform="rotate(-90 64 64)"/>
+      </svg>
+      <div class="c"><span class="n">62</span><span class="unit">%</span></div>
+    </div>
+    <div class="hstats">
+      <div>
+        <div class="lbl">공부 시간</div>
+        <div class="v"><span class="n">3</span><span class="unit">시간</span><span class="n">42</span><span class="unit">분</span></div>
+      </div>
+      <div>
+        <div class="lbl">완료한 계획</div>
+        <div class="v"><span class="n">2</span><span class="unit">/ 4개</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec"><b>오늘 계획</b><span class="lbl">4개 중 2개 완료</span></div>
+  <div class="plans">
+    <div class="plan">
+      <div>
+        <div class="nm"><span class="dot m"></span>수학의 정석</div>
+        <div class="sb">수학 · 121~135쪽 · 1시간 20분</div>
+      </div>
+      <div class="rt"><div class="v">9<i>/15쪽</i></div><div class="bar"><i style="width:60%"></i></div></div>
+    </div>
+    <div class="plan done">
+      <div>
+        <div class="nm"><span class="dot e"></span>영단어</div>
+        <div class="sb">영어 · 30개 · 25분</div>
+      </div>
+      <div class="rt"><span>30/30개</span><svg class="ic sm" viewBox="0 0 24 24"><use href="#i-check"/></svg></div>
+    </div>
+    <div class="plan">
+      <div>
+        <div class="nm"><span class="dot k"></span>비문학 인강</div>
+        <div class="sb">국어 · 시간 계획</div>
+      </div>
+      <div class="rt"><div class="v">1시간 12분<i> / 2시간</i></div><div class="bar"><i style="width:60%"></i></div></div>
+    </div>
+    <div class="plan done">
+      <div>
+        <div class="nm"><span class="dot o"></span>아침 스트레칭</div>
+        <div class="sb">체크 계획</div>
+      </div>
+      <div class="rt"><span>완료</span><svg class="ic sm" viewBox="0 0 24 24"><use href="#i-check"/></svg></div>
+    </div>
+  </div>
+
+  <div class="acts">
+    <div class="btn pri"><svg class="ic sm" viewBox="0 0 24 24"><use href="#i-play"/></svg>스톱워치 시작</div>
+    <div class="btn sec2"><svg class="ic sm" viewBox="0 0 24 24"><use href="#i-plus"/></svg>새 계획</div>
+  </div>
+
+  <nav class="tabbar">
+    <div class="tab on"><svg class="ic" viewBox="0 0 24 24"><use href="#i-today"/></svg>오늘</div>
+    <div class="tab"><svg class="ic" viewBox="0 0 24 24"><use href="#i-cal"/></svg>캘린더</div>
+    <div class="tab"><svg class="ic" viewBox="0 0 24 24"><use href="#i-chart"/></svg>통계</div>
+    <div class="tab"><svg class="ic" viewBox="0 0 24 24"><use href="#i-book"/></svg>일기</div>
+    <div class="tab"><svg class="ic" viewBox="0 0 24 24"><use href="#i-menu"/></svg>더보기</div>
+  </nav>
+</div>
+<figcaption>오늘</figcaption>
+</figure>
+
+<!-- ============ 새 계획 ============ -->
+<figure>
+<div class="phone">
+  <div class="status"><span>21:40</span><svg class="ic sm" viewBox="0 0 24 24"><use href="#i-batt"/></svg></div>
+  <div class="f-head">
+    <div class="x"><svg class="ic" viewBox="0 0 24 24"><use href="#i-close"/></svg></div>
+    <b>새 계획</b>
+  </div>
+
+  <div class="form">
+    <div class="box"><span class="lbl">이름</span><span class="v ph">수학의 정석</span></div>
+
+    <div class="fl">
+      <span class="lbl">종류</span>
+      <div class="seg c4"><div class="on">분량</div><div>시간</div><div>체크</div><div>횟수</div></div>
+    </div>
+
+    <div class="grid3">
+      <div class="box"><span class="lbl">시작</span><span class="v">121</span></div>
+      <div class="box"><span class="lbl">끝</span><span class="v">300</span></div>
+      <div class="box"><span class="lbl">단위</span><span class="v">쪽</span></div>
+    </div>
+
+    <div class="grid2">
+      <div class="box"><span class="lbl">시작일</span><span class="v">11월 16일 (월)</span></div>
+      <div class="box"><span class="lbl">종료일</span><span class="v">12월 15일 (화)</span></div>
+    </div>
+
+    <div class="fl">
+      <span class="lbl">공부 요일</span>
+      <div class="wk"><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div><div class="off">일</div></div>
+    </div>
+
+    <div class="fl">
+      <span class="lbl">보충 요일</span>
+      <div class="wk"><div class="off">월</div><div class="off">화</div><div class="off">수</div><div class="off">목</div><div class="off">금</div><div class="mk">토</div><div class="off">일</div></div>
+    </div>
+
+    <div class="prev"><span>공부하는 날</span><b>26일</b><span>&nbsp;·&nbsp;하루 약</span><b class="a">7쪽</b></div>
+
+    <div class="fl">
+      <span class="lbl">카테고리</span>
+      <div class="cats">
+        <div class="on"><span class="dot m"></span>수학</div>
+        <div><span class="dot e"></span>영어</div>
+        <div><span class="dot k"></span>국어</div>
+        <div><svg class="ic sm" viewBox="0 0 24 24"><use href="#i-plus"/></svg>추가</div>
+      </div>
+    </div>
+
+    <div class="btn pri save">저장</div>
+  </div>
+</div>
+<figcaption>새 계획</figcaption>
+</figure>
+
+<!-- ============ 통계 ============ -->
+<figure>
+<div class="phone">
+  <div class="status"><span>21:40</span><svg class="ic sm" viewBox="0 0 24 24"><use href="#i-batt"/></svg></div>
+
+  <div class="s-head">
+    <b>통계</b>
+    <div class="tg"><div class="on">주</div><div>월</div></div>
+  </div>
+  <div class="per">
+    <span>11.10 ~ 11.16</span>
+    <div class="arr">
+      <div><svg class="ic" viewBox="0 0 24 24"><use href="#i-chevl"/></svg></div>
+      <div><svg class="ic" viewBox="0 0 24 24"><use href="#i-chevr"/></svg></div>
+    </div>
+  </div>
+
+  <div class="tot">
+    <div class="lbl">총 공부 시간</div>
+    <div class="big"><span class="n">21</span><span class="unit">시간</span><span class="n">5</span><span class="unit">분</span></div>
+  </div>
+  <div class="two">
+    <div><div class="lbl">공부한 날 평균</div><div class="v">3<span class="unit">시간 </span>30<span class="unit">분</span></div></div>
+    <div><div class="lbl">평균 성취율</div><div class="v">74<span class="unit">%</span></div></div>
+  </div>
+
+  <div class="chart">
+    <div class="top"><b>일별 공부 시간</b><span class="lbl">시간</span></div>
+    <div class="plot">
+      <div class="avg"><span>평균 3.5</span></div>
+      <div class="b" style="height:60px"></div>
+      <div class="b" style="height:96px"></div>
+      <div class="b" style="height:72px"></div>
+      <div class="b" style="height:36px"></div>
+      <div class="b" style="height:120px"></div>
+      <div class="b" style="height:34px"></div>
+      <div class="b t" style="height:89px"></div>
+    </div>
+    <div class="base">
+      <div><b>2.5</b>화</div><div><b>4</b>수</div><div><b>3</b>목</div><div><b>1.5</b>금</div><div><b>5</b>토</div><div><b>1.4</b>일</div><div class="t"><b>3.7</b>월</div>
+    </div>
+  </div>
+
+  <div class="share">
+    <b style="font-size:14px;font-weight:500">과목별 비중</b>
+    <div class="stack">
+      <i style="width:42%;background:var(--c-math)"></i>
+      <i style="width:31%;background:var(--c-eng)"></i>
+      <i style="width:27%;background:var(--c-kor)"></i>
+    </div>
+    <div style="margin-top:8px">
+      <div class="sr"><span class="nm"><span class="dot m"></span>수학</span><span class="tm">8시간 51분</span><span class="pc">42%</span></div>
+      <div class="sr"><span class="nm"><span class="dot e"></span>영어</span><span class="tm">6시간 32분</span><span class="pc">31%</span></div>
+      <div class="sr"><span class="nm"><span class="dot k"></span>국어</span><span class="tm">5시간 42분</span><span class="pc">27%</span></div>
+    </div>
+  </div>
+
+  <nav class="tabbar" style="margin-top:auto">
+    <div class="tab"><svg class="ic" viewBox="0 0 24 24"><use href="#i-today"/></svg>오늘</div>
+    <div class="tab"><svg class="ic" viewBox="0 0 24 24"><use href="#i-cal"/></svg>캘린더</div>
+    <div class="tab on"><svg class="ic" viewBox="0 0 24 24"><use href="#i-chart"/></svg>통계</div>
+    <div class="tab"><svg class="ic" viewBox="0 0 24 24"><use href="#i-book"/></svg>일기</div>
+    <div class="tab"><svg class="ic" viewBox="0 0 24 24"><use href="#i-menu"/></svg>더보기</div>
+  </nav>
+</div>
+<figcaption>통계</figcaption>
+</figure>
+
+<!-- ============ 스톱워치 ============ -->
+<figure>
+<div class="phone">
+  <div class="status"><span>21:40</span><svg class="ic sm" viewBox="0 0 24 24"><use href="#i-batt"/></svg></div>
+  <div class="w-top"><div><svg class="ic" viewBox="0 0 24 24"><use href="#i-chevd"/></svg></div></div>
+
+  <div class="w-title">
+    <b>수학의 정석</b>
+    <span>수학 · 오늘 121~135쪽</span>
+  </div>
+
+  <div class="dial">
+    <svg viewBox="0 0 300 300">
+      <circle cx="150" cy="150" r="146" fill="none" stroke="#2A2F3B" stroke-width="6" stroke-dasharray="1.2 14.09" transform="rotate(-90 150 150)"/>
+      <circle cx="150" cy="150" r="132" fill="none" stroke="#2A2F3B" stroke-width="2"/>
+      <circle cx="150" cy="150" r="132" fill="none" stroke="#E8B04A" stroke-width="3" stroke-linecap="round"
+        stroke-dasharray="652.5 829.4" transform="rotate(-90 150 150)"/>
+      <circle cx="21.5" cy="119.9" r="5" fill="#12151C" stroke="#E8B04A" stroke-width="1.5"/>
+    </svg>
+    <div class="c">
+      <div class="tm">00:47:12</div>
+      <div class="lbl">경과 시간</div>
+    </div>
+  </div>
+
+  <div class="w-rows">
+    <div><span>오늘 이 계획에</span><b>1시간 20분</b></div>
+    <div><span>오늘 전체 공부</span><b>3시간 42분</b></div>
+  </div>
+
+  <div class="w-acts">
+    <div class="btn p"><svg class="ic sm" viewBox="0 0 24 24"><use href="#i-pause"/></svg>일시정지</div>
+    <div class="btn s"><svg class="ic sm" viewBox="0 0 24 24"><use href="#i-stop"/></svg>종료</div>
+  </div>
+</div>
+<figcaption>스톱워치</figcaption>
+</figure>
+
+</div>
+</body>
+</html>

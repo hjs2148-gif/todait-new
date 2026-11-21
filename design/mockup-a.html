@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Todait 시안 A. 종이 플래너</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Noto+Serif+KR:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<style>
+:root{
+  --paper:#F6F2EA; --ink:#1F1B16; --sub:#8A8072; --rule:#DDD5C7; --red:#D9482B;
+  --serif:'Fraunces','Noto Serif KR',serif;
+  --sans:'Pretendard Variable','Pretendard',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#DAD6CD;color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;
+  font-variant-numeric:tabular-nums lining-nums;-webkit-font-smoothing:antialiased;padding:32px 24px 48px}
+.page-title{display:flex;align-items:baseline;gap:16px;max-width:1720px;margin:0 auto 32px}
+.page-title h1{font-family:var(--serif);font-weight:600;font-size:20px;letter-spacing:-.01em}
+.page-title span{color:#6F675B;font-size:14px}
+.wrap{display:flex;flex-wrap:wrap;gap:40px 32px;justify-content:center;max-width:1720px;margin:0 auto}
+figure{width:390px}
+figcaption{margin-top:12px;font-size:14px;color:#5E574C;font-weight:500}
+.frame{width:390px;height:844px;overflow:hidden;position:relative;background:var(--paper);
+  border:1px solid #BDB6A8;border-radius:24px;display:flex;flex-direction:column}
+svg.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.num{font-family:var(--serif);font-variant-numeric:tabular-nums lining-nums;font-weight:500;letter-spacing:-.01em}
+.sub{color:var(--sub)}
+.red{color:var(--red)}
+
+/* status bar */
+.status{height:32px;flex:none;display:flex;justify-content:space-between;align-items:flex-end;padding:0 24px 4px;
+  font-size:12px;font-weight:600}
+.status .bat{width:22px;height:10px;border:1.5px solid var(--ink);border-radius:2px;position:relative}
+.status .bat::after{content:"";position:absolute;left:1px;top:1px;bottom:1px;width:12px;background:var(--ink);border-radius:1px}
+
+/* tab bar */
+.tabs{height:76px;flex:none;display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--ink);
+  padding-bottom:12px;background:var(--paper)}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--sub);
+  font-size:12px;min-height:44px}
+.tab.on{color:var(--ink);font-weight:600}
+
+/* TODAY */
+.main{flex:1;min-height:0;display:flex;flex-direction:column;padding:0 20px}
+.t-head{display:flex;justify-content:space-between;align-items:baseline;padding:12px 0 12px;border-bottom:2px solid var(--ink)}
+.t-head h2{font-family:var(--serif);font-weight:600;font-size:20px;letter-spacing:-.02em}
+.t-head .dd{display:flex;align-items:baseline;gap:8px;font-size:14px;color:var(--sub)}
+.t-head .dd b{font-family:var(--serif);font-size:20px;color:var(--red);font-weight:600}
+
+.sum{display:grid;grid-template-columns:1.15fr 1fr;border-bottom:1px solid var(--rule)}
+.sum .hero{padding:16px 16px 12px 0;border-right:1px solid var(--rule)}
+.lab{font-size:12px;color:var(--sub);letter-spacing:.02em}
+.hero .big{font-size:48px;line-height:1.1;margin-top:4px;display:flex;align-items:baseline}
+.hero .big small{font-size:20px;margin-left:2px;font-weight:500}
+.sum .side{display:flex;flex-direction:column}
+.sum .side div{padding:12px 0 8px 16px;flex:1}
+.sum .side div + div{border-top:1px solid var(--rule)}
+.side .v{font-size:20px;line-height:1.3;margin-top:0}
+.ruler{height:20px;position:relative;margin-top:4px;
+  background:repeating-linear-gradient(to right,var(--sub) 0 1px,transparent 1px 10%) left bottom/100% 6px no-repeat}
+.ruler i{position:absolute;left:0;bottom:0;height:2px;background:var(--red)}
+.ruler::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--rule)}
+.ruler i{z-index:1}
+
+.sec{display:flex;justify-content:space-between;align-items:center;height:48px;border-bottom:1px solid var(--rule)}
+.sec h3{font-family:var(--serif);font-size:16px;font-weight:600}
+.sec .btn-t{display:flex;align-items:center;gap:4px;height:44px;font-size:14px;font-weight:600}
+.sec .btn-t svg{width:20px;height:20px}
+
+.row{display:grid;grid-template-columns:24px 1fr auto;column-gap:12px;padding:16px 0 0;border-bottom:1px solid var(--rule)}
+.stamp{width:24px;height:24px;border:1.5px solid var(--sub);border-radius:3px;margin-top:0;display:flex;align-items:center;justify-content:center}
+.stamp.done{border-color:var(--red);color:var(--red);transform:rotate(-4deg)}
+.stamp svg{width:18px;height:18px;stroke-width:1.5}
+.row .nm{font-family:var(--serif);font-size:16px;font-weight:600;line-height:1.4;letter-spacing:-.02em}
+.row .meta{font-size:12px;color:var(--sub);margin-top:0;line-height:1.5}
+.row .rt{text-align:right}
+.row .rt .num{font-size:20px;line-height:1.2}
+.row .rt .num small{font-size:12px;color:var(--sub);font-family:var(--sans);margin-left:2px}
+.row .st{font-size:12px;color:var(--sub)}
+.row .st.on{color:var(--red);font-weight:600}
+.row .bar{grid-column:2 / 4;height:16px;position:relative;margin-top:8px}
+.row .bar::before{content:"";position:absolute;left:0;right:0;top:7px;height:1px;background:var(--rule)}
+.row .bar i{position:absolute;left:0;top:6px;height:3px;background:var(--red)}
+.row.done .nm{text-decoration:line-through;text-decoration-thickness:1px;color:var(--sub);font-weight:400}
+.row.done .rt .num{color:var(--sub)}
+.row.done .bar i{background:var(--sub)}
+.row.chk{padding-bottom:16px}
+
+.dock{margin-top:auto;padding:12px 0 12px;display:grid;grid-template-columns:1fr 1.5fr;gap:8px}
+.btn{height:52px;border-radius:3px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:16px;font-weight:600;font-family:var(--sans)}
+.btn.line{border:1.5px solid var(--ink);color:var(--ink)}
+.btn.solid{background:var(--ink);color:var(--paper)}
+.btn.red{background:var(--red);color:#FFF8F0}
+
+/* NEW PLAN */
+.nav{height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 8px 0 12px;border-bottom:2px solid var(--ink);margin:0 0 0}
+.nav h2{font-family:var(--serif);font-size:20px;font-weight:600;letter-spacing:-.02em}
+.nav .ib{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
+.form{flex:1;min-height:0;padding:0 20px;display:flex;flex-direction:column}
+.fld{padding:12px 0;border-bottom:1px solid var(--rule)}
+.fld .lab{display:block;margin-bottom:4px}
+.fld .val{font-size:20px;font-family:var(--serif);font-weight:600;line-height:1.4}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--ink);border-radius:3px;margin-top:4px;height:44px}
+.seg span{display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--sub);font-weight:500}
+.seg span + span{border-left:1px solid var(--rule)}
+.seg span.on{background:var(--ink);color:var(--paper);font-weight:600}
+.trio{display:grid;grid-template-columns:1fr 1fr 72px;margin-top:0}
+.trio > div{padding:0 12px}
+.trio > div:first-child{padding-left:0}
+.trio > div + div{border-left:1px solid var(--rule)}
+.trio .val{font-size:20px}
+.duo{display:grid;grid-template-columns:1fr 1fr}
+.duo > div{padding:0 12px}
+.duo > div:first-child{padding-left:0}
+.duo > div + div{border-left:1px solid var(--rule)}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:4px}
+.days span{height:44px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;border:1px solid var(--ink);border-radius:3px}
+.days span.off{border:1px dashed var(--rule);color:var(--sub);font-weight:400;text-decoration:line-through;text-decoration-thickness:1px}
+.days span.mk{border-color:var(--red);color:var(--red);position:relative}
+.days span.mk::after{content:"";position:absolute;left:8px;right:8px;bottom:6px;height:1.5px;background:var(--red)}
+.hint{font-size:12px;color:var(--sub);margin-top:4px}
+.prev{display:flex;align-items:baseline;gap:8px;padding:12px 0;border-bottom:1px solid var(--rule)}
+.prev .num{font-size:20px;color:var(--red);font-weight:600}
+.prev .t{font-size:14px;color:var(--sub);width:100%;display:flex;align-items:baseline;gap:8px;flex-wrap:nowrap;white-space:nowrap}
+.prev .t b{font-family:var(--serif);font-size:20px;color:var(--red);font-weight:600}
+.prev .t em{font-style:normal;color:var(--sub)}
+.cats{display:flex;gap:24px;margin-top:0}
+.cats span{height:44px;display:flex;align-items:center;gap:8px;font-size:16px;color:var(--sub);border-bottom:2px solid transparent}
+.cats span.on{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.form .save{margin-top:auto;padding:12px 0 16px}
+
+/* STATS */
+.sh{display:flex;justify-content:space-between;align-items:center;height:52px;border-bottom:2px solid var(--ink)}
+.sh h2{font-family:var(--serif);font-size:20px;font-weight:600;letter-spacing:-.02em}
+.toggle{display:flex;height:44px;align-items:stretch}
+.toggle span{display:flex;align-items:center;padding:0 12px;font-size:14px;color:var(--sub);position:relative}
+.toggle span.on{color:var(--ink);font-weight:600}
+.toggle span.on::after{content:"";position:absolute;left:12px;right:12px;bottom:6px;height:2px;background:var(--ink)}
+.per{display:flex;justify-content:space-between;align-items:center;height:44px;border-bottom:1px solid var(--rule)}
+.per .p{font-family:var(--serif);font-size:16px;font-weight:500}
+.per .ar{display:flex}
+.per .ar span{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
+.per .ar span.dis{color:var(--rule)}
+.tot{padding:16px 0 12px;border-bottom:1px solid var(--rule)}
+.tot .big{font-size:48px;line-height:1.1;display:flex;align-items:baseline;gap:4px;margin-top:4px}
+.tot .big small{font-size:20px;font-weight:500;margin-right:8px}
+.two{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--rule)}
+.two > div{padding:12px 0}
+.two > div + div{border-left:1px solid var(--rule);padding-left:16px}
+.two .v{font-size:20px;line-height:1.3}
+.chart{padding:16px 0 0}
+.chart .hd{display:flex;justify-content:space-between;align-items:baseline}
+.chart .hd h3,.share h3{font-family:var(--serif);font-size:16px;font-weight:600}
+.plot{position:relative;height:196px;margin-top:8px}
+.gl{position:absolute;left:0;right:0;height:0;border-top:1px dashed var(--rule)}
+.gl.z{border-top:1px solid var(--ink)}
+.gl span{position:absolute;right:0;top:-20px;font-size:12px;color:var(--sub)}
+.cols{position:absolute;left:0;right:0;top:0;height:196px;display:grid;grid-template-columns:repeat(7,1fr)}
+.col{position:relative}
+.col .b{position:absolute;left:50%;margin-left:-10px;width:20px;bottom:24px;background:var(--ink);border-radius:2px 2px 0 0}
+.col .b.today{background:var(--red)}
+.col .v{position:absolute;left:0;right:0;text-align:center;font-family:var(--serif);font-size:12px;line-height:16px}
+.col .d{position:absolute;left:0;right:0;bottom:0;height:24px;line-height:20px;text-align:center;font-size:12px;color:var(--sub)}
+.col .d.t{color:var(--ink);font-weight:700}
+.share{padding:16px 0 0}
+.seg3{display:flex;gap:2px;height:8px;margin:12px 0 4px}
+.seg3 i{display:block;height:8px}
+.sr{display:grid;grid-template-columns:12px 1fr auto;align-items:center;column-gap:8px;height:44px;border-bottom:1px solid var(--rule)}
+.sr:last-child{border-bottom:0}
+.sr .nm{font-size:14px;font-weight:500}
+.sr .num{font-size:20px}
+.sr .num small{font-size:12px;font-family:var(--sans);color:var(--sub);margin-left:1px}
+
+/* STOPWATCH */
+.sw-top{height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 8px 0 12px}
+.sw-top .ib{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
+.sw-top .lab{font-size:12px}
+.sw-mid{flex:1;min-height:0;padding:0 20px;display:flex;flex-direction:column;justify-content:center}
+.sw-plan{border-top:2px solid var(--ink);padding-top:16px}
+.sw-plan .nm{font-family:var(--serif);font-size:20px;font-weight:600;letter-spacing:-.02em;line-height:1.4}
+.sw-plan .meta{font-size:14px;color:var(--sub)}
+.clock{font-family:var(--serif);font-weight:400;font-size:72px;line-height:1.1;letter-spacing:-.02em;margin:48px 0 24px;
+  font-variant-numeric:tabular-nums lining-nums;white-space:nowrap}
+.clock .c{color:var(--red);padding:0 2px}
+.rl{display:block;width:100%;height:56px}
+.rl text{font-family:var(--serif);font-size:12px;fill:var(--sub)}
+.sw-stat{margin-top:32px;border-top:1px solid var(--rule)}
+.sw-stat div{display:flex;justify-content:space-between;align-items:baseline;height:48px;align-items:center;border-bottom:1px solid var(--rule);font-size:14px;color:var(--sub)}
+.sw-stat .num{font-size:20px;color:var(--ink)}
+.sw-btn{padding:12px 20px 32px;display:grid;grid-template-columns:1fr 1.5fr;gap:8px;flex:none}
+.sw-btn .btn{height:56px}
+</style>
+</head>
+<body>
+
+<!-- icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-today" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8.5 12.5l2.5 2.5 4.5-5.5"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 20V12M12 20V5M19 20v-5"/></symbol>
+    <symbol id="i-diary" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="1.5"/><path d="M9 9h6M9 13h6"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="18" cy="12" r="1"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="M14.5 6L8.5 12l6 6"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="1.5"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24"><path d="M5 19l1-4L16.5 4.5l3 3L9 18z"/></symbol>
+  </defs>
+</svg>
+
+<div class="page-title">
+  <h1>A. 종이 플래너</h1>
+  <span>미색 종이 · 먹색 · 주홍 도장 한 가지 · 괘선 노트 구조</span>
+</div>
+
+<div class="wrap">
+
+<!-- ===== 오늘 ===== -->
+<figure>
+<div class="frame">
+  <div class="status"><span>9:41</span><span class="bat"></span></div>
+  <div class="main">
+    <div class="t-head">
+      <h2>11월 16일 월요일</h2>
+      <div class="dd">기말고사 <b class="num">D-24</b></div>
+    </div>
+
+    <div class="sum">
+      <div class="hero">
+        <div class="lab">오늘 성취율</div>
+        <div class="big num">62<small>%</small></div>
+      </div>
+      <div class="side">
+        <div><div class="lab" style="padding:0">공부 시간</div><div class="v num" style="padding:0">3시간 42분</div></div>
+        <div><div class="lab" style="padding:0">완료한 계획</div><div class="v num" style="padding:0">2<span class="sub" style="font-size:14px;font-family:var(--sans)"> / 4개</span></div></div>
+      </div>
+    </div>
+    <div class="ruler"><i style="width:62%"></i></div>
+
+    <div class="sec">
+      <h3>오늘의 계획</h3>
+      <div class="btn-t"><svg class="i"><use href="#i-plus"/></svg>새 계획</div>
+    </div>
+
+    <div class="row">
+      <div class="stamp"></div>
+      <div>
+        <div class="nm">수학의 정석</div>
+        <div class="meta">수학 · 오늘 121~135쪽 · 1시간 20분</div>
+      </div>
+      <div class="rt"><div class="num">9<small>/15쪽</small></div><div class="st on">진행 중</div></div>
+      <div class="bar"><i style="width:60%"></i></div>
+    </div>
+
+    <div class="row done">
+      <div class="stamp done"><svg class="i"><use href="#i-check"/></svg></div>
+      <div>
+        <div class="nm">영단어</div>
+        <div class="meta">영어 · 30개 · 25분</div>
+      </div>
+      <div class="rt"><div class="num">30<small>/30개</small></div><div class="st">완료</div></div>
+      <div class="bar"><i style="width:100%"></i></div>
+    </div>
+
+    <div class="row">
+      <div class="stamp"></div>
+      <div>
+        <div class="nm">비문학 인강</div>
+        <div class="meta">국어 · 시간 계획</div>
+      </div>
+      <div class="rt"><div class="num" style="font-size:16px">1시간 12분<small>/ 2시간</small></div><div class="st on">진행 중</div></div>
+      <div class="bar"><i style="width:60%"></i></div>
+    </div>
+
+    <div class="row done chk">
+      <div class="stamp done"><svg class="i"><use href="#i-check"/></svg></div>
+      <div>
+        <div class="nm">아침 스트레칭</div>
+        <div class="meta">체크 계획</div>
+      </div>
+      <div class="rt"><div class="st" style="padding-top:2px">완료</div></div>
+    </div>
+
+    <div class="dock">
+      <div class="btn line"><svg class="i"><use href="#i-pen"/></svg>분량 입력</div>
+      <div class="btn solid"><svg class="i"><use href="#i-play"/></svg>스톱워치 시작</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab on"><svg class="i"><use href="#i-today"/></svg>오늘</div>
+    <div class="tab"><svg class="i"><use href="#i-cal"/></svg>캘린더</div>
+    <div class="tab"><svg class="i"><use href="#i-chart"/></svg>통계</div>
+    <div class="tab"><svg class="i"><use href="#i-diary"/></svg>일기</div>
+    <div class="tab"><svg class="i"><use href="#i-more"/></svg>더보기</div>
+  </div>
+</div>
+<figcaption>오늘</figcaption>
+</figure>
+
+<!-- ===== 새 계획 ===== -->
+<figure>
+<div class="frame">
+  <div class="status"><span>9:41</span><span class="bat"></span></div>
+  <div class="nav">
+    <div class="ib"><svg class="i"><use href="#i-close"/></svg></div>
+    <h2>새 계획</h2>
+    <div class="ib" style="width:44px"></div>
+  </div>
+  <div class="form">
+    <div class="fld">
+      <span class="lab">이름</span>
+      <div class="val">수학의 정석</div>
+    </div>
+
+    <div class="fld">
+      <span class="lab">종류</span>
+      <div class="seg"><span class="on">분량</span><span>시간</span><span>체크</span><span>횟수</span></div>
+    </div>
+
+    <div class="fld">
+      <div class="trio">
+        <div><span class="lab">시작</span><div class="val num">121</div></div>
+        <div><span class="lab">끝</span><div class="val num">300</div></div>
+        <div><span class="lab">단위</span><div class="val">쪽</div></div>
+      </div>
+    </div>
+
+    <div class="fld">
+      <div class="duo">
+        <div><span class="lab">시작일</span><div class="val num" style="font-size:16px">11월 16일 (월)</div></div>
+        <div><span class="lab">종료일</span><div class="val num" style="font-size:16px">12월 15일 (화)</div></div>
+      </div>
+    </div>
+
+    <div class="fld">
+      <span class="lab">공부 요일</span>
+      <div class="days"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span class="off">일</span></div>
+    </div>
+
+    <div class="fld">
+      <span class="lab">보충 요일</span>
+      <div class="days"><span class="off" style="text-decoration:none">월</span><span class="off" style="text-decoration:none">화</span><span class="off" style="text-decoration:none">수</span><span class="off" style="text-decoration:none">목</span><span class="off" style="text-decoration:none">금</span><span class="mk">토</span><span class="off" style="text-decoration:none">일</span></div>
+    </div>
+
+    <div class="prev">
+      <div class="t">공부하는 날 <b class="num">26일</b> · 하루 약 <b class="num">7쪽</b></div>
+    </div>
+
+    <div class="fld">
+      <span class="lab">카테고리</span>
+      <div class="cats">
+        <span class="on"><i class="dot" style="background:var(--ink)"></i>수학</span>
+        <span><i class="dot" style="background:var(--sub)"></i>영어</span>
+        <span><i class="dot" style="background:#C3B8A5"></i>국어</span>
+      </div>
+    </div>
+
+    <div class="save"><div class="btn solid" style="width:100%">저장</div></div>
+  </div>
+</div>
+<figcaption>새 계획</figcaption>
+</figure>
+
+<!-- ===== 통계 ===== -->
+<figure>
+<div class="frame">
+  <div class="status"><span>9:41</span><span class="bat"></span></div>
+  <div class="main">
+    <div class="sh">
+      <h2>통계</h2>
+      <div class="toggle"><span class="on">주</span><span>월</span></div>
+    </div>
+    <div class="per">
+      <div class="ar"><span style="margin-left:-12px"><svg class="i"><use href="#i-left"/></svg></span></div>
+      <div class="p num">11.10 ~ 11.16</div>
+      <div class="ar"><span class="dis" style="margin-right:-12px"><svg class="i"><use href="#i-right"/></svg></span></div>
+    </div>
+
+    <div class="tot">
+      <div class="lab">총 공부 시간</div>
+      <div class="big num">21<small>시간</small>5<small style="margin-right:0">분</small></div>
+    </div>
+    <div class="two">
+      <div><div class="lab">공부한 날 평균</div><div class="v num">3시간 30분</div></div>
+      <div><div class="lab">평균 성취율</div><div class="v num">74<span style="font-size:14px">%</span></div></div>
+    </div>
+
+    <div class="chart">
+      <div class="hd"><h3>일별 공부 시간</h3><span class="lab">단위 시간</span></div>
+      <div class="plot">
+        <div class="gl" style="bottom:174px"><span>5</span></div>
+        <div class="gl" style="bottom:99px"></div>
+        <div class="gl z" style="bottom:24px"></div>
+        <div class="cols">
+          <div class="col"><div class="b" style="height:75px"></div><div class="v" style="bottom:103px">2.5</div><div class="d">화</div></div>
+          <div class="col"><div class="b" style="height:120px"></div><div class="v" style="bottom:148px">4</div><div class="d">수</div></div>
+          <div class="col"><div class="b" style="height:90px"></div><div class="v" style="bottom:118px">3</div><div class="d">목</div></div>
+          <div class="col"><div class="b" style="height:45px"></div><div class="v" style="bottom:73px">1.5</div><div class="d">금</div></div>
+          <div class="col"><div class="b" style="height:150px"></div><div class="v" style="bottom:178px">5</div><div class="d">토</div></div>
+          <div class="col"><div class="b" style="height:42px"></div><div class="v" style="bottom:70px">1.4</div><div class="d">일</div></div>
+          <div class="col"><div class="b today" style="height:111px"></div><div class="v red" style="bottom:139px;font-weight:600">3.7</div><div class="d t">월</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="share">
+      <h3>과목별 비중</h3>
+      <div class="seg3"><i style="width:42%;background:var(--ink)"></i><i style="width:31%;background:var(--sub)"></i><i style="width:27%;background:#C3B8A5"></i></div>
+      <div class="sr"><i class="dot" style="background:var(--ink)"></i><span class="nm">수학</span><span class="num">42<small>%</small></span></div>
+      <div class="sr"><i class="dot" style="background:var(--sub)"></i><span class="nm">영어</span><span class="num">31<small>%</small></span></div>
+      <div class="sr"><i class="dot" style="background:#C3B8A5"></i><span class="nm">국어</span><span class="num">27<small>%</small></span></div>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab"><svg class="i"><use href="#i-today"/></svg>오늘</div>
+    <div class="tab"><svg class="i"><use href="#i-cal"/></svg>캘린더</div>
+    <div class="tab on"><svg class="i"><use href="#i-chart"/></svg>통계</div>
+    <div class="tab"><svg class="i"><use href="#i-diary"/></svg>일기</div>
+    <div class="tab"><svg class="i"><use href="#i-more"/></svg>더보기</div>
+  </div>
+</div>
+<figcaption>통계</figcaption>
+</figure>
+
+<!-- ===== 스톱워치 ===== -->
+<figure>
+<div class="frame">
+  <div class="status"><span>9:41</span><span class="bat"></span></div>
+  <div class="sw-top">
+    <div class="ib"><svg class="i"><use href="#i-down"/></svg></div>
+    <span class="lab">스톱워치 · 진행 중</span>
+    <div class="ib"></div>
+  </div>
+  <div class="sw-mid">
+    <div class="sw-plan">
+      <div class="nm">수학의 정석</div>
+      <div class="meta">수학 · 오늘 121~135쪽</div>
+    </div>
+
+    <div class="clock">00<span class="c">:</span>47<span class="c">:</span>12</div>
+
+    <svg class="rl" viewBox="0 0 350 56" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <pattern id="t1" width="5.8333" height="8" patternUnits="userSpaceOnUse"><path d="M0.5 0V6" stroke="#8A8072" stroke-width="1"/></pattern>
+        <pattern id="t5" width="29.1667" height="14" patternUnits="userSpaceOnUse"><path d="M0.5 0V12" stroke="#1F1B16" stroke-width="1"/></pattern>
+      </defs>
+      <rect x="0" y="0" width="350" height="8" fill="url(#t1)"/>
+      <rect x="0" y="0" width="350" height="14" fill="url(#t5)"/>
+      <path d="M349.5 0V14" stroke="#1F1B16" stroke-width="1"/>
+      <path d="M0 0.5H350" stroke="#DDD5C7" stroke-width="1"/>
+      <path d="M0 1.5H275.3" stroke="#D9482B" stroke-width="3"/>
+      <path d="M275.3 0V22" stroke="#D9482B" stroke-width="2"/>
+      <text x="0" y="40" text-anchor="start">0</text>
+      <text x="87.5" y="40" text-anchor="middle">15</text>
+      <text x="175" y="40" text-anchor="middle">30</text>
+      <text x="262.5" y="40" text-anchor="middle">45</text>
+      <text x="350" y="40" text-anchor="end">60분</text>
+    </svg>
+
+    <div class="sw-stat">
+      <div>오늘 이 계획<span class="num">1시간 20분</span></div>
+      <div>오늘 전체<span class="num">3시간 42분</span></div>
+    </div>
+  </div>
+  <div class="sw-btn">
+    <div class="btn line"><svg class="i"><use href="#i-pause"/></svg>일시정지</div>
+    <div class="btn red"><svg class="i"><use href="#i-stop"/></svg>종료</div>
+  </div>
+</div>
+<figcaption>스톱워치</figcaption>
+</figure>
+
+</div>
+</body>
+</html>

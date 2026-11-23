@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { demoName, leaveDemo } from './demo.ts'
 import { Icon, type IconName } from './Icon.tsx'
 import { Calendar } from './Calendar.tsx'
 import { todayISO } from './date.ts'
@@ -55,6 +56,7 @@ export function App() {
   const editTask = (task: Task | null) => setForm({ task })
   return (
     <>
+      {demoName && <div className="demo-bar" role="status"><span>체험 중 · 실제 기록과 따로 저장돼요</span><button onClick={leaveDemo}>나가기</button></div>}
       {tab === 'today' && <Today nav={{ date, setDate, editTask, writeDiary: (d, taskId) => setDraft({ date: d, taskId }), editWidgets: () => setWidgets(true), goProgress: () => setTab('progress') }} />}
       {tab === 'progress' && <Progress editTask={editTask} />}
       {tab === 'calendar' && <Calendar goTo={(d) => { setDate(d); setTab('today') }} />}

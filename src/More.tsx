@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { DEMO_SCENES, demoName, leaveDemo, openDemo } from './demo.ts'
 import { ExamEdit } from './ExamEdit.tsx'
 import { Icon, type IconName } from './Icon.tsx'
 import { diffDays, fmtDate, todayISO } from './date.ts'
@@ -75,7 +76,7 @@ const Item = ({ icon, label, value, onClick, children }: { icon?: IconName; labe
   </div>
 )
 
-type Page = 'plans' | 'widgets' | 'rest' | 'streak' | 'subjects' | 'exams' | null
+type Page = 'plans' | 'widgets' | 'rest' | 'streak' | 'subjects' | 'exams' | 'demo' | null
 
 export function More({ editTask, openDiary }: { editTask: (t: Task) => void; openDiary: () => void }) {
   const s = useStore()
@@ -122,6 +123,9 @@ export function More({ editTask, openDiary }: { editTask: (t: Task) => void; ope
           <Item icon="archive" label="끝낸 계획" value={`${done}개`} onClick={() => setPage('plans')} />
           <Item icon="target" label="시험과 D-day" value={selected ? `${selected.name} ${selected.date.slice(5).replace('-', '.')}` : '추가하기'} onClick={() => (s.exams.length ? setPage('exams') : setExam('new'))} />
         </section>
+        <section className="tcard tight" aria-label="체험">
+          <Item icon="play" label="체험 모드" value={demoName ? '체험 중' : '가상 데이터로 써 보기'} onClick={() => setPage('demo')} />
+        </section>
         <section className="tcard tight" aria-label="설정">
           <Item icon="grid" label="오늘 위젯 편집" value={`${s.settings.widgets.length}개`} onClick={() => setPage('widgets')} />
           <Item icon="palette" label="과목과 색" value={`${s.categories.length}개`} onClick={() => setPage('subjects')} />
@@ -158,6 +162,16 @@ export function More({ editTask, openDiary }: { editTask: (t: Task) => void; ope
       </div>
 
       {page === 'plans' && <Plans onClose={() => setPage(null)} edit={editTask} />}
+      {page === 'demo' && (
+        <Sheet title="체험 모드" sub="가상 데이터는 따로 저장돼요. 실제 기록은 그대로예요." onClose={() => setPage(null)}>
+          <div className="demo-list">
+            {DEMO_SCENES.map(([k, n, d]) => (
+              <button key={k} className={`demo-i${demoName === k ? ' on' : ''}`} onClick={() => openDemo(k)}><span className="grow"><b>{n}</b><small>{d}</small></span><Icon name="right" size={16} /></button>
+            ))}
+          </div>
+          {demoName && <button className="primary" onClick={leaveDemo}>체험 끝내고 내 기록으로</button>}
+        </Sheet>
+      )}
       {page === 'widgets' && <WidgetEdit onClose={() => setPage(null)} />}
       {page === 'rest' && <RestSheet onClose={() => setPage(null)} />}
       {page === 'streak' && <StreakSheet onClose={() => setPage(null)} />}

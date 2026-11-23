@@ -1,4 +1,4 @@
-// 개발용 가상 데이터. `npm run dev` 주소에 ?demo=장면 을 붙이면 켜진다 (배포 빌드에서는 아무것도 하지 않는다).
+// 체험용 가상 데이터. 주소에 ?demo=장면 을 붙이면 켜진다 (배포된 앱에서도. 더보기 → 체험 모드).
 // - 실제 기록과 섞이지 않게 IndexedDB를 'todait-demo'로 바꿔 쓴다.
 // - 장면의 날짜·시각으로 시계를 옮긴다 (시간은 계속 흐른다).
 // - 장면이 바뀌거나 &reset 을 붙이면 다시 채운다. 같은 장면이면 고친 내용이 남는다.
@@ -20,8 +20,23 @@ const SCENES: Record<string, Scene> = {
 }
 
 const params = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null
-const name = import.meta.env.DEV ? params?.get('demo') ?? null : null
+const name = params?.get('demo') ?? null
 const scene = name ? SCENES[name] ?? SCENES.mid : null
+/** 지금 체험 중인 장면 이름 (아니면 null) */
+export const demoName = scene ? name : null
+/** 체험 모드에서 고를 수 있는 장면 */
+export const DEMO_SCENES: [string, string, string][] = [
+  ['mid', '보통 날', '수요일 저녁, 오늘 목표를 반쯤 한 날'],
+  ['tight', '빠듯한 날', '공부 시간이 모자라 넘치는 날 카드가 떠요'],
+  ['catchup', '밀린 날', '어제 못 한 분량이 있는 아침'],
+  ['done', '다 한 날', '오늘 목표를 다 끝낸 밤'],
+  ['monday', '새 주', '월요일 아침, 지난주 정리와 이번 주 목표'],
+  ['rest', '쉬는 날', '전체 쉬는 날로 정한 날'],
+  ['empty', '처음 쓰는 날', '계획이 하나도 없어요. 새 계획 만들기부터'],
+]
+/** 장면 열기 (처음부터 다시 채움) · 나가기 */
+export const openDemo = (n: string) => { location.href = `${location.pathname}?demo=${n}&reset` }
+export const leaveDemo = () => { location.href = location.pathname }
 
 if (scene) {
   // 시계 옮기기

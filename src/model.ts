@@ -230,6 +230,10 @@ export function offFor(s: Pick<State, 'exams' | 'settings'>, t: Task): OffFn | u
   return (d) => blank.has(d) || d in rest || isPausedOn(t, d)
 }
 
+/** 바쁜 날 최소 목표를 채운 계획이 있는 날 (연속 공부로 친다) */
+export const minGoalMet = (s: Pick<State, 'tasks' | 'recs'>, d: string) =>
+  s.tasks.some((t) => !!t.minGoal && (s.recs[t.id]?.[d]?.done ?? 0) >= t.minGoal)
+
 /** 백업 알림: 마지막 백업(없으면 가장 오래된 계획을 만든 날)에서 7일이 지났으면 지난 일수. 오늘 이미 "나중에"를 눌렀으면 null */
 export function backupDue(s: Pick<State, 'tasks' | 'settings'>, now: number, today: string): number | null {
   if (!s.tasks.length || s.settings.backupRemindedOn === today) return null

@@ -2,7 +2,7 @@
 // 원칙: %에는 늘 이름을 붙인다. 여기서는 시간(초), 목표 개수(끝낸/전체), 범위 진도를 섞지 않는다.
 import { addDays, diffDays, dow } from './date.ts'
 import { futurePlan, liveExpect, rateOf, type Task } from './logic.ts'
-import { offFor, type State, type TimeHistory } from './model.ts'
+import { minGoalMet, offFor, type State, type TimeHistory } from './model.ts'
 
 const visible = (t: Task, d: string) =>
   !t.archived && d >= t.startDate && (!t.endDate || d <= t.endDate) && (!t.completedDate || d <= t.completedDate)
@@ -156,7 +156,7 @@ export function bestStreak(s: State, today: string, minSec: number) {
   let run = 0
   for (const d of datesBetween(firstRecord(s, today), today)) {
     if (d in s.settings.restDays) continue
-    run = secOn(s, d) >= minSec ? run + 1 : 0
+    run = secOn(s, d) >= minSec || minGoalMet(s, d) ? run + 1 : 0
     best = Math.max(best, run)
   }
   return best

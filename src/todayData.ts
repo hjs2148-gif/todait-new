@@ -1,7 +1,7 @@
 // 오늘 탭이 쓰는 계산 모음. 화면 코드(React)와 섞이지 않게 따로 둔다.
 import { addDays } from './date.ts'
 import { expectIfOnTrack, liveExpect, secPerUnit, type Task, type TaskKind } from './logic.ts'
-import { offFor, subjectVar, type State } from './store.ts'
+import { minGoalMet, offFor, subjectVar, type State } from './store.ts'
 import { daySec, itemsOn, type Item } from './view.ts'
 
 export const KIND_TABS: ['all' | TaskKind, string][] = [
@@ -86,7 +86,7 @@ export const recentSecs = (s: State, end: string, n: number) =>
 
 /** 연속 공부: 하루 minSec 이상 공부한 날이 이어진 일수. 쉬는 날은 끊지 않고 세지도 않는다 */
 export function streakInfo(s: State, today: string, minSec: number) {
-  const ok = (d: string) => daySec(s, d) >= minSec
+  const ok = (d: string) => daySec(s, d) >= minSec || minGoalMet(s, d)
   const rest = (d: string) => d in s.settings.restDays
   let count = 0
   let d = ok(today) ? today : addDays(today, -1)

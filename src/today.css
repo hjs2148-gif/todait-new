@@ -306,3 +306,4 @@ input.switch:disabled { opacity: .4; }
 .mini-b { width: 44px; height: 44px; border-radius: 22px; background: color-mix(in srgb, var(--bg) 18%, var(--ink)); color: var(--bg); display: inline-flex; align-items: center; justify-content: center; flex: none; }
 .mini-b.end { background: var(--bg); color: var(--ink); }
 .fit-t { color: var(--rib); }
+.bc-note .ok { color: var(--ink); font-weight: 600; }

@@ -3,7 +3,7 @@ import {
   avgPerDay, currentChapter, doneInRange, expectIfOnTrack, extendEnd, futurePlan, liveExpect, missedSince, rollForward, secPerUnit,
   type Recs, type Task,
 } from './logic.ts'
-import { backupDue, DEFAULT_WIDGETS, guessKind, isoWeek, migrate, offFor, STATE_VERSION, emptyState, type Exam } from './model.ts'
+import { backupDue, DEFAULT_WIDGETS, guessKind, isoWeek, migrate, minGoalMet, offFor, STATE_VERSION, emptyState, type Exam } from './model.ts'
 
 const base: Task = {
   id: 't', name: '수학', type: 'amount', kind: 'book', bookMode: 'amount', unit: '쪽', startPoint: 1, amount: 100, perDay: 0,
@@ -138,5 +138,9 @@ assert.equal(backupDue(withTask({ lastBackupAt: 1 * DAY, backupRemindedOn: '2026
 assert.equal(isoWeek('2026-11-23'), 48)
 assert.equal(isoWeek('2026-01-01'), 1)
 assert.equal(isoWeek('2025-12-29'), 1)
+
+// 바쁜 날 최소 목표를 채운 날
+const mg = { tasks: [{ id: 'm', minGoal: 5 } as never], recs: { m: { '2026-11-02': { done: 5, sec: 0, checked: false }, '2026-11-03': { done: 4, sec: 0, checked: false } } } }
+assert.deepEqual([minGoalMet(mg, '2026-11-02'), minGoalMet(mg, '2026-11-03'), minGoalMet(mg, '2026-11-04')], [true, false, false])
 
 console.log('model tests passed')

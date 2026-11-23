@@ -729,7 +729,19 @@ function SummaryStep({ s: s0, w, set, task: t0, today, examDate, go }: { s: Stat
   const others = [...new Set(bal.moves.filter((m) => m.taskId !== t0.id).map((m) => m.taskId))]
   const firstMove = bal.moves.find((m) => m.taskId !== t0.id)
   const mt = firstMove && s0.tasks.find((x) => x.id === firstMove.taskId)
-  const overDays = bal.over.filter((d) => d >= t0.startDate && d <= t0.endDate!).length
+  const mineOver = (b: typeof bal, t: Task) => { const p = futurePlan(t, {}, t.startDate); return b.over.filter((d) => (p[d] ?? 0) > 0).length }
+  const overDays = mineOver(bal, t0)
+  // 옮겨도 안 들어가면: 끝나는 날을 얼마나 늦추면 들어가는지
+  const later = useMemo(() => {
+    if (!overDays) return null
+    for (const k of [2, 4, 7, 10, 14, 21]) {
+      const t = wizardTask({ ...w, endDate: addDays(w.endDate, k) }, t0.id, 0, 0)
+      if (typeof t === 'string') return null
+      const b = balance({ tasks: [...s0.tasks, t], recs: s0.recs, today, offOf: (x) => offFor(s0, x), capOf: (d) => winSum(windowsOn(w.windows, dow(d))), spu: (x) => (x.id === t.id ? speedOf(s0, t) : secPerUnit(x, s0.recs[x.id] ?? {})) })
+      if (!mineOver(b, t)) return addDays(w.endDate, k)
+    }
+    return 'none'
+  }, [overDays, w, s0, t0, today])
   const res0 = w.toc.length ? resolveToc(w.toc, w.to, w.from) : null
   const cats = s.categories
   const ld = weekdayLoad(s, task, today, w.windows)
@@ -834,14 +846,21 @@ function SummaryStep({ s: s0, w, set, task: t0, today, examDate, go }: { s: Stat
                 <small>어려운 단원은 하루 쪽 수를 줄이고, 쉬운 단원은 늘려요. 공부를 시작하면 실제 속도로 맞춰요.</small>
               </>
             )}
-            <div className="frow"><span className="grow"><span style={{ display: 'block' }}>바쁜 날 최소 목표</span><small>바쁜 날엔 이것만 하라고 오늘 탭에 보여 줘요</small></span><span className="wz-pgin"><Num value={w.minGoal} onChange={(v) => set({ minGoal: v })} placeholder={String(Math.max(1, Math.round((task.amount / Math.max(1, Object.values(futurePlan(task, {}, task.startDate)).filter((v) => v > 0).length)) / 3)))} /><small>{task.unit}</small></span></div>
+            <div className="frow"><span className="grow"><span style={{ display: 'block' }}>바쁜 날 최소 목표</span><small>이것만 해도 연속 공부로 쳐요</small></span><span className="wz-pgin"><Num value={w.minGoal} onChange={(v) => set({ minGoal: v })} placeholder={String(Math.max(1, Math.round((task.amount / Math.max(1, Object.values(futurePlan(task, {}, task.startDate)).filter((v) => v > 0).length)) / 3)))} /><small>{task.unit}</small></span></div>
             <div className="frow"><span className="grow"><span style={{ display: 'block' }}>회독</span><small>1회독이 끝날 때 2회독(덮고 떠올리기 중심)과 오답만 보기를 제안해요</small></span></div>
           </div>
         )}
         {others.length > 0 && firstMove && mt && (
           <div className="frow wz-moved"><i className="wz-dot" style={{ background: subjectVar(cats.find((c) => c.id === mt.categoryId)?.color) }} /><span className="grow"><span style={{ display: 'block' }}>다른 계획 {others.length}개가 맞춰져요</span><small>{mt.name} {DOW[dow(firstMove.date)]}요일 {firstMove.from}{mt.unit} → {firstMove.to}{mt.unit} · 남은 건 뒤 날짜로</small></span></div>
         )}
-        {overDays > 0 && <div className="frow"><span className="grow"><span style={{ display: 'block' }}>옮겨도 가능 시간을 넘는 날 {overDays}일</span><small>마감이 가까운 계획은 자리를 지켜요. 시간대를 늘리거나 끝나는 날을 늦춰 보세요.</small></span></div>}
+        {overDays > 0 && (
+          <div className="frow wz-moved"><span className="grow"><span style={{ display: 'block' }}>옮겨도 가능 시간을 넘는 날 {overDays}일</span>
+            {later && later !== 'none'
+              ? <small>끝나는 날을 {mdKo(later)}로 늦추면 들어가요{examDate && later >= examDate && <b className="bad"> · 시험 뒤로 밀려요</b>}</small>
+              : <small>늦춰도 들어가지 않아요. 시간대를 늘리거나 다른 계획을 줄여 보세요.</small>}</span>
+            {later && later !== 'none' && <button className={`chip${examDate && later >= examDate ? ' wz-badchip' : ''}`} onClick={() => set({ endDate: later })}>늦추기</button>}
+          </div>
+        )}
       </section>
     </>
   )

@@ -1,6 +1,7 @@
 // 계획 분량 배분 로직.
 // 원본 앱의 ByAmountTaskLogic(남은 분량을 남은 공부일에 올림 분배, 보충 요일, 분량 변경/쉬는 날)을 옮긴 것.
 import { addDays, diffDays, dow } from './date.ts'
+import type { TocLine } from './toc.ts'
 
 /** 배분 엔진이 쓰는 방식. 화면의 분류(kind)와 따로 둔다 */
 export type TaskType = 'amount' | 'daily' | 'time' | 'check'
@@ -38,8 +39,12 @@ export interface Task {
   kind: TaskKind
   /** kind === 'book' 일 때 나누는 방식 */
   bookMode?: BookMode
-  /** 목차·문제집 단원 */
+  /** 목차·문제집 단원 (맨 위 단계) */
   chapters?: Chapter[]
+  /** 깊이 자유 목차 원본 (고칠 때 다시 씀) */
+  toc?: TocLine[]
+  /** 하루 분량을 끊을 자리: 가장 아래 항목의 끝 쪽들. 없으면 단원 끝 */
+  cuts?: number[]
   /** 인강 강의 목록 (없으면 amount개의 이름 없는 강의) */
   lectures?: Lecture[]
   /** 목차 계획: 단원 순서대로(단원 끝에 맞춰 끊기) / 하루 쪽 수 같게 */
@@ -110,7 +115,7 @@ const customOf = (t: Task, date: string, off?: OffFn): number | undefined => {
 export const isPausedOn = (t: Task, date: string) =>
   !!t.pauses?.some((p) => date >= p.from && (p.to === null || date <= p.to))
 
-/** 목차 '단원 순서대로': 하루 끝이 단원 끝 근처(하루 분량의 절반 안)면 단원 끝에서 끊는다 */
+/** 목차 '단원 순서대로': 하루 끝이 끊을 자리(가장 아래 항목 끝) 근처(하루 분량의 절반 안)면 거기서 끊는다 */
 function snapToChapter(t: Task, recs: Recs, date: string, v: number, left: number) {
   if (t.split !== 'chapter' || !t.chapters?.length || t.startPoint === null || v <= 0) return v
   const pos = t.startPoint + sumDone(recs, date)
@@ -118,11 +123,11 @@ function snapToChapter(t: Task, recs: Recs, date: string, v: number, left: numbe
   const reach = Math.floor(v / 2)
   let best = v
   let bestGap = Infinity
-  for (const c of t.chapters) {
-    if (c.to < pos) continue
-    const gap = Math.abs(c.to - end)
+  for (const to of t.cuts ?? t.chapters.map((c) => c.to)) {
+    if (to < pos) continue
+    const gap = Math.abs(to - end)
     if (gap <= reach && gap < bestGap) {
-      best = c.to - pos + 1
+      best = to - pos + 1
       bestGap = gap
     }
   }

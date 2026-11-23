@@ -131,7 +131,7 @@ function AllRows({ s, items, date, today, goTab, onEntry }: { s: State; items: I
       <div key={i.task.id} className="prow" role="button" tabIndex={0} onClick={() => goTab(i.task.kind)} onKeyDown={(e) => e.key === 'Enter' && goTab(i.task.kind)}>
         <div className="prow-main">
           <div className="prow-1"><span className="prow-name">{i.task.name}</span><b>{pctOf(i.rate)}<small>%</small></b></div>
-          <div className="prow-2"><span className="ell">{goalText(s, i, date).replace(/ · .*함$/, '')}{b && b !== '예정대로' && <> · <span className={b.includes('밀림') || b.includes('지남') ? 'late-t' : ''}>{b}</span></>}</span><span className="prow-n">{amountText(i)}</span></div>
+          <div className="prow-2"><span className="ell">{goalText(s, i, date).replace(/ · .*함$/, '')}{b && b !== '예정대로' && <> · <span className={b.includes('밀림') || b.includes('지남') ? 'late-t' : ''}>{b}</span></>}{i.task.fitFrom?.[date] !== undefined && <> · <span className="fit-t">시간에 맞춰 줄임</span></>}</span><span className="prow-n">{amountText(i)}</span></div>
           <div className="track" aria-hidden="true"><div style={{ width: `${pctOf(i.rate)}%`, background: colorOf(s, i.task) }} /></div>
         </div>
         <RowAction s={s} item={i} date={date} today={today} onEntry={() => onEntry(i.task.id)} />

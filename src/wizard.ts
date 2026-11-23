@@ -30,6 +30,10 @@ export interface Wiz {
   examId: string
   windows: StudyWindows
   notify: boolean
+  /** 단원 무게 (맨 위 단원 순서 → 1 쉬움 · 2 보통 · 3 어려움) */
+  weights: Record<number, 1 | 2 | 3>
+  /** 바쁜 날엔 이것만 */
+  minGoal: number | null
 }
 
 export const DEFAULT_WINDOWS: StudyWindows = { weekday: [[16 * 60, 18 * 60], [20 * 60, 22 * 60]], weekend: [[10 * 60, 13 * 60]] }
@@ -37,7 +41,7 @@ export const DEFAULT_DAYS: DayKind[] = ['sp', 'on', 'on', 'on', 'on', 'on', 'on'
 
 export const emptyWiz = (today: string, endDate: string, examId = ''): Wiz => ({
   name: '', categoryId: '', part: false, from: 1, to: null, done: null, unit: '쪽', toc: [],
-  startDate: today, endDate, days: [...DEFAULT_DAYS], buffer: 2, examId, windows: DEFAULT_WINDOWS, notify: true,
+  startDate: today, endDate, days: [...DEFAULT_DAYS], buffer: 2, examId, windows: DEFAULT_WINDOWS, notify: true, weights: {}, minGoal: null,
 })
 
 export const hhmm = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
@@ -81,7 +85,9 @@ export function wizardTask(w: Wiz, id: string, order: number, now: number, first
     ...BASE, id, name, order, createdAt: now, categoryId: w.categoryId || null,
     type: 'amount', kind: lecture ? 'lecture' : 'book',
     ...(lecture ? {} : { bookMode: unit === '문항' ? 'workbook' as const : 'toc' as const, split: 'chapter' as const }),
-    ...(res && !lecture ? { chapters: res.chapters, cuts: res.cuts, toc: res.lines } : {}),
+    ...(res && !lecture ? { chapters: res.chapters.map((c, i) => (w.weights[i] && w.weights[i] !== 2 ? { ...c, weight: w.weights[i] } : c)), cuts: res.cuts, toc: res.lines } : {}),
+    ...(dayWeights(w.windows) ? { dayWeights: dayWeights(w.windows)! } : {}),
+    ...(w.minGoal ? { minGoal: w.minGoal } : {}),
     unit, startPoint: start, amount: to - start + 1,
     startDate: w.startDate, endDate: w.endDate,
     week: w.days.map((d) => d !== 'off'), supplementDow: sp >= 0 ? sp : null,
@@ -93,6 +99,15 @@ export function wizardTask(w: Wiz, id: string, order: number, now: number, first
     if (first >= 2) t.custom = { ...t.custom, [w.startDate]: Math.ceil(first / 2) }
   }
   return t
+}
+
+/** 요일별 공부 가능 시간 → 하루 분량 비율. 시간이 없는 요일은 평균으로, 모두 같으면 없음 */
+export function dayWeights(win: StudyWindows): number[] | null {
+  const m = [0, 1, 2, 3, 4, 5, 6].map((d) => winSum(windowsOn(win, d)))
+  const pos = m.filter((x) => x > 0)
+  if (!pos.length || pos.every((x) => x === pos[0]) && pos.length === 7) return null
+  const avg = pos.reduce((a, b) => a + b, 0) / pos.length
+  return m.map((x) => Math.round(((x || avg) / avg) * 100) / 100)
 }
 
 /** 요일별 평균 분량 (0=일 … 6=토). 한 주 모양 그림에 쓴다 */

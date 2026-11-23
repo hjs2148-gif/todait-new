@@ -1,8 +1,10 @@
 // 앱 상태와 IndexedDB 저장. 서버 없이 이 기기 브라우저에만 저장된다.
 import { useSyncExternalStore } from 'react'
-import { addDays, todayISO } from './date.ts'
+import { addDays, dow, todayISO } from './date.ts'
+import { applyBalance, balance } from './balance.ts'
+import { windowsOn, winSum } from './wizard.ts'
 import {
-  expectIfOnTrack, extendEnd, futurePlan, liveExpect, missedSince, rollForward, sumDone,
+  expectIfOnTrack, extendEnd, futurePlan, liveExpect, missedSince, rollForward, secPerUnit, sumDone,
   type Chapter, type DayRec, type Grade, type Task,
 } from './logic.ts'
 import {
@@ -59,7 +61,22 @@ const freeze = (s: State): State => {
       recs[t.id] = next
     }
   }
-  return recs === s.recs ? s : { ...s, recs }
+  const next = recs === s.recs ? s : { ...s, recs }
+  return fitToHours(next, today)
+}
+
+/** 공부 가능 시간을 정했으면, 넘치는 날의 분량을 마감이 먼 계획부터 뒤로 옮긴다 (balance.ts) */
+function fitToHours(s: State, today: string): State {
+  const win = s.settings.studyWindows
+  if (!win) return s
+  const out = balance({
+    tasks: s.tasks, recs: s.recs, today,
+    offOf: (t) => offFor(s, t),
+    capOf: (d) => winSum(windowsOn(win, dow(d))),
+    spu: (t) => secPerUnit(t, s.recs[t.id] ?? {}),
+  })
+  const tasks = applyBalance(s.tasks, out, today)
+  return tasks === s.tasks ? s : { ...s, tasks }
 }
 
 export const getState = () => state

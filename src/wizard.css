@@ -94,7 +94,7 @@ input.chip.wz-unit { width: 72px; border: 0; outline: 0; box-shadow: inset 0 0 0
 .wz-pg.bad { box-shadow: inset 0 0 0 1.5px var(--bad); }
 .wz-edit { gap: 6px; background: var(--cur); justify-content: flex-end; padding: 0 4px; }
 .wz-pgin { display: inline-flex; align-items: center; gap: 2px; margin-right: auto; }
-.wz-pgin input { width: 64px; height: 36px; border: 0; border-radius: 9px; background: var(--sf); text-align: right; padding: 0 8px; outline: 0; }
+.wz .frow .wz-pgin input { width: 64px; height: 36px; border: 0; border-radius: 9px; background: var(--sf); text-align: right; padding: 0 8px; outline: 0; }
 .wz-ok { display: flex; align-items: center; gap: 6px; color: var(--ink); }
 .wz-ok svg { color: var(--s-k); }
 
@@ -227,3 +227,18 @@ input.chip.wz-unit { width: 72px; border: 0; outline: 0; box-shadow: inset 0 0 0
 .wz-usebar .o { box-shadow: inset 1px 0 0 var(--sf); }
 .wz-today small { font-weight: 400; font-size: 13px; color: var(--mu); }
 .wz-rowtxt { height: 40px; text-align: left; font-size: 15px; }
+
+/* 6단계 더 정하기 */
+.wz-more-b { display: flex; flex-direction: column; padding-bottom: 8px; }
+.wz-more-b > .wz-lab { padding: 10px 0 2px; }
+.wz-more-b > small { padding: 6px 0; }
+.wz-wrow { gap: 8px; min-height: 44px; }
+.wz-wrow > small:first-child { width: 18px; flex: none; }
+.wz-wt { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; flex: none; }
+.wz-wt i { display: block; width: 4px; border-radius: 1px; background: var(--trk); height: 5px; }
+.wz-wt i:nth-child(2) { height: 8px; } .wz-wt i:nth-child(3) { height: 12px; }
+.wz-wt i.f { background: var(--ink); }
+.wz-wtl { width: 40px; text-align: right; flex: none; }
+.wz-moved { gap: 10px; padding: 10px 0; }
+.wz .frow .wz-pgin input { flex: none; min-height: 0; font-size: 16px; background: var(--pg); box-shadow: none; }
+.wz-more-b .frow .grow { min-width: 0; }

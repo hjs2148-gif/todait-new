@@ -2,10 +2,10 @@
 import { addDays, diffDays } from './date.ts'
 import type { WidgetSlot } from './model.ts'
 import { actions, type State } from './store.ts'
-import { reviewDue } from './progress.ts'
 import { goalTotals } from './stats.ts'
 import { itemsOn } from './view.ts'
 import { finishClock, hm, examProgress, recentSecs, streakInfo, subjectSecs, type DayStats } from './todayData.ts'
+import { MapWidget, ProgressWidget, RecallWidget, ReviewWidget, SlackWidget, WrongWidget } from './LearnWidgets.tsx'
 
 const DOW = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -137,16 +137,6 @@ function SubjectsWidget({ s, date }: { s: State; date: string }) {
   )
 }
 
-function ReviewWidget({ s, today }: { s: State; today: string }) {
-  const r = reviewDue(s.tasks, today)[0]
-  return (
-    <section className="wd" aria-label="다음 복습">
-      <div className="wd-t">다음 복습</div>
-      {r ? <><div className="wd-name">{r.index + 1}단원 {r.chapter.name}</div><div className="wd-sub">{r.task.name} · {r.days}일 지남</div></> : <div className="wd-sub">복습할 단원이 없어요</div>}
-    </section>
-  )
-}
-
 function WeekGoalWidget({ s, today }: { s: State; today: string }) {
   const g = goalTotals(s, { from: addDays(today, -6), to: today, days: 7 }, today)
   return (
@@ -191,32 +181,35 @@ function QuickStartWidget({ s, today }: { s: State; today: string }) {
 }
 
 export function renderWidget(slot: WidgetSlot, s: State, date: string, today: string, stats: DayStats) {
+  const z = slot.size
   switch (slot.id) {
-    case 'today': return <TodayWidget key={slot.id} s={s} date={date} stats={stats} />
-    case 'left': return <LeftWidget key={slot.id} stats={stats} isToday={date === today} />
-    case 'exam': return <ExamWidget key={slot.id} s={s} today={today} />
-    case 'week': return <WeekWidget key={slot.id} s={s} today={today} />
-    case 'streak': return <StreakWidget key={slot.id} s={s} today={today} />
-    case 'subjects': return <SubjectsWidget key={slot.id} s={s} date={date} />
-    case 'review': return <ReviewWidget key={slot.id} s={s} today={today} />
-    case 'weekGoal': return <WeekGoalWidget key={slot.id} s={s} today={today} />
-    case 'tomorrow': return <TomorrowWidget key={slot.id} s={s} today={today} />
-    case 'memo': return <MemoWidget key={slot.id} s={s} />
-    case 'quickStart': return <QuickStartWidget key={slot.id} s={s} today={today} />
-    default: return null
+    case 'progress': return <ProgressWidget key={slot.id} s={s} size={z} date={date} today={today} stats={stats} />
+    case 'review': return <ReviewWidget key={slot.id} s={s} size={z} today={today} />
+    case 'slack': return <SlackWidget key={slot.id} s={s} size={z} today={today} />
+    case 'recall': return <RecallWidget key={slot.id} s={s} size={z} today={today} />
+    case 'wrong': return <WrongWidget key={slot.id} s={s} size={z} today={today} />
+    case 'umap': return <MapWidget key={slot.id} s={s} size={z} />
   }
+  // 예전 위젯은 칸 하나(오늘 공부는 넓게)에 그대로 담는다
+  const old = (() => {
+    switch (slot.id) {
+      case 'today': return <TodayWidget s={s} date={date} stats={stats} />
+      case 'left': return <LeftWidget stats={stats} isToday={date === today} />
+      case 'exam': return <ExamWidget s={s} today={today} />
+      case 'week': return <WeekWidget s={s} today={today} />
+      case 'streak': return <StreakWidget s={s} today={today} />
+      case 'subjects': return <SubjectsWidget s={s} date={date} />
+      case 'weekGoal': return <WeekGoalWidget s={s} today={today} />
+      case 'tomorrow': return <TomorrowWidget s={s} today={today} />
+      case 'memo': return <MemoWidget s={s} />
+      case 'quickStart': return <QuickStartWidget s={s} today={today} />
+      default: return null
+    }
+  })()
+  return old && <div key={slot.id} className={`tile-old ${z}`}>{old}</div>
 }
 
-/** 넓은 위젯은 한 줄, 작은 위젯은 둘씩 묶어 격자로 */
+/** 칸 격자: 작게 1×1 · 넓게 2×1 · 크게 2×2, 빈칸은 작은 위젯이 채운다 */
 export function Widgets({ s, date, today, stats }: { s: State; date: string; today: string; stats: DayStats }) {
-  const out: JSX.Element[] = []
-  let small: JSX.Element[] = []
-  const flush = () => { if (small.length) out.push(<div className="wd-grid" key={`g${out.length}`}>{small}</div>); small = [] }
-  for (const slot of s.settings.widgets) {
-    const el = renderWidget(slot, s, date, today, stats)
-    if (!el) continue
-    if (slot.wide) { flush(); out.push(el) } else small.push(el)
-  }
-  flush()
-  return <>{out}</>
+  return <div className="wgrid">{s.settings.widgets.map((slot) => renderWidget(slot, s, date, today, stats))}</div>
 }

@@ -149,14 +149,20 @@ export function OverCard({ s, today, list, onDone }: { s: State; today: string; 
 }
 
 // ── 시험까지 여유 (진도 탭) ──
+/** 시험 범위 계획별: 이대로 끝나는 날과 여유(시험 전 마지막 공부일까지 남는 날), 여유 적은 순 */
+export function slackRows(s: State, exam: Exam, today: string) {
+  const dl = examDeadline(exam)
+  return s.tasks.filter((t) => t.type === 'amount' && !t.completed && !t.archived && (exam.scope.length ? exam.scope.some((x) => x.taskId === t.id) : t.kind === 'book' || t.kind === 'lecture'))
+    .map((t) => ({ t, end: planProgress(s, t, today, exam).planEnd }))
+    .filter((r): r is { t: Task; end: string } => !!r.end && sumDone(s.recs[r.t.id] ?? {}) < r.t.amount)
+    .map((r) => ({ ...r, slack: diffDays(r.end, dl) }))
+    .sort((a, b) => a.slack - b.slack)
+}
+/** 위젯·카드가 볼 시험: 고른 시험, 없으면 가장 가까운 시험 */
+export const examFor = (s: State, today: string) => s.exams.find((e) => e.selected) ?? [...s.exams].filter((e) => e.date >= today).sort((a, b) => a.date.localeCompare(b.date))[0] ?? null
 export function SlackCard({ s, exam, today }: { s: State; exam: Exam; today: string }) {
   const [open, setOpen] = useState<string | null>(null)
-  const dl = examDeadline(exam)
-  const rows = s.tasks.filter((t) => t.type === 'amount' && !t.completed && !t.archived && (exam.scope.length ? exam.scope.some((x) => x.taskId === t.id) : t.kind === 'book' || t.kind === 'lecture'))
-    .map((t) => ({ t, end: planProgress(s, t, today, exam).planEnd }))
-    .filter((r) => r.end && sumDone(s.recs[r.t.id] ?? {}) < r.t.amount)
-    .map((r) => ({ ...r, slack: diffDays(r.end!, dl) }))
-    .sort((a, b) => a.slack - b.slack)
+  const rows = slackRows(s, exam, today)
   const over = useMemo(() => overDays(s, today, 14), [s, today])
   if (!rows.length) return null
   const sel = rows.find((r) => r.t.id === open)
@@ -169,16 +175,16 @@ export function SlackCard({ s, exam, today }: { s: State; exam: Exam; today: str
         {rows.map((r) => (
           <button key={r.t.id} className="g-dl" onClick={() => setOpen(open === r.t.id ? null : r.t.id)} aria-expanded={open === r.t.id}>
             <span className={`dd${r.slack <= 0 ? ' z' : ''}${r.slack < 0 ? ' late' : ''}`}><small>{r.slack < 0 ? '늦음' : '여유'}</small><b>{Math.abs(r.slack)}일</b></span>
-            <span className="grow"><b className="ell">{r.t.name}</b><small>{mdKo(r.end!)} 끝</small></span>
+            <span className="grow"><b className="ell">{r.t.name}</b><small>{mdKo(r.end)} 끝</small></span>
           </button>
         ))}
       </div>
-      {sel && <SlackCal end={sel.end!} exam={exam.date} today={today} />}
+      {sel && <SlackCal end={sel.end} exam={exam.date} today={today} />}
       <span className="g-body mu" style={{ fontSize: 13, lineHeight: '18px' }}>여유는 이대로 끝나는 날부터 시험 전 마지막 공부일까지 남는 날이에요.</span>
     </section>
   )
 }
-function SlackCal({ end, exam, today }: { end: string; exam: string; today: string }) {
+export function SlackCal({ end, exam, today }: { end: string; exam: string; today: string }) {
   const first = addDays(today, -((dow(today) + 6) % 7))
   const last = [end, exam].sort().pop()!
   const n = Math.ceil((diffDays(first, last) + 1) / 7) * 7

@@ -1,0 +1,99 @@
+/* 학습 위젯 칸 격자 (design/gen 의 WG*·WC* 시안): 칸 = 반 너비 × 164px, 넓게 2×1, 크게 2×2 */
+.wgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 164px; gap: 10px; grid-auto-flow: dense; }
+.wgrid .s1 { grid-column: span 1; grid-row: span 1; }
+.wgrid .s2 { grid-column: span 2; grid-row: span 1; }
+.wgrid .s4 { grid-column: span 2; grid-row: span 2; }
+.tile { background: var(--sf); border-radius: 24px; box-shadow: 0 1px 2px var(--shd); padding: 16px; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; position: relative; text-align: left; }
+.tile.tap { cursor: pointer; }
+.tile.tap:active { transform: scale(.985); transition: transform .12s; }
+.tile-old { min-width: 0; min-height: 0; display: flex; }
+.tile-old > .wd { flex: 1; height: auto !important; min-width: 0; }
+.t-hd { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-width: 0; }
+.t-lab { font-size: 13px; line-height: 18px; color: var(--mu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.t-ic { width: 22px; height: 22px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; background: var(--chip); color: var(--ink); vertical-align: -6px; margin-right: 6px; font-style: normal; }
+.t-ic svg { display: block; }
+.t-r { font-size: 13px; line-height: 18px; color: var(--mu); white-space: nowrap; flex: none; }
+.t-r.b, .t-r b { color: var(--ink); font-weight: 700; }
+.t-num { font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.5px; margin-top: 2px; }
+.t-num small { font-size: 14px; font-weight: 500; color: var(--mu); margin-left: 2px; letter-spacing: 0; }
+.t-sub { font-size: 13px; line-height: 18px; color: var(--mu); margin-top: auto; }
+.t-sub b { color: var(--ink); }
+.t-sm { font-size: 12px; line-height: 16px; color: var(--mu); }
+.t-q { font-size: 16px; line-height: 22px; font-weight: 700; margin-top: 4px; }
+.t-q.big { font-size: 18px; line-height: 26px; }
+.t-q.sm { font-size: 13px; line-height: 18px; margin-top: 2px; }
+.t-end { margin-top: auto; }
+.t-seg { display: flex; gap: 3px; height: 8px; margin-top: 10px; }
+.t-seg i { flex: 1; border-radius: 4px; background: var(--trk); position: relative; overflow: hidden; }
+.t-seg i b { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; }
+.t-cols { display: flex; gap: 16px; flex: 1; min-height: 0; }
+.t-cols > .l { width: 108px; flex: none; display: flex; flex-direction: column; }
+.t-cols > .r { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+.t-list { margin-top: 6px; }
+.t-list.end { margin-top: auto; }
+.t-list.in-sheet { margin: 0 0 12px; }
+.t-row { display: flex; align-items: center; gap: 8px; min-height: 28px; }
+.t-row.tall { min-height: 56px; box-shadow: inset 0 -1px 0 var(--hl); }
+.t-row.tall:last-child { box-shadow: none; }
+.t-dot { width: 8px; height: 8px; border-radius: 4px; flex: none; }
+.t-nm { flex: 1; min-width: 0; font-size: 14px; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t-nm b { display: block; font-size: 15px; line-height: 20px; overflow: hidden; text-overflow: ellipsis; }
+.t-nm small { display: block; font-size: 12px; line-height: 16px; color: var(--mu); }
+.t-bar { height: 6px; border-radius: 3px; background: var(--trk); flex: none; position: relative; overflow: hidden; }
+.t-bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; }
+.t-v { font-size: 13px; line-height: 18px; color: var(--mu); flex: none; text-align: right; white-space: nowrap; }
+.t-act { height: 40px; border-radius: 12px; font-size: 14px; font-weight: 700; background: var(--ink); color: var(--bg); width: 100%; flex: none; margin-top: auto; }
+.t-act.sm { height: 36px; font-size: 13px; }
+.t-g { font-size: 12px; line-height: 16px; padding: 1px 7px; border-radius: 6px; flex: none; white-space: nowrap; }
+.g0, .t-g.g0 { background: color-mix(in srgb, var(--ink) 12%, var(--sf)); }
+.g1, .t-g.g1 { background: color-mix(in srgb, var(--ink) 40%, var(--sf)); color: var(--ink); }
+.g2, .t-g.g2 { background: var(--ink); color: var(--bg); }
+.gn, .t-g.gn { box-shadow: inset 0 0 0 1.5px var(--hl); }
+.gq { box-shadow: inset 0 0 0 1.5px var(--mu); }
+.t-sl { min-width: 58px; text-align: center; font-size: 13px; line-height: 22px; font-weight: 700; border-radius: 7px; flex: none; background: color-mix(in srgb, var(--ink) 10%, var(--sf)); }
+.t-sl.z { background: var(--ink); color: var(--bg); }
+.t-sl.late { background: var(--bad); color: #fff; }
+.t-dd { align-self: flex-start; text-align: center; border-radius: 12px; padding: 6px 10px; background: var(--ink); color: var(--bg); margin-top: 8px; }
+.t-dd small { display: block; font-size: 12px; line-height: 16px; color: var(--bg); opacity: .8; }
+.t-dd b { display: block; font-size: 20px; line-height: 24px; }
+.t-dd.late { background: var(--bad); color: #fff; }
+.t-g3 { display: flex; gap: 4px; }
+.t-g3 button { flex: 1; height: 34px; border-radius: 10px; font-size: 13px; font-weight: 600; background: color-mix(in srgb, var(--ink) 8%, var(--sf)); color: var(--ink); padding: 0 8px; min-width: 44px; }
+.t-g3 button.on { background: var(--ink); color: var(--bg); }
+.t-rc { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.t-rc .t-g3 { width: 168px; flex: none; }
+.t-map { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; margin-top: 10px; }
+.t-map.n8 { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+.t-map span { height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+.t-lgd { margin-top: 8px; font-size: 12px; line-height: 16px; color: var(--mu); }
+.t-lgd i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }
+.t-cal { margin-top: auto; display: flex; flex-direction: column; gap: 6px; }
+.t-cal > div { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.t-cal > div span { width: 40px; flex: none; color: var(--mu); }
+.t-cal > div i { display: block; height: 10px; border-radius: 5px; }
+.t-ses { margin-top: 8px; }
+.t-ses.big { margin: 0 0 14px; }
+.t-tl { position: relative; height: 24px; border-radius: 7px; background: var(--pg); margin-top: 4px; }
+.t-tl i { position: absolute; top: 4px; bottom: 4px; border-radius: 4px; min-width: 3px; }
+.t-tk { position: relative; height: 16px; margin-top: 4px; }
+.t-tk span { position: absolute; transform: translateX(-50%); font-size: 12px; line-height: 16px; color: var(--mu); white-space: nowrap; }
+.t-tk span:first-child { transform: none; }
+.t-tk span:last-child { transform: translateX(-100%); }
+.t-rowbtn { display: block; width: 100%; text-align: left; color: var(--ink); padding: 6px 0; box-shadow: inset 0 -1px 0 var(--hl); }
+/* 주인공 한 장: 먹색 */
+.tile.hero { background: var(--ink); color: var(--bg); }
+.hero .t-lab, .hero .t-r, .hero .t-sm, .hero .t-v, .hero .t-num small, .hero .t-sub { color: color-mix(in srgb, var(--bg) 72%, transparent); }
+.hero .t-r b { color: var(--bg); }
+.hero .t-ic { background: color-mix(in srgb, var(--bg) 18%, transparent); color: var(--bg); }
+.hero .t-bar, .hero .t-tl, .hero .t-seg i { background: color-mix(in srgb, var(--bg) 16%, transparent); }
+.hero .t-act { background: var(--bg); color: var(--ink); }
+/* 편집: One UI처럼 흔들지 않고 테두리만, 들어 올리면 커지고 그림자 */
+.wgrid.edit .we-cell { position: relative; min-width: 0; min-height: 0; display: flex; border-radius: 24px; box-shadow: 0 0 0 1.5px var(--hl); touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.wgrid.edit .we-cell > .we-live { flex: 1; display: flex; min-width: 0; }
+.wgrid.edit .we-cell > .we-live > * { flex: 1; }
+.we-cell.sel { box-shadow: 0 0 0 2px var(--ink); }
+.we-cell.lifted { z-index: 5; box-shadow: 0 16px 34px rgba(0,0,0,.22); }
+.we-sizes { position: absolute; left: 50%; bottom: -20px; transform: translateX(-50%); display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: var(--ink); z-index: 6; box-shadow: 0 6px 16px rgba(0,0,0,.25); }
+.we-sizes button { height: 34px; padding: 0 12px; border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--bg); white-space: nowrap; }
+.we-sizes button.on { background: var(--bg); color: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .tile.tap:active { transform: none; } }

@@ -36,17 +36,25 @@ export interface Timer { taskId: string; date: string; startedAt: number; paused
 export const timerElapsed = (t: Timer, now: number) => Math.max(0, ((t.pausedAt ?? now) - t.startedAt - (t.pausedMs ?? 0)) / 1000)
 
 export type WidgetId =
+  | 'progress' | 'review' | 'slack' | 'recall' | 'wrong' | 'umap'
   | 'today' | 'left' | 'exam' | 'week' | 'streak'
-  | 'subjects' | 'review' | 'weekGoal' | 'tomorrow' | 'memo' | 'quickStart'
-export interface WidgetSlot { id: WidgetId; wide: boolean }
-export const WIDGET_MAX = 8
+  | 'subjects' | 'weekGoal' | 'tomorrow' | 'memo' | 'quickStart'
+/** 위젯 크기: 작게 1×1 · 넓게 2×1 · 크게 2×2 (칸 = 화면 반 너비 × 164px) */
+export type WidgetSize = 's1' | 's2' | 's4'
+export interface WidgetSlot { id: WidgetId; size: WidgetSize }
+/** 위젯마다 고를 수 있는 크기 (앞이 기본) */
+export const WIDGET_SIZES: Record<WidgetId, WidgetSize[]> = {
+  progress: ['s4', 's2', 's1'], review: ['s1', 's2'], slack: ['s1', 's2', 's4'], recall: ['s2', 's1', 's4'], wrong: ['s1', 's2'], umap: ['s1', 's4'],
+  today: ['s2'], left: ['s1'], exam: ['s1'], week: ['s1'], streak: ['s1'], subjects: ['s1'], weekGoal: ['s1'], tomorrow: ['s1'], memo: ['s1'], quickStart: ['s1'],
+}
 export const DEFAULT_WIDGETS: WidgetSlot[] = [
-  { id: 'today', wide: true },
-  { id: 'left', wide: false },
-  { id: 'exam', wide: false },
-  { id: 'week', wide: false },
-  { id: 'streak', wide: false },
+  { id: 'progress', size: 's4' },
+  { id: 'review', size: 's1' },
+  { id: 'slack', size: 's1' },
+  { id: 'recall', size: 's2' },
 ]
+/** 예전 기본 위젯 (그대로 쓰고 있었다면 새 기본으로 바꾼다) */
+const OLD_DEFAULT = 'today,left,exam,week,streak'
 
 /** 밀린 분량을 어떻게 처리할지: 남은 날에 나누기 / 오늘 더하기 / 끝나는 날 늦추기 */
 export type CatchupWay = 'spread' | 'today' | 'extend'
@@ -204,6 +212,11 @@ export function migrate(raw: unknown): State {
 
   const settings: Settings = { ...base.settings, ...(isObj(s.settings) ? s.settings : {}) }
   if (!Array.isArray(settings.widgets) || settings.widgets.length === 0) settings.widgets = base.settings.widgets
+  // 예전 넓게/작게(wide) → 크기(size). 예전 기본 구성 그대로면 새 학습 위젯 기본으로
+  settings.widgets = (settings.widgets as (WidgetSlot & { wide?: boolean })[])
+    .filter((w) => w && w.id in WIDGET_SIZES)
+    .map((w) => ({ id: w.id, size: w.size && WIDGET_SIZES[w.id].includes(w.size) ? w.size : WIDGET_SIZES[w.id].includes(w.wide ? 's2' : 's1') ? (w.wide ? 's2' : 's1') : WIDGET_SIZES[w.id][0] }))
+  if (settings.widgets.map((w) => w.id).join(',') === OLD_DEFAULT) settings.widgets = base.settings.widgets
   if (!isObj(settings.restDays)) settings.restDays = {}
   if (!isObj(settings.restMoves)) settings.restMoves = {}
   if (!Array.isArray(settings.oldCategories)) settings.oldCategories = []

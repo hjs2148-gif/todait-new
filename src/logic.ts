@@ -27,7 +27,7 @@ export interface Chapter {
   weight?: 1 | 2 | 3
 }
 
-/** 회독 (데이터 모델만, 아직 배분에 쓰지 않음): 1회독 → 2회독(인출 중심, 더 빠르게) → 오답만 */
+/** 회독: 1회독 → 2회독(인출 중심, 더 빠르게) → 오답만. 2회독·오답만은 roundOf로 이어진 별도 계획이다 */
 export interface Round {
   kind: 'first' | 'second' | 'wrong'
   /** 1회독 대비 속도 배율 (2회독 기본 2) */
@@ -64,8 +64,12 @@ export interface Task {
   fitFrom?: Record<string, number>
   /** 바쁜 날엔 이것만 (최소 목표) */
   minGoal?: number | null
-  /** 회독 계획 (아직 배분에 쓰지 않음) */
+  /** 회독 결정: 1회독이 끝날 무렵 제안에 답하면 채워진다 (2회독·오답만은 따로 계획을 만든다) */
   rounds?: Round[]
+  /** 2회독·오답만 계획이면 1회독 계획 id */
+  roundOf?: string
+  /** 기본 속도 배율 (2회독은 2배 빠르게) */
+  speed?: number
   /** 인강 강의 목록 (없으면 amount개의 이름 없는 강의) */
   lectures?: Lecture[]
   /** 목차 계획: 단원 순서대로(단원 끝에 맞춰 끊기) / 하루 쪽 수 같게 */
@@ -342,8 +346,8 @@ export function secPerUnit(t: Task, recs: Recs): number {
     const mins = (t.lectures ?? []).map((l) => l.min).filter((m): m is number => !!m)
     return mins.length ? (mins.reduce((a, b) => a + b, 0) / mins.length) * 60 : 30 * 60
   }
-  if (t.bookMode === 'workbook') return 2 * 60
-  return 3 * 60
+  if (t.bookMode === 'workbook') return (2 * 60) / (t.speed ?? 1)
+  return (3 * 60) / (t.speed ?? 1)
 }
 
 /** 지금까지 한 범위가 [from, to] 범위와 겹치는 양 */

@@ -12,7 +12,7 @@ import { Widgets } from './widgets.tsx'
 import { BookCard, KindHead, LectureCard, MiniBar } from './BookCards.tsx'
 import { DayEnd } from './DayEnd.tsx'
 import { DoneChapterSheet } from './DoneChapter.tsx'
-import { BackupCard, DoneDayCard, EmptyCard, NewWeekCard, RestView } from './TodayCards.tsx'
+import { BackupCard, DoneDayCard, EmptyCard, NewWeekCard, RestView, RoundCard } from './TodayCards.tsx'
 
 export interface Nav {
   date: string
@@ -342,6 +342,7 @@ export function Today({ nav }: { nav: Nav }) {
 
       <div className="wd-wrap">
         {date === today && <BackupCard s={s} today={today} />}
+        {date === today && <RoundCard s={s} today={today} />}
         {date === today && dow(today) === 1 && s.settings.weekCardSeen !== today && !isRest && <NewWeekCard s={s} today={today} goProgress={nav.goProgress} />}
         {allDone && !isRest && <DoneDayCard s={s} today={today} stats={stats} openDayEnd={() => setDayEnd(true)} tomorrow={() => setDate(addDays(today, 1))} />}
         {!isRest && <Widgets s={s} date={date} today={today} stats={stats} />}

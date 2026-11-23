@@ -4,7 +4,8 @@ import { addDays, diffDays } from './date.ts'
 import { liveExpect } from './logic.ts'
 import { backupDue, isoWeek } from './model.ts'
 import { bestDaySecBefore, lastWeekSummary, weekTargets } from './stats.ts'
-import { actions, downloadBackup, importBackup, offFor, type State } from './store.ts'
+import { actions, downloadBackup, importBackup, offFor, uid, type State } from './store.ts'
+import { roundDecision, roundOffer, roundTask } from './rounds.ts'
 import { examProgress, habitDays, hm, streakInfo, type DayStats } from './todayData.ts'
 import { Icon } from './Icon.tsx'
 import { colorOf } from './view.ts'
@@ -23,6 +24,31 @@ export function BackupCard({ s, today }: { s: State; today: string }) {
       <div className="two">
         <button className="chip" onClick={() => actions.setSettings({ backupRemindedOn: today })}>나중에</button>
         <button className="chip dark" disabled={busy} onClick={async () => { setBusy(true); await downloadBackup(); setBusy(false) }}>지금 백업</button>
+      </div>
+    </section>
+  )
+}
+
+/** 1회독이 3일 남았거나 끝났을 때: 2회독(또는 오답만)도 할까요? */
+export function RoundCard({ s, today }: { s: State; today: string }) {
+  const examOf = (t: State['tasks'][number]) => s.exams.filter((e) => e.date > today && (e.scope.length ? e.scope.some((x) => x.taskId === t.id) : true)).sort((a, b) => a.date.localeCompare(b.date))[0]?.date ?? null
+  const o = roundOffer(s.tasks, (id) => s.recs[id] ?? {}, today, examOf)
+  if (!o) return null
+  const second = o.kind === 'second'
+  const answer = (yes: boolean) => {
+    actions.saveTask({ ...o.task, rounds: roundDecision(o, yes) })
+    if (yes) actions.saveTask(roundTask(o, uid(), Math.max(0, ...s.tasks.map((x) => x.order)) + 1, Date.now()))
+  }
+  return (
+    <section className="tcard notice" role="region" aria-label="회독 제안">
+      <div className="nt-t">
+        <small>{o.task.name} · {o.task.completed ? '1회독을 끝냈어요' : `1회독이 ${o.daysLeft}일 남았어요`}</small>
+        <b>{second ? '2회독도 할까요?' : `틀린 ${o.amount}${o.task.unit}만 다시 풀까요?`}</b>
+        <small>{second ? '다시 읽기보다 덮고 떠올리기·문제 위주로 빠르게' : '맞힌 문항은 빼고 틀린 것만'} · {md(o.from)} ~ {md(o.to)}</small>
+      </div>
+      <div className="two">
+        <button className="chip" onClick={() => answer(false)}>안 할래요</button>
+        <button className="chip dark" onClick={() => answer(true)}>{second ? '2회독 만들기' : '오답만 만들기'}</button>
       </div>
     </section>
   )

@@ -14,6 +14,7 @@ const time: Task = { ...base, id: 'b', name: '풀이', type: 'time', kind: 'time
 const r = (expect: number, done: number, sec = 0) => ({ expect, done, sec, checked: false })
 const s = {
   ...emptyState(),
+  categories: [{ id: 'c1', name: '국어', color: '#3d8762' }, { id: 'c2', name: '수학', color: '#4a67ad' }],
   tasks: [base, time],
   recs: {
     a: { '2026-11-10': r(10, 10, 3600), '2026-11-11': r(10, 4, 1200), '2026-11-12': r(10, 0, 0) },

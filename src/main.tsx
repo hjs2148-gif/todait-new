@@ -1,3 +1,4 @@
+import { demoReady } from './demo.ts' // 맨 먼저: 개발용 ?demo= 이면 시계·저장소를 바꾼다
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App.tsx'
@@ -10,9 +11,12 @@ import './progress.css'
 import './stats.css'
 import './forms.css'
 import './moments.css'
+import './wizard.css'
+import './guide.css'
 
 const root = createRoot(document.getElementById('root')!)
-loadState()
+demoReady()
+  .then(loadState)
   .then(() => {
     root.render(<StrictMode><App /></StrictMode>)
     startNotifier()

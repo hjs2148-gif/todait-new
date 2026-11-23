@@ -46,6 +46,20 @@ function EndLine({ s, t, today, left }: { s: State; t: Task; today: string; left
   )
 }
 
+/** 가능 시간에 맞춰 옮긴 날, 바쁜 날 최소 목표 */
+function FitNote({ t, date, expect, done }: { t: Task; date: string; expect: number; done: number }) {
+  const from = t.fitFrom?.[date]
+  const min = t.minGoal && t.minGoal < expect ? t.minGoal : null
+  const met = !!min && done >= min && done < expect
+  if (from === undefined && !min) return null
+  return (
+    <div className="bc-note">
+      {from !== undefined && <span className="rib">가능 시간에 맞춰 옮김 · {from}{t.unit} → {expect}{t.unit}</span>}
+      {min && (met ? <span className="ok">최소 목표 {min}{t.unit} 채움 · 연속 공부에 들어가요</span> : <span>바쁘면 {min}{t.unit}만</span>)}
+    </div>
+  )
+}
+
 function Status({ s, t, today }: { s: State; t: Task; today: string }) {
   const b = behindOf(s, t, today)
   return b > 0 ? <b className="bad nowrap">{b}{t.unit} 밀림</b> : <span className="mu nowrap">예정대로</span>
@@ -84,6 +98,7 @@ export function BookCard({ s, item, date, today, onEntry, onMenu }: { s: State; 
         <Status s={s} t={t} today={today} />
       </div>
       <div className="bc-row"><span className="mu">오늘 {t.startPoint !== null && expect > 1 ? `${from}~${to}${t.unit}` : `${expect}${t.unit}`}</span><span><b>{doneToday}</b><span className="mu"> / {expect}{t.unit}</span></span></div>
+      <FitNote t={t} date={date} expect={expect} done={doneToday} />
       {showCells && (
         <div className="cells ro" role="img" aria-label={`오늘 ${from}~${to}${t.unit} 중 ${doneToday}${t.unit} 함`} onClick={onEntry}>
           {Array.from({ length: to - from + 1 }, (_, i) => from + i).map((n) => <span key={n} className={n < from + doneToday ? 'on' : ''} style={n < from + doneToday ? { background: color } : undefined}>{n}</span>)}

@@ -1,0 +1,45 @@
+/* 안내 카드 (design/gen 의 CM*·RM* 시안): 문장 하나 + 행동 하나 */
+.gcard { background: var(--sf); border-radius: 20px; box-shadow: 0 1px 2px var(--shd); padding: 18px 20px 20px; display: flex; flex-direction: column; text-align: left; }
+.g-lab { font-size: 13px; line-height: 18px; color: var(--mu); }
+.g-head { font-size: 20px; line-height: 28px; font-weight: 700; letter-spacing: -0.2px; margin-top: 2px; }
+.g-body { font-size: 15px; line-height: 22px; margin-top: 4px; }
+.g-acts { display: flex; gap: 8px; margin-top: 16px; }
+.g-acts button { height: 44px; border-radius: 12px; font-size: 15px; font-weight: 600; padding: 0 16px; min-width: 0; }
+.g-s, .g-c { background: var(--chip); color: var(--ink); }
+.g-c { flex: 1; }
+.g-p { background: var(--ink); color: var(--bg); flex: 1; font-weight: 700 !important; }
+/* 시계 줄 */
+.g-tl { position: relative; height: 58px; margin-top: 14px; }
+.g-tl .ax { position: absolute; left: 0; right: 0; top: 24px; height: 2px; background: var(--hl); }
+.g-tl .win { position: absolute; top: 14px; height: 22px; border-radius: 6px; background: color-mix(in srgb, var(--s-m) 45%, var(--sf)); }
+.g-tl .over { position: absolute; top: 14px; height: 22px; border-radius: 0 6px 6px 0; background: var(--ink); }
+.g-tl .tk { position: absolute; top: 42px; font-size: 13px; line-height: 16px; color: var(--mu); transform: translateX(-50%); white-space: nowrap; }
+.g-tl .pin { position: absolute; top: -4px; font-size: 13px; line-height: 16px; font-weight: 700; transform: translateX(-50%); white-space: nowrap; }
+/* 다른 방법 시트 */
+.g-sheet { padding: 8px 20px calc(20px + env(safe-area-inset-bottom)); }
+.g-sh { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding: 8px 0 6px; }
+.g-sh > div { display: flex; flex-direction: column; }
+.g-opt { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 10px 0; text-align: left; box-shadow: inset 0 -1px 0 var(--hl); color: var(--ink); }
+.g-opt:last-child { box-shadow: none; }
+.g-opt b { display: block; font-size: 16px; line-height: 22px; }
+.g-opt .grow > span { display: block; font-size: 13px; line-height: 18px; margin-top: 2px; }
+.g-opt svg { color: var(--mu); }
+.g-rec { font-size: 12px; line-height: 16px; font-weight: 700; padding: 2px 7px; border-radius: 6px; background: var(--chip); margin-left: 6px; vertical-align: 2px; }
+/* 시험까지 여유 */
+.g-list { margin-top: 10px; }
+.g-dl { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 0; text-align: left; box-shadow: inset 0 -1px 0 var(--hl); color: var(--ink); }
+.g-dl:last-child { box-shadow: none; }
+.g-dl .dd { width: 56px; flex: none; text-align: center; border-radius: 10px; padding: 6px 0; background: var(--pg); }
+.g-dl .dd small { display: block; font-size: 12px; line-height: 16px; }
+.g-dl .dd b { display: block; font-size: 18px; line-height: 22px; }
+.g-dl .dd.z { background: var(--ink); color: var(--bg); }
+.g-dl .dd.z small { color: var(--bg); opacity: .8; }
+.g-dl .dd.late { background: var(--bad); }
+.g-dl .grow b { display: block; font-size: 16px; line-height: 22px; }
+.g-dl .grow small { display: block; }
+.g-cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; text-align: center; margin: 4px 0 12px; }
+.g-cal span { height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.g-cal .w { height: 18px; font-size: 12px; color: var(--mu); }
+.g-cal .o { color: var(--mu); opacity: .5; }
+.g-cal .ex { background: var(--ink); color: var(--bg); font-weight: 700; }
+.g-cal .en { box-shadow: inset 0 0 0 2px var(--rib); font-weight: 700; }

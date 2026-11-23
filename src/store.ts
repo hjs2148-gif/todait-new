@@ -1,8 +1,10 @@
 // 앱 상태와 IndexedDB 저장. 서버 없이 이 기기 브라우저에만 저장된다.
 import { useSyncExternalStore } from 'react'
-import { addDays, todayISO } from './date.ts'
+import { addDays, dow, todayISO } from './date.ts'
+import { applyBalance, balance } from './balance.ts'
+import { windowsOn, winSum } from './wizard.ts'
 import {
-  expectIfOnTrack, extendEnd, futurePlan, liveExpect, missedSince, rollForward, sumDone,
+  expectIfOnTrack, extendEnd, futurePlan, liveExpect, missedSince, rollForward, secPerUnit, sumDone,
   type Chapter, type DayRec, type Grade, type Task,
 } from './logic.ts'
 import {
@@ -59,7 +61,25 @@ const freeze = (s: State): State => {
       recs[t.id] = next
     }
   }
-  return recs === s.recs ? s : { ...s, recs }
+  const next = recs === s.recs ? s : { ...s, recs }
+  return fitToHours(next, today)
+}
+
+/** 공부 가능 시간을 정했으면, 넘치는 날의 분량을 마감이 먼 계획부터 뒤로 옮긴다 (balance.ts) */
+/** 그날 공부 가능 시간대 (그날만 바꾼 것이 우선) */
+export const windowsFor = (s: State, d: string) => s.settings.windowOverrides?.[d] ?? (s.settings.studyWindows ? windowsOn(s.settings.studyWindows, dow(d)) : [])
+/** 가능 시간에 맞춰 나눠 담기 (오늘 탭·진도 탭의 넘치는 날 계산에도 쓴다) */
+export const balanceOf = (s: State, today: string, tasks = s.tasks) => balance({
+  tasks, recs: s.recs, today,
+  offOf: (t) => offFor(s, t),
+  capOf: (d) => winSum(windowsFor(s, d)),
+  spu: (t) => secPerUnit(t, s.recs[t.id] ?? {}),
+})
+function fitToHours(s: State, today: string): State {
+  if (!s.settings.studyWindows) return s
+  const out = balanceOf(s, today)
+  const tasks = applyBalance(s.tasks, out, today)
+  return tasks === s.tasks ? s : { ...s, tasks }
 }
 
 export const getState = () => state
@@ -315,7 +335,7 @@ export const actions = {
     }),
   saveCategory: (c: Category) => setState((s) => ({ ...s, categories: upsert(s.categories, c) })),
   deleteCategory: (id: string) =>
-    setState((s) => ({ ...s, categories: s.categories.filter((c) => c.id !== id), tasks: s.tasks.map((t) => (t.categoryId === id ? { ...t, categoryId: null } : t)) })),
+    setState((s) => ({ ...s, settings: { ...s.settings, oldCategories: [...s.settings.oldCategories.filter((c) => c.id !== id), ...s.categories.filter((c) => c.id === id)] }, categories: s.categories.filter((c) => c.id !== id), tasks: s.tasks.map((t) => (t.categoryId === id ? { ...t, categoryId: null } : t)) })),
   saveExam: (e: Exam) =>
     setState((s) => {
       const list = upsert(s.exams, e)

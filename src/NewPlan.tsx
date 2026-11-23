@@ -21,10 +21,13 @@ function KindArt({ kind }: { kind: TaskKind }) {
 const MODES: [BookMode, string][] = [['toc', '목차 (쪽)'], ['workbook', '문제집 (문항)'], ['amount', '분량만']]
 const md = (iso: string) => { const [, m, d] = iso.split('-'); return `${Number(m)}.${Number(d)}` }
 
-export function NewPlan({ onClose }: { onClose: () => void }) {
+export function NewPlan({ onClose, kind }: { onClose: () => void; kind?: TaskKind }) {
   const s = useStore()
   const today = todayISO()
-  const [f, setF] = useState<PlanForm>(() => ({ ...emptyForm(today), categoryId: s.categories[0]?.id ?? '' }))
+  const [f, setF] = useState<PlanForm>(() => {
+    const base = { ...emptyForm(today), categoryId: s.categories[0]?.id ?? '' }
+    return kind ? { ...base, kind, ...(kind === 'time' || kind === 'habit' ? { endDate: '' } : {}) } : base
+  })
   const [error, setError] = useState('')
   const [pasting, setPasting] = useState(false)
   const set = (p: Partial<PlanForm>) => { setF({ ...f, ...p }); setError('') }

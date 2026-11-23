@@ -1,6 +1,7 @@
 // 계획 분량 배분 로직.
 // 원본 앱의 ByAmountTaskLogic(남은 분량을 남은 공부일에 올림 분배, 보충 요일, 분량 변경/쉬는 날)을 옮긴 것.
 import { addDays, diffDays, dow } from './date.ts'
+import type { TocLine } from './toc.ts'
 
 /** 배분 엔진이 쓰는 방식. 화면의 분류(kind)와 따로 둔다 */
 export type TaskType = 'amount' | 'daily' | 'time' | 'check'
@@ -22,6 +23,17 @@ export interface Chapter {
   grade?: Grade
   /** 복습한 날들 */
   reviews?: string[]
+  /** 단원 무게: 1 쉬움 · 2 보통(기본) · 3 어려움. 어려울수록 하루 쪽 수가 줄어든다 */
+  weight?: 1 | 2 | 3
+}
+
+/** 회독: 1회독 → 2회독(인출 중심, 더 빠르게) → 오답만. 2회독·오답만은 roundOf로 이어진 별도 계획이다 */
+export interface Round {
+  kind: 'first' | 'second' | 'wrong'
+  /** 1회독 대비 속도 배율 (2회독 기본 2) */
+  speed: number
+  from: string | null
+  to: string | null
 }
 
 export interface Lecture { title: string; min: number | null }
@@ -38,8 +50,26 @@ export interface Task {
   kind: TaskKind
   /** kind === 'book' 일 때 나누는 방식 */
   bookMode?: BookMode
-  /** 목차·문제집 단원 */
+  /** 목차·문제집 단원 (맨 위 단계) */
   chapters?: Chapter[]
+  /** 깊이 자유 목차 원본 (고칠 때 다시 씀) */
+  toc?: TocLine[]
+  /** 하루 분량을 끊을 자리: 가장 아래 항목의 끝 쪽들. 없으면 단원 끝 */
+  cuts?: number[]
+  /** 요일별 공부 가능 시간 비율 (0=일 … 6=토). 있으면 하루 분량을 이 비율로 나눈다 */
+  dayWeights?: number[]
+  /** 가능 시간에 맞춰 엔진이 정한 날짜별 분량 (직접 바꾼 custom이 우선) */
+  fit?: Record<string, number>
+  /** fit 가운데 실제로 줄인 날의 원래 분량 ("15 → 10" 표시용) */
+  fitFrom?: Record<string, number>
+  /** 바쁜 날엔 이것만 (최소 목표) */
+  minGoal?: number | null
+  /** 회독 결정: 1회독이 끝날 무렵 제안에 답하면 채워진다 (2회독·오답만은 따로 계획을 만든다) */
+  rounds?: Round[]
+  /** 2회독·오답만 계획이면 1회독 계획 id */
+  roundOf?: string
+  /** 기본 속도 배율 (2회독은 2배 빠르게) */
+  speed?: number
   /** 인강 강의 목록 (없으면 amount개의 이름 없는 강의) */
   lectures?: Lecture[]
   /** 목차 계획: 단원 순서대로(단원 끝에 맞춰 끊기) / 하루 쪽 수 같게 */
@@ -101,7 +131,7 @@ const inPeriod = (t: Task, date: string) => date >= t.startDate && (!t.endDate |
 
 /** 그 날의 분량 변경. 직접 바꾼 값이 우선이고, 쉬는 날(off)이면 0 */
 const customOf = (t: Task, date: string, off?: OffFn): number | undefined => {
-  const c = t.custom[date]
+  const c = t.custom[date] ?? t.fit?.[date]
   if (c !== undefined) return c
   return off?.(date) ? 0 : undefined
 }
@@ -110,7 +140,19 @@ const customOf = (t: Task, date: string, off?: OffFn): number | undefined => {
 export const isPausedOn = (t: Task, date: string) =>
   !!t.pauses?.some((p) => date >= p.from && (p.to === null || date <= p.to))
 
-/** 목차 '단원 순서대로': 하루 끝이 단원 끝 근처(하루 분량의 절반 안)면 단원 끝에서 끊는다 */
+const FACTOR = { 1: 0.7, 2: 1, 3: 1.4 } as const
+/** 그 쪽의 노력 배율 (단원 무게) */
+const factorAt = (t: Task, p: number) => FACTOR[t.chapters?.find((c) => p >= c.from && p <= c.to)?.weight ?? 2]
+/** a~b쪽에 드는 노력 */
+function effort(t: Task, a: number, b: number) {
+  let e = 0
+  for (let p = a; p <= b; p++) e += factorAt(t, p)
+  return e
+}
+/** 요일 비율 (없으면 1) */
+const dayW = (t: Task, d: string) => (t.dayWeights ? t.dayWeights[dow(d)] || 1 : 1)
+
+/** 목차 '단원 순서대로': 하루 끝이 끊을 자리(가장 아래 항목 끝) 근처(하루 분량의 절반 안)면 거기서 끊는다 */
 function snapToChapter(t: Task, recs: Recs, date: string, v: number, left: number) {
   if (t.split !== 'chapter' || !t.chapters?.length || t.startPoint === null || v <= 0) return v
   const pos = t.startPoint + sumDone(recs, date)
@@ -118,11 +160,11 @@ function snapToChapter(t: Task, recs: Recs, date: string, v: number, left: numbe
   const reach = Math.floor(v / 2)
   let best = v
   let bestGap = Infinity
-  for (const c of t.chapters) {
-    if (c.to < pos) continue
-    const gap = Math.abs(c.to - end)
+  for (const to of t.cuts ?? t.chapters.map((c) => c.to)) {
+    if (to < pos) continue
+    const gap = Math.abs(to - end)
     if (gap <= reach && gap < bestGap) {
-      best = c.to - pos + 1
+      best = to - pos + 1
       bestGap = gap
     }
   }
@@ -178,13 +220,30 @@ export function liveExpect(t: Task, recs: Recs, date: string, off?: OffFn): numb
   // 남은 분량(분량 변경한 날 몫 제외)을 남은 공부일 수로 올림 분배
   let customSum = 0
   let days = 0
+  let sumW = 0
   for (let d = date; d <= t.endDate; d = addDays(d, 1)) {
     const c = customOf(t, d, off)
     if (c !== undefined) customSum += c
-    else if (t.week[dow(d)] && dow(d) !== sup) days++
+    else if (t.week[dow(d)] && dow(d) !== sup) { days++; sumW += dayW(t, d) }
   }
   const rest = Math.max(left - customSum, 0)
-  const v = Math.min(days > 0 ? Math.ceil(rest / days) : 0, left)
+  const weighted = t.startPoint !== null && !!t.chapters?.some((c) => c.weight && c.weight !== 2)
+  let v: number
+  if (!t.dayWeights && !weighted) v = Math.min(days > 0 ? Math.ceil(rest / days) : 0, left)
+  else if (days <= 1) v = Math.min(rest, left)
+  else {
+    const share = dayW(t, date) / sumW
+    if (!weighted) v = Math.min(Math.ceil(rest * share - 1e-9), left)
+    else {
+      // 단원 무게: 남은 '노력'을 나누고, 오늘 몫의 노력만큼 쪽을 센다
+      const pos = t.startPoint! + sumDone(recs, date)
+      const target = effort(t, pos, pos + rest - 1) * share
+      let acc = 0
+      let n = 0
+      while (n < rest && acc < target - 1e-9) { acc += factorAt(t, pos + n); n++ }
+      v = Math.min(Math.max(n, 1), left)
+    }
+  }
   // 마지막 공부일엔 남은 분량을 그대로 둔다
   return days > 1 ? snapToChapter(t, recs, date, v, left) : v
 }
@@ -287,8 +346,8 @@ export function secPerUnit(t: Task, recs: Recs): number {
     const mins = (t.lectures ?? []).map((l) => l.min).filter((m): m is number => !!m)
     return mins.length ? (mins.reduce((a, b) => a + b, 0) / mins.length) * 60 : 30 * 60
   }
-  if (t.bookMode === 'workbook') return 2 * 60
-  return 3 * 60
+  if (t.bookMode === 'workbook') return (2 * 60) / (t.speed ?? 1)
+  return (3 * 60) / (t.speed ?? 1)
 }
 
 /** 지금까지 한 범위가 [from, to] 범위와 겹치는 양 */

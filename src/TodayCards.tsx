@@ -4,7 +4,9 @@ import { addDays, diffDays } from './date.ts'
 import { liveExpect } from './logic.ts'
 import { backupDue, isoWeek } from './model.ts'
 import { bestDaySecBefore, lastWeekSummary, weekTargets } from './stats.ts'
-import { actions, downloadBackup, importBackup, offFor, type State } from './store.ts'
+import { actions, downloadBackup, importBackup, offFor, uid, type State } from './store.ts'
+import { roundDecision, roundOffer, roundTask } from './rounds.ts'
+import { GuideCard } from './Guide.tsx'
 import { examProgress, habitDays, hm, streakInfo, type DayStats } from './todayData.ts'
 import { Icon } from './Icon.tsx'
 import { colorOf } from './view.ts'
@@ -25,6 +27,27 @@ export function BackupCard({ s, today }: { s: State; today: string }) {
         <button className="chip dark" disabled={busy} onClick={async () => { setBusy(true); await downloadBackup(); setBusy(false) }}>지금 백업</button>
       </div>
     </section>
+  )
+}
+
+/** 1회독이 3일 남았거나 끝났을 때: 2회독(또는 오답만)도 할까요? */
+/** 오늘 띄울 회독 제안 */
+export const roundToday = (s: State, today: string) => roundOffer(s.tasks, (id) => s.recs[id] ?? {}, today,
+  (t) => s.exams.filter((e) => e.date > today && (e.scope.length ? e.scope.some((x) => x.taskId === t.id) : true)).sort((a, b) => a.date.localeCompare(b.date))[0]?.date ?? null)
+export function RoundCard({ s, today }: { s: State; today: string }) {
+  const o = roundToday(s, today)
+  if (!o) return null
+  const second = o.kind === 'second'
+  const answer = (yes: boolean) => {
+    actions.saveTask({ ...o.task, rounds: roundDecision(o, yes) })
+    if (yes) actions.saveTask(roundTask(o, uid(), Math.max(0, ...s.tasks.map((x) => x.order)) + 1, Date.now()))
+  }
+  return (
+    <GuideCard lab={`${o.task.name} · ${o.task.completed ? '1회독 끝' : `1회독 ${o.daysLeft}일 남음`}`} head={second ? '2회독도 할까요?' : `틀린 ${o.amount}${o.task.unit}만 다시 풀까요?`}
+      body={`${second ? '다시 읽기보다 덮고 떠올리기 위주로 빠르게' : '맞힌 문항은 빼고 틀린 것만'} · ${md(o.from)} ~ ${md(o.to)}`}>
+      <button className="g-s" onClick={() => answer(false)}>안 할래요</button>
+      <button className="g-p" onClick={() => answer(true)}>{second ? '2회독 만들기' : '오답만 만들기'}</button>
+    </GuideCard>
   )
 }
 

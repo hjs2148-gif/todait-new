@@ -233,6 +233,8 @@ input.switch:disabled { opacity: .4; }
 .bc-h .bad, .bc-h .mu { font-size: 13px; }
 .bc-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 13px; line-height: 18px; width: 100%; text-align: left; }
 .bc-row b { font-size: 15px; }
+.bc-note { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; line-height: 16px; color: var(--mu); }
+.bc-note .rib { color: var(--rib); }
 .bc-fold { padding: 10px 0 2px; border-top: 1px solid var(--hl); margin-top: 2px; }
 .bc-fold > span { display: inline-flex; align-items: baseline; gap: 2px; }
 .bc-fold svg { align-self: center; margin-left: 4px; color: var(--mu); transform: rotate(90deg); }
@@ -303,3 +305,5 @@ input.switch:disabled { opacity: .4; }
 .dock.mini .dock-t b { font-size: 20px; line-height: 24px; color: var(--bg); }
 .mini-b { width: 44px; height: 44px; border-radius: 22px; background: color-mix(in srgb, var(--bg) 18%, var(--ink)); color: var(--bg); display: inline-flex; align-items: center; justify-content: center; flex: none; }
 .mini-b.end { background: var(--bg); color: var(--ink); }
+.fit-t { color: var(--rib); }
+.bc-note .ok { color: var(--ink); font-weight: 600; }

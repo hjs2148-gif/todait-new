@@ -1,5 +1,6 @@
 // 진도 탭 (RProg · RProgBook · RProgDone) 과 진도 자세히 (RDetail)
 import { useState } from 'react'
+import { SlackCard } from './Guide.tsx'
 import { Icon } from './Icon.tsx'
 import { addDays, diffDays, todayISO } from './date.ts'
 import { sumDone, type Grade, type Task } from './logic.ts'
@@ -357,6 +358,7 @@ export function Progress({ editTask }: { editTask: (t: Task | null) => void }) {
       </header>
       <div className="tbody">
         {view === 'doing' && exam && <ExamCard s={s} exam={exam} plans={doing} reviews={reviews.length} today={today} />}
+        {view === 'doing' && exam && <SlackCard s={s} exam={exam} today={today} />}
         {view === 'doing' && <StackCard s={s} today={today} />}
         <div role="tablist" aria-label="보기" className="segs">
           <button role="tab" aria-selected={view === 'doing'} className={view === 'doing' ? 'on' : ''} onClick={() => setView('doing')}>진행 중 {doing.length}</button>

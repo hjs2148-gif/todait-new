@@ -211,8 +211,8 @@ input.chip.wz-unit { width: 72px; border: 0; outline: 0; box-shadow: inset 0 0 0
 .wz-kbar { position: sticky; bottom: -16px; margin: 0 -16px -16px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); background: var(--sf); box-shadow: inset 0 1px 0 var(--hl); display: flex; gap: 6px; margin-top: auto; }
 
 /* 시간대 끌기 */
-.wz-track { touch-action: none; cursor: pointer; }
-.wz-track .blk { cursor: grab; touch-action: none; }
+.wz-track { touch-action: pan-y; cursor: pointer; }
+.wz-track .blk { cursor: grab; touch-action: pan-y; }
 .wz-track .blk.sel { box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 25%, transparent); }
 .wz-track .h { position: absolute; top: 9px; width: 10px; height: 16px; border-radius: 5px; background: var(--sf); box-shadow: 0 0 0 2px var(--ink); cursor: ew-resize; }
 .wz-track .h::before { content: ''; position: absolute; inset: -14px -12px; }

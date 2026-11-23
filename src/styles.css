@@ -16,7 +16,9 @@
 :root[data-theme=dark] { --bg: #121110; --sf: #1d1b18; --chip: #2a2723; --segon: #4a4640; --ink: #f2eee7; --mu: #a69f94; --hl: #2c2925; --trk: #322e29; --pg: #272420; --cur: #25221e; --s-m: #8ea6ea; --s-k: #85c2a0; --s-e: #c79ad8; --s-c: #6cc4cf; --s-g: #b3ab9f; --s-s: #79b8e3; --s-l: #a6cf7a; --s-y: #e7a679; --s-r: #e8909f; --s-i: #aaa4ec; --s-t: #a9b8c9; --s-d: #cdb48a; --s-a: #d8d2c8; --s-p: #e391b8; --s-o: #bcc777; --s-b: #d6a682; --cs: 50%; --cl: 72%; --rib: #e2ac48; --bad: #ff8a75; --shd: rgba(0,0,0,.4); --scrim: rgba(0,0,0,.6); --inv: #121110; color-scheme: dark; }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
-html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/22px 'Pretendard Variable', Pretendard, system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; overflow-x: hidden; overscroll-behavior-y: none; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; letter-spacing: -0.005em; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/22px 'Pretendard Variable', Pretendard, system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; overflow-x: clip; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; letter-spacing: -0.005em; }
+/* 가로 넘침은 clip으로 자른다. hidden이면 body가 스크롤 상자가 되어 손가락 스크롤이 화면으로 이어지지 않는다 */
+html { overscroll-behavior-y: none; }
 #root { max-width: 520px; margin: 0 auto; min-height: 100dvh; background: var(--bg); position: relative; }
 button, input, select, textarea { font: inherit; color: inherit; }
 button { border: 0; background: none; cursor: pointer; padding: 0; margin: 0; -webkit-appearance: none; appearance: none; user-select: none; -webkit-user-select: none; touch-action: manipulation; }

@@ -36,16 +36,21 @@ export interface Timer { taskId: string; date: string; startedAt: number; paused
 export const timerElapsed = (t: Timer, now: number) => Math.max(0, ((t.pausedAt ?? now) - t.startedAt - (t.pausedMs ?? 0)) / 1000)
 
 export type WidgetId =
+  | 'stack'
   | 'progress' | 'review' | 'slack' | 'recall' | 'wrong' | 'umap'
   | 'today' | 'left' | 'exam' | 'week' | 'streak'
   | 'subjects' | 'weekGoal' | 'tomorrow' | 'memo' | 'quickStart'
 /** 위젯 크기: 작게 1×1 · 넓게 2×1 · 크게 2×2 (칸 = 화면 반 너비 × 164px) */
 export type WidgetSize = 's1' | 's2' | 's4'
-export interface WidgetSlot { id: WidgetId; size: WidgetSize }
+/** items: 스마트 스택에 겹친 위젯들 (id가 'stack'일 때만) */
+export interface WidgetSlot { id: WidgetId; size: WidgetSize; items?: WidgetId[] }
+/** 스마트 스택 기본 구성 */
+export const STACK_DEFAULT: WidgetId[] = ['progress', 'recall', 'tomorrow']
 /** 위젯마다 고를 수 있는 크기 (앞이 기본) */
 export const WIDGET_SIZES: Record<WidgetId, WidgetSize[]> = {
+  stack: ['s2', 's1', 's4'],
   progress: ['s4', 's2', 's1'], review: ['s1', 's2'], slack: ['s1', 's2', 's4'], recall: ['s2', 's1', 's4'], wrong: ['s1', 's2'], umap: ['s1', 's4'],
-  today: ['s2'], left: ['s1'], exam: ['s1'], week: ['s1'], streak: ['s1'], subjects: ['s1'], weekGoal: ['s1'], tomorrow: ['s1'], memo: ['s1'], quickStart: ['s1'],
+  today: ['s2', 's1'], left: ['s1'], exam: ['s1'], week: ['s1', 's2'], streak: ['s1', 's2'], subjects: ['s1', 's2'], weekGoal: ['s1'], tomorrow: ['s1', 's2'], memo: ['s1', 's2'], quickStart: ['s1'],
 }
 export const DEFAULT_WIDGETS: WidgetSlot[] = [
   { id: 'progress', size: 's4' },
@@ -215,7 +220,7 @@ export function migrate(raw: unknown): State {
   // 예전 넓게/작게(wide) → 크기(size). 예전 기본 구성 그대로면 새 학습 위젯 기본으로
   settings.widgets = (settings.widgets as (WidgetSlot & { wide?: boolean })[])
     .filter((w) => w && w.id in WIDGET_SIZES)
-    .map((w) => ({ id: w.id, size: w.size && WIDGET_SIZES[w.id].includes(w.size) ? w.size : WIDGET_SIZES[w.id].includes(w.wide ? 's2' : 's1') ? (w.wide ? 's2' : 's1') : WIDGET_SIZES[w.id][0] }))
+    .map((w) => ({ id: w.id, size: w.size && WIDGET_SIZES[w.id].includes(w.size) ? w.size : WIDGET_SIZES[w.id].includes(w.wide ? 's2' : 's1') ? (w.wide ? 's2' : 's1') : WIDGET_SIZES[w.id][0], ...(w.id === 'stack' ? { items: (w.items ?? STACK_DEFAULT).filter((x) => x in WIDGET_SIZES && x !== 'stack') } : {}) }))
   if (settings.widgets.map((w) => w.id).join(',') === OLD_DEFAULT) settings.widgets = base.settings.widgets
   if (!isObj(settings.restDays)) settings.restDays = {}
   if (!isObj(settings.restMoves)) settings.restMoves = {}

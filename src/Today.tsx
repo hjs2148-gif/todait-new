@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Catchup } from './TodayCatchup.tsx'
 import { EntrySheet } from './Entry.tsx'
 import { Icon } from './Icon.tsx'
@@ -12,7 +12,8 @@ import { Widgets } from './widgets.tsx'
 import { BookCard, KindHead, LectureCard, MiniBar } from './BookCards.tsx'
 import { DayEnd } from './DayEnd.tsx'
 import { DoneChapterSheet } from './DoneChapter.tsx'
-import { BackupCard, DoneDayCard, EmptyCard, NewWeekCard, RestView, RoundCard } from './TodayCards.tsx'
+import { BackupCard, DoneDayCard, EmptyCard, NewWeekCard, RestView, RoundCard, roundToday } from './TodayCards.tsx'
+import { GuideCard, OverCard, overDays, SuggestCard } from './Guide.tsx'
 
 export interface Nav {
   date: string
@@ -342,7 +343,7 @@ export function Today({ nav }: { nav: Nav }) {
 
       <div className="wd-wrap">
         {date === today && <BackupCard s={s} today={today} />}
-        {date === today && <RoundCard s={s} today={today} />}
+        {date === today && <GuideSlot s={s} today={today} />}
         {date === today && dow(today) === 1 && s.settings.weekCardSeen !== today && !isRest && <NewWeekCard s={s} today={today} goProgress={nav.goProgress} />}
         {allDone && !isRest && <DoneDayCard s={s} today={today} stats={stats} openDayEnd={() => setDayEnd(true)} tomorrow={() => setDate(addDays(today, 1))} />}
         {!isRest && <Widgets s={s} date={date} today={today} stats={stats} />}
@@ -373,3 +374,13 @@ export function Today({ nav }: { nav: Nav }) {
   )
 }
 
+
+/** 안내 카드는 한 번에 한 장: 넘치는 날 → 회독 → 필요할 때 제안 */
+function GuideSlot({ s, today }: { s: State; today: string }) {
+  const [done, setDone] = useState<string | null>(null)
+  const over = useMemo(() => (s.settings.overSnooze === today ? [] : overDays(s, today, 14)), [s, today])
+  if (done) return <GuideCard lab="정리됐어요" head={done}><button className="g-s" onClick={() => setDone(null)}>닫기</button></GuideCard>
+  if (over.length) return <OverCard s={s} today={today} list={over} onDone={setDone} />
+  if (roundToday(s, today)) return <RoundCard s={s} today={today} />
+  return <SuggestCard s={s} today={today} />
+}

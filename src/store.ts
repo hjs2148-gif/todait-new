@@ -66,15 +66,18 @@ const freeze = (s: State): State => {
 }
 
 /** 공부 가능 시간을 정했으면, 넘치는 날의 분량을 마감이 먼 계획부터 뒤로 옮긴다 (balance.ts) */
+/** 그날 공부 가능 시간대 (그날만 바꾼 것이 우선) */
+export const windowsFor = (s: State, d: string) => s.settings.windowOverrides?.[d] ?? (s.settings.studyWindows ? windowsOn(s.settings.studyWindows, dow(d)) : [])
+/** 가능 시간에 맞춰 나눠 담기 (오늘 탭·진도 탭의 넘치는 날 계산에도 쓴다) */
+export const balanceOf = (s: State, today: string, tasks = s.tasks) => balance({
+  tasks, recs: s.recs, today,
+  offOf: (t) => offFor(s, t),
+  capOf: (d) => winSum(windowsFor(s, d)),
+  spu: (t) => secPerUnit(t, s.recs[t.id] ?? {}),
+})
 function fitToHours(s: State, today: string): State {
-  const win = s.settings.studyWindows
-  if (!win) return s
-  const out = balance({
-    tasks: s.tasks, recs: s.recs, today,
-    offOf: (t) => offFor(s, t),
-    capOf: (d) => winSum(windowsOn(win, dow(d))),
-    spu: (t) => secPerUnit(t, s.recs[t.id] ?? {}),
-  })
+  if (!s.settings.studyWindows) return s
+  const out = balanceOf(s, today)
   const tasks = applyBalance(s.tasks, out, today)
   return tasks === s.tasks ? s : { ...s, tasks }
 }

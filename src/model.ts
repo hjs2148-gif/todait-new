@@ -80,6 +80,12 @@ export interface Settings {
   studyWindows: StudyWindows | null
   /** 지운 과목 (새 계획의 '예전 과목'에서 다시 가져온다) */
   oldCategories: Category[]
+  /** 그날만 바꾼 공부 시간대 (넘치는 날 '이날만 늘리기') */
+  windowOverrides: Record<string, [number, number][]>
+  /** 넘치는 날 카드를 '나중에'로 닫은 날 */
+  overSnooze: string | null
+  /** 필요할 때 제안에 답한 날 (키 → 날짜). 하루에 한 장만 띄운다 */
+  suggested: Record<string, string>
 }
 
 export interface State {
@@ -146,6 +152,9 @@ export const defaultSettings = (): Settings => ({
   weekCardSeen: null,
   studyWindows: null,
   oldCategories: [],
+  windowOverrides: {},
+  overSnooze: null,
+  suggested: {},
 })
 
 export const emptyState = (): State => ({
@@ -198,6 +207,8 @@ export function migrate(raw: unknown): State {
   if (!isObj(settings.restDays)) settings.restDays = {}
   if (!isObj(settings.restMoves)) settings.restMoves = {}
   if (!Array.isArray(settings.oldCategories)) settings.oldCategories = []
+  if (!isObj(settings.windowOverrides)) settings.windowOverrides = {}
+  if (!isObj(settings.suggested)) settings.suggested = {}
 
   return {
     version: STATE_VERSION,

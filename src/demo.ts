@@ -2,13 +2,13 @@
 // - 실제 기록과 섞이지 않게 IndexedDB를 'todait-demo'로 바꿔 쓴다.
 // - 장면의 날짜·시각으로 시계를 옮긴다 (시간은 계속 흐른다).
 // - 장면이 바뀌거나 &reset 을 붙이면 다시 채운다. 같은 장면이면 고친 내용이 남는다.
-// 장면: mid(수요일 저녁) · done(목표 다 함) · monday(새 주) · catchup(어제 밀림) · rest(쉬는 날) · empty(첫날)
+// 장면: mid(수요일 저녁) · done(목표 다 함) · monday(새 주) · catchup(어제 밀림) · rest(쉬는 날) · empty(첫날) · tight(공부 시간이 빠듯해 넘치는 날이 있음)
 // 예: http://localhost:5173/?demo=mid   ·   ?demo=done&t=23:30   ·   ?demo=mid&reset
 import { addDays, diffDays, dow } from './date.ts'
 import { liveExpect, secPerUnit, type Chapter, type Task } from './logic.ts'
 import { emptyState, offFor, type State, type TimeHistory } from './model.ts'
 
-type Scene = { date: string; clock: string; today: 'none' | 'part' | 'full'; missYesterday?: boolean; rest?: boolean; empty?: boolean }
+type Scene = { date: string; clock: string; today: 'none' | 'part' | 'full'; missYesterday?: boolean; rest?: boolean; empty?: boolean; tight?: boolean }
 const SCENES: Record<string, Scene> = {
   mid: { date: '2026-11-25', clock: '20:30', today: 'part' },
   done: { date: '2026-11-25', clock: '22:10', today: 'full' },
@@ -16,6 +16,7 @@ const SCENES: Record<string, Scene> = {
   catchup: { date: '2026-11-26', clock: '07:40', today: 'none', missYesterday: true },
   rest: { date: '2026-11-25', clock: '10:20', today: 'none', rest: true },
   empty: { date: '2026-11-25', clock: '19:00', today: 'none', empty: true },
+  tight: { date: '2026-11-25', clock: '20:30', today: 'part', tight: true },
 }
 
 const params = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null
@@ -101,6 +102,7 @@ function build(sc: Scene): State {
   // 과목은 처음에 비어 있으므로 장면에서 채운다
   s.categories = [{ id: 'c1', name: '국어', color: '#3d8762' }, { id: 'c2', name: '수학', color: '#4a67ad' }, { id: 'c3', name: '영어', color: '#8d5aa0' }]
   const [kor, math, eng] = s.categories.map((c) => c.id)
+  if (sc.tight) s.settings.studyWindows = { weekday: [[20 * 60, 21 * 60]], weekend: [[10 * 60, 11 * 60]] }
   s.categories.push({ id: 'c4', name: '과학', color: '#2c7f8c' })
 
   const at = (n: number) => addDays(T, n)

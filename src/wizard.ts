@@ -7,7 +7,10 @@ import { resolveToc, type TocLine } from './toc.ts'
 export type DayKind = 'on' | 'sp' | 'off'
 /** 공부 가능 시간대 [시작 분, 끝 분] */
 export type Win = [number, number]
-export interface StudyWindows { weekday: Win[]; weekend: Win[] }
+/** 평일·주말 시간대. perDay가 있으면 요일마다 따로 (0=일 … 6=토) */
+export interface StudyWindows { weekday: Win[]; weekend: Win[]; perDay?: Win[][] | null }
+/** 그 요일의 시간대 */
+export const windowsOn = (w: StudyWindows, d: number): Win[] => w.perDay?.[d] ?? (d === 0 || d === 6 ? w.weekend : w.weekday)
 
 export interface Wiz {
   name: string
@@ -82,7 +85,7 @@ export function wizardTask(w: Wiz, id: string, order: number, now: number, first
     unit, startPoint: start, amount: to - start + 1,
     startDate: w.startDate, endDate: w.endDate,
     week: w.days.map((d) => d !== 'off'), supplementDow: sp >= 0 ? sp : null,
-    custom, notifyTime: w.notify && w.windows.weekday[0] ? hhmm(w.windows.weekday[0][0]) : null,
+    custom, notifyTime: w.notify && windowsOn(w.windows, 1)[0] ? hhmm(windowsOn(w.windows, 1)[0][0]) : null,
   }
   if (firstHalf) {
     const plan = futurePlan(t, {}, w.startDate)

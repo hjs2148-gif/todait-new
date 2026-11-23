@@ -214,3 +214,9 @@ export function autoNums(lines: TocLine[]): string[] {
     return l.num || stack.map((n) => n ?? 1).join('-')
   })
 }
+
+/** 직접 입력 한 줄: 앞 '-' 개수, 이름, 줄 끝 숫자(시작 쪽) */
+export function splitRow(text: string): { dashes: number; name: string; page: number | null } {
+  const r = readLine(text)
+  return { dashes: r.dashes, name: r.name, page: r.page }
+}

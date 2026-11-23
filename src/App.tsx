@@ -73,7 +73,7 @@ export function App() {
 
       {form && (form.task ? <PlanEdit task={form.task} onClose={() => setForm(null)} />
         : form.one ? <NewPlan onClose={() => setForm(null)} kind={form.one === true ? undefined : form.one} />
-          : <NewPlanWizard onClose={() => setForm(null)} onForm={(k) => setForm({ task: null, one: k ?? true })} />)}
+          : <NewPlanWizard onClose={() => setForm(null)} onForm={(k) => setForm({ task: null, one: k ?? true })} onOpen={(t) => setForm({ task: t })} />)}
       {widgets && <WidgetEdit onClose={() => setWidgets(false)} />}
       {draft && <DiaryForm draft={draft} onClose={() => setDraft(null)} />}
       <Stopwatch showStart={tab === 'today' && date === todayISO()} />

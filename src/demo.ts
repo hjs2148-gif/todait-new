@@ -96,9 +96,11 @@ function build(sc: Scene): State {
   const T = sc.date
   const now = Date.now()
   const s = emptyState()
-  const [kor, math, eng] = s.categories.map((c) => c.id)
   s.settings = { ...s.settings, lastBackupAt: now - 2 * 86400000, catchupSeenOn: T, weekCardSeen: null }
   if (sc.empty) return s
+  // 과목은 처음에 비어 있으므로 장면에서 채운다
+  s.categories = [{ id: 'c1', name: '국어', color: '#3d8762' }, { id: 'c2', name: '수학', color: '#4a67ad' }, { id: 'c3', name: '영어', color: '#8d5aa0' }]
+  const [kor, math, eng] = s.categories.map((c) => c.id)
   s.categories.push({ id: 'c4', name: '과학', color: '#2c7f8c' })
 
   const at = (n: number) => addDays(T, n)

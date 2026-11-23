@@ -78,6 +78,8 @@ export interface Settings {
   weekCardSeen: string | null
   /** 공부할 수 있는 시간대 (평일·주말). 안내형 계획 만들기 5단계에서 정한다 */
   studyWindows: StudyWindows | null
+  /** 지운 과목 (새 계획의 '예전 과목'에서 다시 가져온다) */
+  oldCategories: Category[]
 }
 
 export interface State {
@@ -92,20 +94,34 @@ export interface State {
   timer: Timer | null
 }
 
-/** 과목색 5가지. 저장은 라이트 값(hex)으로 하고, 화면에서는 subjectVar()로 다크 모드 색을 따라간다 */
+/** 과목 추천색 16가지. 저장은 라이트 값(hex)으로 하고, 화면에서는 subjectVar()로 다크 모드 색을 따라간다.
+ * 직접 고른 색은 'hue:28'처럼 색상만 저장하고 밝기는 라이트·다크에 맞춘다 (--cs, --cl) */
 export const SUBJECTS = [
-  { key: 'm', name: '파랑', hex: '#4a67ad' },
-  { key: 'k', name: '초록', hex: '#3d8762' },
-  { key: 'e', name: '보라', hex: '#8d5aa0' },
-  { key: 'c', name: '청록', hex: '#2c7f8c' },
-  { key: 'g', name: '회색', hex: '#6d675e' },
+  { key: 'm', name: '파랑', hex: '#4a67ad', dark: '#8ea6ea' },
+  { key: 's', name: '하늘', hex: '#2b77a8', dark: '#79b8e3' },
+  { key: 'c', name: '청록', hex: '#2c7f8c', dark: '#6cc4cf' },
+  { key: 'k', name: '초록', hex: '#3d8762', dark: '#85c2a0' },
+  { key: 'l', name: '연두', hex: '#557d2e', dark: '#a6cf7a' },
+  { key: 'o', name: '올리브', hex: '#6e7a2c', dark: '#bcc777' },
+  { key: 'd', name: '황토', hex: '#8a7350', dark: '#cdb48a' },
+  { key: 'b', name: '갈색', hex: '#8a5d3b', dark: '#d6a682' },
+  { key: 'y', name: '주황', hex: '#a85a2c', dark: '#e7a679' },
+  { key: 'r', name: '장미', hex: '#a8435a', dark: '#e8909f' },
+  { key: 'p', name: '자주', hex: '#a24d76', dark: '#e391b8' },
+  { key: 'e', name: '보라', hex: '#8d5aa0', dark: '#c79ad8' },
+  { key: 'i', name: '남색', hex: '#5a54a8', dark: '#aaa4ec' },
+  { key: 't', name: '청회', hex: '#56677a', dark: '#a9b8c9' },
+  { key: 'g', name: '회색', hex: '#6d675e', dark: '#b3ab9f' },
+  { key: 'a', name: '먹색', hex: '#3f3b36', dark: '#d8d2c8' },
 ] as const
 export const COLORS: string[] = SUBJECTS.map((x) => x.hex)
 
 /** 저장된 과목색 → CSS 값 (다크 모드에서 밝은 색으로 바뀐다). 모르는 색은 그대로 */
 export const subjectVar = (hex: string | null | undefined) => {
   const s = SUBJECTS.find((x) => x.hex === hex)
-  return s ? `var(--s-${s.key})` : hex ?? 'var(--s-g)'
+  if (s) return `var(--s-${s.key})`
+  if (hex?.startsWith('hue:')) return `hsl(${Number(hex.slice(4)) || 0} var(--cs) var(--cl))`
+  return hex ?? 'var(--s-g)'
 }
 
 /** 첫 버전의 파스텔 과목색을 새 과목색으로 옮긴다 */
@@ -129,16 +145,13 @@ export const defaultSettings = (): Settings => ({
   backupRemindedOn: null,
   weekCardSeen: null,
   studyWindows: null,
+  oldCategories: [],
 })
 
 export const emptyState = (): State => ({
   version: STATE_VERSION,
   tasks: [], recs: {}, exams: [], diaries: [], histories: [], timer: null,
-  categories: [
-    { id: 'c1', name: '국어', color: SUBJECTS[1].hex },
-    { id: 'c2', name: '수학', color: SUBJECTS[0].hex },
-    { id: 'c3', name: '영어', color: SUBJECTS[2].hex },
-  ],
+  categories: [],
   settings: defaultSettings(),
 })
 
@@ -184,6 +197,7 @@ export function migrate(raw: unknown): State {
   if (!Array.isArray(settings.widgets) || settings.widgets.length === 0) settings.widgets = base.settings.widgets
   if (!isObj(settings.restDays)) settings.restDays = {}
   if (!isObj(settings.restMoves)) settings.restMoves = {}
+  if (!Array.isArray(settings.oldCategories)) settings.oldCategories = []
 
   return {
     version: STATE_VERSION,

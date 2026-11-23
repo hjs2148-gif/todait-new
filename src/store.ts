@@ -315,7 +315,7 @@ export const actions = {
     }),
   saveCategory: (c: Category) => setState((s) => ({ ...s, categories: upsert(s.categories, c) })),
   deleteCategory: (id: string) =>
-    setState((s) => ({ ...s, categories: s.categories.filter((c) => c.id !== id), tasks: s.tasks.map((t) => (t.categoryId === id ? { ...t, categoryId: null } : t)) })),
+    setState((s) => ({ ...s, settings: { ...s.settings, oldCategories: [...s.settings.oldCategories.filter((c) => c.id !== id), ...s.categories.filter((c) => c.id === id)] }, categories: s.categories.filter((c) => c.id !== id), tasks: s.tasks.map((t) => (t.categoryId === id ? { ...t, categoryId: null } : t)) })),
   saveExam: (e: Exam) =>
     setState((s) => {
       const list = upsert(s.exams, e)

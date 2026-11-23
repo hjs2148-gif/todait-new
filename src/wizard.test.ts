@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { futurePlan } from './logic.ts'
 import { parseTocText } from './toc.ts'
-import { emptyWiz, pickDate, weekShape, wizardTask } from './wizard.ts'
+import { emptyWiz, pickDate, simpleTask, weekShape, wizardTask } from './wizard.ts'
 
 // 2026-11-24(화) ~ 12-14(월), 일요일 예비, 끝 2일 여유, 1~232쪽, 목차 2단원
 const w = { ...emptyWiz('2026-11-24', '2026-12-14'), name: '정석', to: 232, toc: parseTocText('Ⅰ. 가\n1. 가1 1\n2. 가2 50\nⅡ. 나\n1. 나1 120\n2. 나2 180') }
@@ -36,4 +36,13 @@ assert.equal(wizardTask({ ...w, days: ['off', 'off', 'off', 'off', 'off', 'off',
 assert.deepEqual(pickDate({ start: '2026-11-24', end: '2026-12-14' }, '2026-11-26'), { start: '2026-11-26', end: null })
 assert.deepEqual(pickDate({ start: '2026-11-26', end: null }, '2026-12-01'), { start: '2026-11-26', end: '2026-12-01' })
 assert.deepEqual(pickDate({ start: '2026-11-26', end: null }, '2026-11-20'), { start: '2026-11-20', end: null })
+// 시간·습관·할 일
+const sw = { ...emptyWiz('2026-11-24', '2026-12-14'), name: '자습', perMin: 90 }
+const tt = simpleTask('time', sw, 't', 1, 0)
+assert.ok(typeof tt !== 'string' && tt.kind === 'time' && tt.perDay === 5400 && tt.endDate === null && tt.notifyTime === '16:00')
+const hb = simpleTask('habit', { ...sw, name: '영단어', repeat: 'day', every: 3, keepOnRest: true, endless: false }, 'h', 1, 0)
+assert.ok(typeof hb !== 'string' && hb.kind === 'habit' && hb.repeatEvery === 3 && hb.keepOnRest && hb.endDate === '2026-12-14')
+const td = simpleTask('todo', { ...sw, name: '보고서', due: '2026-11-27' }, 'd', 1, 0)
+assert.ok(typeof td !== 'string' && td.kind === 'todo' && td.due === '2026-11-27' && td.notifyTime === null)
+assert.equal(simpleTask('todo', { ...sw, name: '보고서', due: '2026-11-20' }, 'd', 1, 0), '마감일이 하는 날보다 빨라요')
 console.log('wizard ok')

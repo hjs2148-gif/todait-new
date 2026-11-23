@@ -10,7 +10,7 @@ import { Num } from './ui.tsx'
 import { Icon } from './Icon.tsx'
 import { PRESETS } from './presets.ts'
 import { autoNums, countLabel, lineSpans, normalize, parseTocText, patternLevels, resolveToc, shiftPattern, splitRow, type TocLine } from './toc.ts'
-import { bufferDates, clock, DEFAULT_WINDOWS, emptyWiz, pickDate, rangeOf, weekShape, windowsOn, winSum, wizardTask, type DayKind, type StudyWindows, type Win, type Wiz } from './wizard.ts'
+import { bufferDates, clock, DEFAULT_WINDOWS, emptyWiz, pickDate, rangeOf, simpleTask, weekShape, windowsOn, winSum, wizardTask, type DayKind, type StudyWindows, type Win, type Wiz } from './wizard.ts'
 
 const TOTAL = 6
 const ORDER = [1, 2, 3, 4, 5, 6, 0] // 월 … 일
@@ -38,6 +38,7 @@ export function NewPlanWizard({ onClose, onForm, onOpen }: { onClose: () => void
     windows: s.settings.studyWindows ?? DEFAULT_WINDOWS,
   }))
   const [step, setStep] = useState(1)
+  const [kind, setKind] = useState<'amount' | Simple>('amount')
   const [sub, setSub] = useState<Sub>(null)
   const [text, setText] = useState('')
   const [rows, setRows] = useState<Row[]>([{ depth: 0, text: '' }])
@@ -47,7 +48,7 @@ export function NewPlanWizard({ onClose, onForm, onOpen }: { onClose: () => void
   const [made, setMade] = useState<Task | null>(null)
   const set = (p: Partial<Wiz>) => { setW((x) => ({ ...x, ...p })); setError('') }
 
-  const built = wizardTask(w, 'preview', 0, 0)
+  const built = kind === 'amount' ? wizardTask(w, 'preview', 0, 0) : simpleTask(kind, w, 'preview', 0, 0)
   const task = typeof built === 'string' ? null : built
   const back = () => { setError(''); if (sub === 'read') setSub(text ? 'paste' : null); else if (sub) setSub(null); else if (step > 1) setStep(step - 1); else onClose() }
   const go = (n: number) => { setError(''); setSub(null); setStep(n) }
@@ -55,13 +56,16 @@ export function NewPlanWizard({ onClose, onForm, onOpen }: { onClose: () => void
   const examDate = s.exams.find((e) => e.id === w.examId)?.date ?? null
   const typeDone = () => { const l = rowsToLines(rows); if (!l.length) return setError('목차를 한 줄 이상 적어 주세요'); setDraft(l); setSub('read') }
 
+  const total = kind === 'todo' ? 4 : TOTAL
   const create = () => {
-    const t = wizardTask(w, uid(), Math.max(0, ...s.tasks.map((x) => x.order)) + 1, Date.now())
+    const order = Math.max(0, ...s.tasks.map((x) => x.order)) + 1
+    const t = kind === 'amount' ? wizardTask(w, uid(), order, Date.now()) : simpleTask(kind, w, uid(), order, Date.now())
     if (typeof t === 'string') return setError(t)
     actions.saveTask(t)
-    actions.setSettings({ studyWindows: w.windows })
+    // 할 일은 시간대를 묻지 않으므로 저장하지 않는다
+    if (kind !== 'todo') actions.setSettings({ studyWindows: w.windows })
     const ex = s.exams.find((e) => e.id === w.examId)
-    if (ex && ex.scope.length > 0) actions.saveExam({ ...ex, scope: [...ex.scope, { taskId: t.id, from: null, to: null }] })
+    if (kind === 'amount' && ex && ex.scope.length > 0) actions.saveExam({ ...ex, scope: [...ex.scope, { taskId: t.id, from: null, to: null }] })
     setMade(t)
     go(7)
   }
@@ -87,10 +91,18 @@ export function NewPlanWizard({ onClose, onForm, onOpen }: { onClose: () => void
       setSub(null)
     }}>이대로 넣기</button>
   } else if (step === 1) {
-    body = <TypeCards pick={(k) => (k === 'amount' ? go(2) : onForm(k))} />
+    body = <TypeCards pick={(k) => { setKind(k === 'amount' ? 'amount' : (k as Simple)); go(2) }} />
     foot = <button className="wz-link" onClick={() => onForm()}>한 화면에서 한 번에 입력하기<Icon name="right" size={16} /></button>
+  } else if (kind !== 'amount' && step < 7) {
+    const sum = kind === 'todo' ? 4 : 6
+    const next = (n: number) => <button className="primary" onClick={() => need(n === 3 && !w.name.trim() ? '이름을 적어 주세요' : null, n)}>다음</button>
+    if (step === 2) { body = <NameStep w={w} set={set} kind={kind} />; foot = next(3) }
+    else if (step === 3) { body = kind === 'time' ? <PerDayStep w={w} set={set} /> : kind === 'habit' ? <OftenStep w={w} set={set} /> : <DueStep w={w} set={set} today={today} />; foot = <button className="primary" onClick={() => need(typeof built === 'string' ? built : null, 4)}>다음</button> }
+    else if (step === 4 && kind !== 'todo') { body = <UntilStep w={w} set={set} today={today} examDate={exam?.date ?? null} />; foot = <button className="primary" onClick={() => need(typeof built === 'string' ? built : null, 5)}>다음</button> }
+    else if (step === 5) { body = <TimeStep w={w} set={set} kind={kind} />; foot = <><button className="wz-sec" onClick={() => { set({ notify: false }); go(6) }}>건너뛰기</button><button className="primary" onClick={() => go(6)}>다음</button></> }
+    else if (step === sum) { body = task ? <SimpleSummary kind={kind} w={w} task={task} today={today} go={go} cats={s.categories} /> : <p className="error">{built as string}</p>; foot = <button className="primary" disabled={!task} onClick={create}>만들기</button> }
   } else if (step === 2) {
-    body = <NameStep w={w} set={set} />
+    body = <NameStep w={w} set={set} kind="amount" />
     foot = <button className="primary" onClick={() => need(w.name.trim() ? null : '이름을 적어 주세요', 3)}>다음</button>
   } else if (step === 3) {
     body = <AmountStep w={w} set={set} openToc={(k) => { if (k === 'type') setRows(linesToRows(w.toc)); setSub(k) }} editToc={() => { setDraft(w.toc); setText(''); setSub('read') }} />
@@ -105,11 +117,12 @@ export function NewPlanWizard({ onClose, onForm, onOpen }: { onClose: () => void
     body = task ? <SummaryStep s={s} w={w} set={set} task={task} today={today} examDate={examDate} go={go} /> : <p className="error">{built as string}</p>
     foot = <button className="primary" disabled={!task} onClick={create}>다음</button>
   } else {
-    body = made ? <DoneStep s={s} t={made} today={today} again={again} open={() => onOpen(made)} /> : null
-    foot = <><button className="wz-sec" onClick={onClose}>오늘 탭으로</button><button className="primary" onClick={() => { if (made && made.startDate === today) actions.startTimer(made.id, today); onClose() }}>지금 시작</button></>
+    body = !made ? null : kind === 'amount' ? <DoneStep s={s} t={made} today={today} again={again} open={() => onOpen(made)} /> : <SimpleDone kind={kind} t={made} today={today} />
+    const startable = !!made && made.startDate === today && (kind === 'amount' || kind === 'time')
+    foot = <><button className="wz-sec" onClick={onClose}>오늘 탭으로</button>{startable ? <button className="primary" onClick={() => { actions.startTimer(made!.id, today); onClose() }}>지금 시작</button> : <button className="primary" onClick={() => onOpen(made!)}>계획 보기</button>}</>
   }
 
-  const shown = Math.min(step, TOTAL)
+  const shown = Math.min(step, total)
   const typing = sub === 'type'
   return (
     <div className="fullpage wz" role="dialog" aria-label="새 계획">
@@ -118,9 +131,9 @@ export function NewPlanWizard({ onClose, onForm, onOpen }: { onClose: () => void
         {typing && <h1>목차 직접 입력</h1>}
         {step === 7 ? <button className="fp-b strong" onClick={onClose}>닫기</button>
           : typing ? <button className="fp-b strong" onClick={typeDone}>완료</button>
-            : <small className="wz-count">{shown} / {TOTAL}</small>}
+            : <small className="wz-count">{shown} / {total}</small>}
       </header>
-      {step < 7 && !typing && <div className="wz-prog" role="progressbar" aria-valuemin={0} aria-valuemax={TOTAL} aria-valuenow={shown}><i style={{ width: `${(shown / TOTAL) * 100}%` }} /></div>}
+      {step < 7 && !typing && <div className="wz-prog" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={shown}><i style={{ width: `${(shown / total) * 100}%` }} /></div>}
       <div className="fp-body wz-body">{body}{error && <p className="error" role="alert">{error}</p>}</div>
       {foot && <footer className="wz-ft">{foot}</footer>}
     </div>
@@ -252,14 +265,14 @@ function PresetSheet({ onClose, onAdded }: { onClose: () => void; onAdded: (id: 
   )
 }
 
-function NameStep({ w, set }: { w: Wiz; set: (p: Partial<Wiz>) => void }) {
+function NameStep({ w, set, kind }: { w: Wiz; set: (p: Partial<Wiz>) => void; kind: 'amount' | Simple }) {
   const s = useStore()
   const [adding, setAdding] = useState(false)
   const [sheet, setSheet] = useState<null | 'preset' | 'color' | string>(null)
   const [cn, setCn] = useState('')
   const [cc, setCc] = useState<string>(SUBJECTS[0].hex)
   const q = w.name.trim()
-  const past = q.length >= 2 ? s.tasks.filter((t) => t.type === 'amount' && t.name.includes(q) && t.name !== q).slice(0, 3) : []
+  const past = q.length >= 2 ? s.tasks.filter((t) => (kind === 'amount' ? t.type === 'amount' : t.kind === kind) && t.name.includes(q) && t.name !== q).slice(0, 3) : []
   const addCat = () => {
     if (!cn.trim()) return
     const id = uid()
@@ -269,12 +282,12 @@ function NameStep({ w, set }: { w: Wiz; set: (p: Partial<Wiz>) => void }) {
   const editing = sheet && sheet !== 'preset' && sheet !== 'color' ? s.categories.find((c) => c.id === sheet) : null
   return (
     <>
-      <Q q="무엇으로 공부하나요?" sub="책이나 강의 이름과 과목을 정해 주세요." />
-      <label className="wz-field"><small>이름</small><input className="wz-big" value={w.name} onChange={(e) => set({ name: e.target.value })} placeholder="예) 수학의 정석 미적분" autoFocus /></label>
+      <Q q={kind === 'amount' ? '무엇으로 공부하나요?' : KIND_Q[kind][0]} sub={kind === 'amount' ? '책이나 강의 이름과 과목을 정해 주세요.' : KIND_Q[kind][1]} />
+      <label className="wz-field"><small>이름</small><input className="wz-big" value={w.name} onChange={(e) => set({ name: e.target.value })} placeholder={kind === 'amount' ? '예) 수학의 정석 미적분' : KIND_Q[kind][2]} autoFocus /></label>
       {past.length > 0 && (
         <section className="fcard tight">
           {past.map((t) => (
-            <button key={t.id} className="frow btn" onClick={() => set({ name: t.name, categoryId: t.categoryId ?? '', unit: t.unit || '쪽' })}>
+            <button key={t.id} className="frow btn" onClick={() => set({ name: t.name, categoryId: t.categoryId ?? '', ...(kind === 'amount' ? { unit: t.unit || '쪽' } : t.type === 'time' ? { perMin: Math.round(t.perDay / 60), week: t.week } : { week: t.week }) })}>
               <i className="wz-dot" style={{ background: subjectVar(s.categories.find((c) => c.id === t.categoryId)?.color) }} />
               <span className="grow ell">{t.name}</span><small>{t.completed ? `끝냄${t.completedDate ? ` · ${Number(t.completedDate.slice(5, 7))}월` : ''}` : '진행 중'}</small>
             </button>
@@ -656,7 +669,7 @@ function Band({ label, ws, onChange }: { label: string; ws: Win[]; onChange: (ws
     </div>
   )
 }
-function TimeStep({ w, set }: { w: Wiz; set: (p: Partial<Wiz>) => void }) {
+function TimeStep({ w, set, kind = 'amount' }: { w: Wiz; set: (p: Partial<Wiz>) => void; kind?: 'amount' | Simple }) {
   const win = w.windows
   const put = (p: Partial<StudyWindows>) => set({ windows: { ...win, ...p } })
   const per = win.perDay ?? null
@@ -664,7 +677,7 @@ function TimeStep({ w, set }: { w: Wiz; set: (p: Partial<Wiz>) => void }) {
   const firstEnd = windowsOn(win, 6)[0] ?? null
   return (
     <>
-      <Q q="보통 언제 공부해요?" sub="공부할 수 있는 시간대를 밀어서 정해요. 이 시간에 다음 공부를 띄우고, 하루에 넣을 양도 여기에 맞춰요." />
+      <Q q={kind === 'habit' ? '보통 언제 해요?' : '보통 언제 공부해요?'} sub={kind === 'amount' ? '공부할 수 있는 시간대를 밀어서 정해요. 이 시간에 다음 공부를 띄우고, 하루에 넣을 양도 여기에 맞춰요.' : '공부할 수 있는 시간대를 밀어서 정해요. 시작할 때 알려 드리고, 다른 계획의 하루 분량도 여기에 맞춰요.'} />
       <section className="fcard prev wz-bands">
         {per ? ORDER.map((d) => <Band key={d} label={`${DOW[d]}요일`} ws={per[d]} onChange={(ws) => put({ perDay: per.map((x, i) => (i === d ? ws : x)) })} />)
           : <><Band label="평일" ws={win.weekday} onChange={(weekday) => put({ weekday })} /><Band label="주말" ws={win.weekend} onChange={(weekend) => put({ weekend })} /></>}
@@ -889,6 +902,136 @@ function DoneStep({ s, t, today, again, open }: { s: State; t: Task; today: stri
       <section className="fcard tight">
         <button className="frow btn" onClick={open}><span className="grow">계획 한눈에 보기</span><Icon name="right" size={16} /></button>
         <button className="frow btn" onClick={again}><span className="grow"><span style={{ display: 'block' }}>같은 시험으로 하나 더 만들기</span><small>기간·요일·시간은 그대로 가져와요</small></span><Icon name="right" size={16} /></button>
+      </section>
+    </>
+  )
+}
+
+// ── 시간 · 습관 · 할 일: 짧은 흐름 ──
+type Simple = 'time' | 'habit' | 'todo'
+const KIND_Q: Record<Simple, [string, string, string]> = {
+  time: ['무엇에 시간을 쓰나요?', '매일 채울 시간에 이름을 붙여요.', '예) 자습, 수학 문제 풀이'],
+  habit: ['무엇을 꾸준히 하나요?', '작게 정할수록 오래가요.', '예) 영단어 50개, 스트레칭'],
+  todo: ['무엇을 해야 하나요?', '한 번 하면 끝나는 일이에요.', '예) 수행평가 보고서 제출'],
+}
+const hmKo = (m: number) => `${m >= 60 ? `${Math.floor(m / 60)}시간` : ''}${m % 60 ? ` ${m % 60}분` : ''}`.trim() || '0분'
+function WeekRow({ week, set }: { week: boolean[]; set: (w: boolean[]) => void }) {
+  return (
+    <section className="fcard wz-days">
+      {ORDER.map((d) => <button key={d} className={`wz-dy ${week[d] ? 'on' : 'off'}`} aria-pressed={week[d]} aria-label={`${DOW[d]}요일`} onClick={() => set(week.map((x, i) => (i === d ? !x : x)))}>{DOW[d]}</button>)}
+    </section>
+  )
+}
+function RepeatPick({ w, set }: { w: Wiz; set: (p: Partial<Wiz>) => void }) {
+  return (
+    <>
+      <div className="seg" role="radiogroup" aria-label="반복">
+        <button role="radio" aria-checked={w.repeat === 'week'} className={w.repeat === 'week' ? 'on' : ''} onClick={() => set({ repeat: 'week' })}>요일마다</button>
+        <button role="radio" aria-checked={w.repeat === 'day'} className={w.repeat === 'day' ? 'on' : ''} onClick={() => set({ repeat: 'day' })}>며칠마다</button>
+      </div>
+      {w.repeat === 'week' ? <WeekRow week={w.week} set={(week) => set({ week })} />
+        : <section className="fcard prev"><div className="wz-lab"><b>{w.every}일마다</b><span className="wz-row2"><button className="chip sq" aria-label="하루 줄이기" disabled={w.every <= 2} onClick={() => set({ every: w.every - 1 })}><Icon name="minus" size={16} /></button><button className="chip sq" aria-label="하루 늘리기" onClick={() => set({ every: w.every + 1 })}><Icon name="plus" size={16} /></button></span></div><small>시작한 날부터 {w.every}일 간격으로 해요.</small></section>}
+    </>
+  )
+}
+function PerDayStep({ w, set }: { w: Wiz; set: (p: Partial<Wiz>) => void }) {
+  const week = w.repeat === 'week' ? w.week.filter(Boolean).length * w.perMin : Math.round((7 / w.every) * w.perMin)
+  return (
+    <>
+      <Q q="하루에 얼마나 할까요?" sub="채우면 그날은 끝이에요. 스톱워치로 재요." />
+      <section className="fcard prev wz-per-big">
+        <div className="wz-lab"><button className="chip sq" aria-label="10분 줄이기" disabled={w.perMin <= 10} onClick={() => set({ perMin: w.perMin - 10 })}><Icon name="minus" size={16} /></button><b>{hmKo(w.perMin)}</b><button className="chip sq" aria-label="10분 늘리기" onClick={() => set({ perMin: w.perMin + 10 })}><Icon name="plus" size={16} /></button></div>
+      </section>
+      <div className="wz-chips">{[30, 60, 90, 120, 180].map((m) => <button key={m} className={`chip${w.perMin === m ? ' dark' : ''}`} onClick={() => set({ perMin: m })}>{hmKo(m)}</button>)}</div>
+      <div className="wz-lab sh"><small>하는 날</small><small>한 주 {hmKo(week)}</small></div>
+      <RepeatPick w={w} set={set} />
+    </>
+  )
+}
+function OftenStep({ w, set }: { w: Wiz; set: (p: Partial<Wiz>) => void }) {
+  return (
+    <>
+      <Q q="얼마나 자주 할까요?" sub="매일이 부담되면 요일을 줄여도 괜찮아요." />
+      <RepeatPick w={w} set={set} />
+      <section className="fcard tight">
+        <label className="frow"><span className="grow"><span style={{ display: 'block' }}>쉬는 날에도 하기</span><small>전체 쉬는 날로 정한 날에도 오늘 탭에 떠요</small></span>
+          <input type="checkbox" className="switch" checked={w.keepOnRest} onChange={(e) => set({ keepOnRest: e.target.checked })} aria-label="쉬는 날에도 하기" /></label>
+      </section>
+    </>
+  )
+}
+function UntilStep({ w, set, today, examDate }: { w: Wiz; set: (p: Partial<Wiz>) => void; today: string; examDate: string | null }) {
+  const ex = examDate ? addDays(examDate, -1) : null
+  return (
+    <>
+      <Q q="언제부터 언제까지 할까요?" sub="끝을 정하지 않으면 계속해요." />
+      <div className="wz-quick">
+        <div><small>시작</small><button className={`chip${w.startDate === today ? ' dark' : ''}`} onClick={() => set({ startDate: today })}>오늘 {md(today)}</button><button className={`chip${w.startDate === addDays(today, 1) ? ' dark' : ''}`} onClick={() => set({ startDate: addDays(today, 1) })}>내일</button></div>
+        <div><small>끝</small><button className={`chip${w.endless ? ' dark' : ''}`} onClick={() => set({ endless: true })}>계속하기</button>
+          {ex && <button className={`chip${!w.endless && w.endDate === ex ? ' dark' : ''}`} onClick={() => set({ endless: false, endDate: ex })}>시험 전날 {md(ex)}</button>}
+          <button className={`chip${!w.endless && w.endDate === addDays(w.startDate, 27) ? ' dark' : ''}`} onClick={() => set({ endless: false, endDate: addDays(w.startDate, 27) })}>4주 뒤</button></div>
+      </div>
+      {!w.endless && <section className="fcard tight"><label className="frow"><span className="fl">끝나는 날</span><input type="date" value={w.endDate} min={w.startDate} onChange={(e) => e.target.value && set({ endDate: e.target.value })} aria-label="끝나는 날" /></label></section>}
+    </>
+  )
+}
+function DueStep({ w, set, today }: { w: Wiz; set: (p: Partial<Wiz>) => void; today: string }) {
+  const fri = addDays(today, (5 - dow(today) + 7) % 7 || 7)
+  const due = w.due || today
+  return (
+    <>
+      <Q q="언제까지 해야 하나요?" sub="마감일을 고르면 그 전에 오늘 탭에 띄워요." />
+      <div className="wz-chips">{([['오늘', today], ['내일', addDays(today, 1)], ['이번 금요일', fri], ['일주일 뒤', addDays(today, 7)]] as const).map(([l, d]) => <button key={l} className={`chip${due === d ? ' dark' : ''}`} onClick={() => set({ due: d, startDate: w.startDate > d ? d : w.startDate })}>{l} {md(d)}</button>)}</div>
+      <section className="fcard tight">
+        <label className="frow"><span className="fl">마감일</span><input type="date" value={due} min={today} onChange={(e) => e.target.value && set({ due: e.target.value })} aria-label="마감일" /></label>
+        <label className="frow"><span className="fl">하는 날</span><input type="date" value={w.startDate} min={today} max={due} onChange={(e) => e.target.value && set({ startDate: e.target.value })} aria-label="하는 날" /></label>
+      </section>
+      <small className="wz-note">하는 날에 오늘 탭에 뜨고, 못 하면 마감일까지 계속 남아 있어요.</small>
+    </>
+  )
+}
+function SimpleSummary({ kind, w, task, today, go, cats }: { kind: Simple; w: Wiz; task: Task; today: string; go: (n: number) => void; cats: Category[] }) {
+  const cat = cats.find((c) => c.id === w.categoryId)
+  const days = w.repeat === 'week' ? (w.week.every(Boolean) ? '매일' : ORDER.filter((d) => w.week[d]).map((d) => DOW[d]).join('')) : `${w.every}일마다`
+  const on = (d: string) => (w.repeat === 'day' ? diffDays(w.startDate, d) % w.every === 0 : w.week[dow(d)]) && d >= w.startDate && (w.endless || d <= w.endDate)
+  const first = addDays(w.startDate, -((dow(w.startDate) + 6) % 7))
+  const grid = Array.from({ length: 28 }, (_, i) => addDays(first, i))
+  const due = w.due || today
+  const rows: [string, ReactNode, number][] = kind === 'todo'
+    ? [['이름', <><i className="wz-dot" style={{ background: subjectVar(cat?.color) }} /> {w.name}{cat ? ` · ${cat.name}` : ''}</>, 2], ['마감', mdKo(due), 3], ['하는 날', mdKo(w.startDate), 3]]
+    : [['이름', <><i className="wz-dot" style={{ background: subjectVar(cat?.color) }} /> {w.name}{cat ? ` · ${cat.name}` : ''}</>, 2],
+      ...(kind === 'time' ? [['하루', hmKo(w.perMin), 3] as [string, ReactNode, number]] : []),
+      ['하는 날', `${days}${kind === 'habit' && w.keepOnRest ? ' · 쉬는 날에도' : ''}`, 3],
+      ['기간', `${md(w.startDate)} ~ ${w.endless ? '계속' : md(w.endDate)}`, 4],
+      ['알림', task.notifyTime ? clock(Number(task.notifyTime.slice(0, 2)) * 60 + Number(task.notifyTime.slice(3))) : <span className="mu">없음</span>, 5]]
+  return (
+    <>
+      <Q q="이렇게 할게요" sub="줄을 누르면 고칠 수 있어요." />
+      {kind === 'todo' ? (
+        <section className="fcard prev"><div className="wz-lab"><span className="wz-per"><b>D-{Math.max(0, diffDays(today, due))}</b></span><small>{mdKo(due)}까지</small></div></section>
+      ) : (
+        <section className="fcard prev" aria-label="4주 미리보기">
+          <div className="wz-lab"><b>4주 동안</b><small>{kind === 'time' ? `한 주 ${hmKo(w.repeat === 'week' ? w.week.filter(Boolean).length * w.perMin : Math.round((7 / w.every) * w.perMin))}` : `${grid.filter(on).length}번`}</small></div>
+          <div className="wz-cal-h">{ORDER.map((d) => <small key={d}>{DOW[d]}</small>)}</div>
+          <div className="wz-hgrid">{grid.map((d) => <span key={d} className={on(d) ? (kind === 'time' ? 'c' : 'e') : d < w.startDate ? 'out' : ''}><small>{d === today ? '오늘' : Number(d.slice(8))}</small></span>)}</div>
+        </section>
+      )}
+      <section className="fcard tight" aria-label="계획 내용">
+        {rows.map(([l, v, n]) => <button key={l} className="frow btn" onClick={() => go(n)}><span className="fl">{l}</span><span className="grow ell">{v}</span><Icon name="right" size={16} /></button>)}
+      </section>
+    </>
+  )
+}
+function SimpleDone({ kind, t, today }: { kind: Simple; t: Task; today: string }) {
+  const at = t.notifyTime ? ` · ${clock(Number(t.notifyTime.slice(0, 2)) * 60 + Number(t.notifyTime.slice(3)))}` : ''
+  return (
+    <>
+      <div className="wz-book" aria-hidden="true"><span><i /></span></div>
+      <div className="wz-q c"><h2>계획을 만들었어요</h2><p>{kind === 'todo' ? `${mdKo(t.due ?? t.startDate)}까지 해요.` : kind === 'time' ? `하루 ${hmKo(t.perDay / 60)}씩 채워요.` : '작게, 꾸준히 해요.'}</p></div>
+      <section className="fcard prev">
+        <small>{t.startDate === today ? '오늘' : mdKo(t.startDate)}{at}</small>
+        <b className="wz-today">{kind === 'time' ? hmKo(t.perDay / 60) : t.name}</b>
+        <small>{kind === 'habit' ? '했으면 오늘 탭에서 체크해요. 연속 기록이 쌓여요.' : kind === 'time' ? '시작을 누르면 스톱워치가 돌아요.' : '끝나면 오늘 탭에서 체크해요.'}</small>
       </section>
     </>
   )

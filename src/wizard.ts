@@ -2,6 +2,7 @@
 import { addDays, dow } from './date.ts'
 import { futurePlan, type Task } from './logic.ts'
 import { resolveToc, type TocLine } from './toc.ts'
+import { buildTask, emptyForm } from './planForm.ts'
 
 /** 요일마다: 공부 · 예비 · 쉼 (0=일 … 6=토) */
 export type DayKind = 'on' | 'sp' | 'off'
@@ -34,6 +35,20 @@ export interface Wiz {
   weights: Record<number, 1 | 2 | 3>
   /** 바쁜 날엔 이것만 */
   minGoal: number | null
+  // ── 시간 · 습관 · 할 일 ──
+  /** 시간: 하루 목표(분) */
+  perMin: number
+  /** 시간·습관: 요일마다 / N일마다 */
+  repeat: 'week' | 'day'
+  every: number
+  /** 시간·습관: 하는 요일 (0=일 … 6=토) */
+  week: boolean[]
+  /** 습관: 전체 쉬는 날에도 한다 */
+  keepOnRest: boolean
+  /** 시간·습관: 끝나는 날 없이 계속 */
+  endless: boolean
+  /** 할 일: 마감일 */
+  due: string
 }
 
 export const DEFAULT_WINDOWS: StudyWindows = { weekday: [[16 * 60, 18 * 60], [20 * 60, 22 * 60]], weekend: [[10 * 60, 13 * 60]] }
@@ -42,6 +57,7 @@ export const DEFAULT_DAYS: DayKind[] = ['sp', 'on', 'on', 'on', 'on', 'on', 'on'
 export const emptyWiz = (today: string, endDate: string, examId = ''): Wiz => ({
   name: '', categoryId: '', part: false, from: 1, to: null, done: null, unit: '쪽', toc: [],
   startDate: today, endDate, days: [...DEFAULT_DAYS], buffer: 2, examId, windows: DEFAULT_WINDOWS, notify: true, weights: {}, minGoal: null,
+  perMin: 60, repeat: 'week', every: 2, week: [true, true, true, true, true, true, true], keepOnRest: false, endless: true, due: '',
 })
 
 export const hhmm = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
@@ -127,4 +143,19 @@ export function weekShape(t: Task, today: string): (number | null)[] {
 export function pickDate(cur: { start: string; end: string | null }, d: string): { start: string; end: string | null } {
   if (cur.end !== null) return { start: d, end: null }
   return d < cur.start ? { start: d, end: null } : { start: cur.start, end: d }
+}
+
+/** 시간·습관·할 일 계획 (planForm.buildTask를 쓴다) */
+export function simpleTask(kind: 'time' | 'habit' | 'todo', w: Wiz, id: string, order: number, now: number): Task | string {
+  const f = {
+    ...emptyForm(w.startDate), kind, name: w.name, categoryId: w.categoryId, startDate: w.startDate,
+    endDate: kind === 'todo' ? w.startDate : w.endless ? '' : w.endDate,
+    hours: Math.floor(w.perMin / 60), mins: w.perMin % 60, repeat: w.repeat, every: w.every, week: w.week, keepOnRest: w.keepOnRest,
+    due: kind === 'todo' ? w.due || w.startDate : '',
+  }
+  if (kind === 'todo' && f.due < f.startDate) return '마감일이 하는 날보다 빨라요'
+  const t = buildTask(f, id, order, now)
+  if (typeof t === 'string') return t
+  const first = windowsOn(w.windows, dow(w.startDate))[0]
+  return { ...t, notifyTime: kind !== 'todo' && w.notify && first ? hhmm(first[0]) : null }
 }

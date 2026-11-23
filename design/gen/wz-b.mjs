@@ -186,7 +186,6 @@ const cell = ([d, v, f]) => {
   return `<span style="${base}background:color-mix(in srgb, var(--m) ${Math.round(6 + v * 2.4)}%, var(--sf));${f === 'today' ? 'box-shadow:inset 0 0 0 2px var(--ink);' : ''}">${date}${rib}<b style="font-size:15px;line-height:18px;text-align:center">${v}</b></span>`
 }
 // 책갈피 길: 1~232쪽, 단원 8개, 주말마다 도착 위치
-const CH = [28, 24, 28, 30, 30, 36, 30, 26]
 const STOPS = [[0, '오늘', '1쪽', true], [55 / 232, '11.29', '55쪽'], [141 / 232, '12.6', '141쪽'], [1, '12.12', '끝']]
 const bookPath = `<div style="position:relative;padding:22px 0 30px">
 <div aria-hidden="true" style="display:flex;gap:2px;height:22px">${CH.map((w, i) => `<span style="flex:${w};border-radius:3px;background:color-mix(in srgb, var(--m) ${i % 2 ? 22 : 34}%, var(--sf));display:flex;align-items:center;justify-content:center"><span class="xs" style="font-size:12px">${i + 1}</span></span>`).join('')}</div>
@@ -199,7 +198,7 @@ ${STOPS.map(([p, d, pg, now]) => {
 const SUM = [
   ['이름', '<span class="dt" style="background:var(--m)"></span> 수학의 정석 미적분 · 수학'],
   ['범위', '1 ~ 232쪽'],
-  ['목차', '<span class="mu">아직 없음</span>', '<button type="button" class="ch">넣기</button>'],
+  ['목차', '8단원 · 소단원 22'],
   ['기간', '11.24 ~ 12.14 · 마지막 2일 여유'],
   ['요일', '월~토 공부 · 일요일 예비'],
   ['시간', '평일 4시·8시 · 주말 10시'],
@@ -225,7 +224,7 @@ ${Q('이렇게 짜 볼게요', '날짜나 줄을 누르면 바로 고칠 수 있
 <section class="cd pd" aria-label="책갈피 길">
 <div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:16px">책갈피 길</b><span class="sm mu">주말마다 여기까지</span></div>
 ${bookPath}
-<div class="xs mu">칸 숫자는 단원이에요. 목차를 넣으면 단원 이름으로 보여요.</div>
+<div class="xs mu">칸 숫자는 단원 번호예요. 칸을 누르면 단원 이름이 보여요.</div>
 </section>
 <section class="cd" aria-label="계획 내용">
 ${SUM.map(([l, v, r], i) => `<div class="rw${i === SUM.length - 1 ? ' nl' : ''}" style="min-height:50px"><span class="lb">${l}</span><span class="gr el">${v}</span>${r ?? `<span class="mu">${I.chev}</span>`}</div>`).join('')}
@@ -264,6 +263,10 @@ const BOARDS = [
   ['WZPreset', '2-1 · 프리셋에서 고르기', W2a, 844],
   ['WZColor', '2-2 · 과목 색 (추천 16색)', W2b, 844],
   ['WZAmount', '3 · 얼마나 하나요', W3, 844],
+  ['WZTocPaste', '3-1 · 목차 붙여넣기', WT1, 844],
+  ['WZTocRead', '3-2 · 이렇게 읽었어요', WT2, 1410],
+  ['WZTocType', '3-3 · 목차 직접 입력', WT3, 844],
+  ['WZAmountToc', '3-4 · 목차를 넣은 뒤', WT4, 844],
   ['WZPeriod', '4 · 언제부터 언제까지 (요일 포함)', W4, 930],
   ['WZTime', '5 · 보통 언제 공부해요 (시간대)', W5, 844],
   ['WZSummary', '6 · 계획 한눈에', W6, 1430],

@@ -1,5 +1,5 @@
 const fs=require("fs"),path=require("path");const root=path.join(__dirname,"..");
-const src=fs.readFileSync(path.join(root,"gen/np.mjs"),"utf8");
+const src=fs.readFileSync(path.join(root,"gen/head.mjs"),"utf8");
 const pal=(k)=>{const m=src.match(new RegExp(k+": \{([^}]*)\}"));return Object.fromEntries([...m[1].matchAll(/(\w+): '([^']*)'/g)].map(x=>[x[1],x[2]]))};
 const names=(process.argv[2]||"").split(",");
 for(const [f,k] of [["np.html","light"],["npd.html","dark"]]){const vars=Object.entries(pal(k)).map(([a,b])=>`--${a}:${b};`).join(" ");

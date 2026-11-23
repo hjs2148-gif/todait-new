@@ -5,7 +5,7 @@
 | 파일 | 만드는 것 |
 |---|---|
 | `np.mjs` | '새 계획 개편' 페이지 (`NP*` 보드: 간단하게·자세히·목차·붙여넣기·과목·가능 시간·필요할 때 제안) |
-| `head.mjs` + `wz-a.mjs` + `wz-b.mjs` | '안내형 계획 만들기' 페이지 (`WZ*` 보드). 세 파일을 이어 붙여 `wz.mjs`로 실행 |
+| `head.mjs` + `wz-a.mjs` + `wz-toc.mjs` + `wz-b.mjs` | '안내형 계획 만들기' 페이지 (`WZ*` 보드). 네 파일을 이 순서로 이어 붙여 `wz.mjs`로 실행 (`wz-toc.mjs`는 3단계 목차 화면) |
 | `static.cjs` | 보드 스크립트를 실행하지 않고 팔레트만 채운 정적 HTML (`static/np.html` 라이트, `static/npd.html` 다크) |
 | `serve.cjs` | 정적 HTML을 5299 포트로 띄우는 작은 서버 (`../static` 폴더) |
 
@@ -15,7 +15,7 @@
 2. 생성기를 `<root>/gen/`에 둔다 (`static.cjs`·`serve.cjs`는 `<root>/gen` 기준으로 `../np`, `../static`을 쓴다).
 3. 실행:
    - `node gen/np.mjs np`
-   - `cat gen/head.mjs gen/wz-a.mjs gen/wz-b.mjs > gen/wz.mjs && node gen/wz.mjs np`
+   - `cat gen/head.mjs gen/wz-a.mjs gen/wz-toc.mjs gen/wz-b.mjs > gen/wz.mjs && node gen/wz.mjs np`
    - 확인용: `node gen/static.cjs WZType,WZName,...` (보드 이름을 쉼표로)
 4. 캔버스에 게시: Artifact publish, `root` = `<root>/np`, `file_path` = `canvas.json`, `files` = 바뀐 `project/*.dc.html`.
 

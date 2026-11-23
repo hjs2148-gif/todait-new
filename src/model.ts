@@ -2,6 +2,7 @@
 // IndexedDB·React와 무관한 순수 코드라 node 테스트에서 바로 불러 쓸 수 있다.
 import { addDays } from './date.ts'
 import { isPausedOn, type OffFn, type Recs, type Task, type TaskKind } from './logic.ts'
+import type { StudyWindows } from './wizard.ts'
 
 export const STATE_VERSION = 2
 
@@ -75,6 +76,8 @@ export interface Settings {
   backupRemindedOn: string | null
   /** 새 주 시작 카드를 닫은 주의 월요일 */
   weekCardSeen: string | null
+  /** 공부할 수 있는 시간대 (평일·주말). 안내형 계획 만들기 5단계에서 정한다 */
+  studyWindows: StudyWindows | null
 }
 
 export interface State {
@@ -125,6 +128,7 @@ export const defaultSettings = (): Settings => ({
   lastBackupAt: null,
   backupRemindedOn: null,
   weekCardSeen: null,
+  studyWindows: null,
 })
 
 export const emptyState = (): State => ({

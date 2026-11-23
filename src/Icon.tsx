@@ -2,6 +2,10 @@
 import type { ReactNode } from 'react'
 
 const PATHS: Record<string, ReactNode> = {
+  outdent: <path d="M20 6H10M20 12H13M20 18H10M7 9l-3 3 3 3" />,
+  indent: <path d="M20 6H10M20 12H13M20 18H10M4 9l3 3-3 3" />,
+  paste: <><rect x="6" y="4.5" width="12" height="16" rx="2.5" /><path d="M9.5 3.5h5v3h-5zM9 11h6M9 14.5h6" /></>,
+  down: <path d="M5 9.5l7 7 7-7" />,
   today: <><rect x="4" y="4" width="16" height="16" rx="3.5" /><path d="M8.5 12.3l2.5 2.5 4.5-5" /></>,
   calendar: <><rect x="4" y="5.5" width="16" height="14.5" rx="2.5" /><path d="M4 10.5h16M8.5 3.5v4M15.5 3.5v4" /></>,
   chart: <path d="M6 20v-6M12 20V5M18 20v-9" strokeWidth="2.6" />,
@@ -37,7 +41,7 @@ const PATHS: Record<string, ReactNode> = {
   plus: <path d="M12 5v14M5 12h14" strokeWidth="2.4" />,
 }
 
-export type IconName = 'today' | 'calendar' | 'chart' | 'pencil' | 'more' | 'play' | 'stop' | 'check' | 'close' | 'left' | 'right' | 'plus' | 'flag' | 'minus' | 'book' | 'lecture' | 'clock' | 'repeat'
+export type IconName = 'outdent' | 'indent' | 'paste' | 'down' | 'today' | 'calendar' | 'chart' | 'pencil' | 'more' | 'play' | 'stop' | 'check' | 'close' | 'left' | 'right' | 'plus' | 'flag' | 'minus' | 'book' | 'lecture' | 'clock' | 'repeat'
   | 'list' | 'archive' | 'target' | 'grid' | 'palette' | 'restday' | 'upload' | 'download' | 'lock' | 'moon' | 'bell' | 'shield' | 'trash' | 'phone' | 'pause'
 
 export const Icon = ({ name, size = 22, stroke = 2 }: { name: IconName; size?: number; stroke?: number }) => (

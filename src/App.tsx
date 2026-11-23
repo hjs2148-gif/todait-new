@@ -3,7 +3,7 @@ import { Icon, type IconName } from './Icon.tsx'
 import { Calendar } from './Calendar.tsx'
 import { todayISO } from './date.ts'
 import { DiaryForm, DiaryPage, type Draft } from './Diary.tsx'
-import type { Task } from './logic.ts'
+import type { Task, TaskKind } from './logic.ts'
 import { More } from './More.tsx'
 import { Progress } from './Progress.tsx'
 import { Stats } from './Stats.tsx'
@@ -11,6 +11,7 @@ import { Stopwatch } from './Stopwatch.tsx'
 import { refreshForNewDay, useStore } from './store.ts'
 import { applyTheme } from './theme.ts'
 import { NewPlan } from './NewPlan.tsx'
+import { NewPlanWizard } from './NewPlanWizard.tsx'
 import { PlanEdit } from './PlanEdit.tsx'
 import { WidgetEdit } from './WidgetEdit.tsx'
 import { Today } from './Today.tsx'
@@ -27,7 +28,7 @@ const TABS: [Tab, string, IconName][] = [
 export function App() {
   const [tab, setTab] = useState<Tab>('today')
   const [date, setDate] = useState(todayISO())
-  const [form, setForm] = useState<{ task: Task | null } | null>(null)
+  const [form, setForm] = useState<{ task: Task | null; one?: TaskKind | true } | null>(null)
   const [draft, setDraft] = useState<Draft | null>(null)
   const [widgets, setWidgets] = useState(false)
   const theme = useStore().settings.theme
@@ -70,7 +71,9 @@ export function App() {
         ))}
       </nav>
 
-      {form && (form.task ? <PlanEdit task={form.task} onClose={() => setForm(null)} /> : <NewPlan onClose={() => setForm(null)} />)}
+      {form && (form.task ? <PlanEdit task={form.task} onClose={() => setForm(null)} />
+        : form.one ? <NewPlan onClose={() => setForm(null)} kind={form.one === true ? undefined : form.one} />
+          : <NewPlanWizard onClose={() => setForm(null)} onForm={(k) => setForm({ task: null, one: k ?? true })} />)}
       {widgets && <WidgetEdit onClose={() => setWidgets(false)} />}
       {draft && <DiaryForm draft={draft} onClose={() => setDraft(null)} />}
       <Stopwatch showStart={tab === 'today' && date === todayISO()} />

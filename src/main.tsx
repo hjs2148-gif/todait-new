@@ -11,6 +11,7 @@ import './progress.css'
 import './stats.css'
 import './forms.css'
 import './moments.css'
+import './wizard.css'
 
 const root = createRoot(document.getElementById('root')!)
 demoReady()

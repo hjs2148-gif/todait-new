@@ -7,7 +7,7 @@
     "dev": "vite --host",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host",
-    "test": "node --experimental-strip-types src/logic.test.ts && node --experimental-strip-types src/model.test.ts && node --experimental-strip-types src/progress.test.ts && node --experimental-strip-types src/stats.test.ts && node --experimental-strip-types src/planForm.test.ts && node --experimental-strip-types src/toc.test.ts"
+    "test": "node --experimental-strip-types src/logic.test.ts && node --experimental-strip-types src/model.test.ts && node --experimental-strip-types src/progress.test.ts && node --experimental-strip-types src/stats.test.ts && node --experimental-strip-types src/planForm.test.ts && node --experimental-strip-types src/toc.test.ts && node --experimental-strip-types src/wizard.test.ts"
   },
   "dependencies": {
     "pretendard": "1.3.9",

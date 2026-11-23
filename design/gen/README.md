@@ -7,6 +7,7 @@
 | `np.mjs` | '새 계획 개편' 페이지 (`NP*` 보드: 간단하게·자세히·목차·붙여넣기·과목·가능 시간·필요할 때 제안) |
 | `head.mjs` + `wz-a.mjs` + `wz-toc.mjs` + `wz-b.mjs` | '안내형 계획 만들기' 페이지 (`WZ*` 보드). 네 파일을 이 순서로 이어 붙여 `wz.mjs`로 실행 (`wz-toc.mjs`는 3단계 목차 화면) |
 | `rm.mjs` | '남은 것' 페이지 (`RM*`: 넘치는 날 알림 · 해결 방법 · 여유 ○일). `cat gen/head.mjs gen/rm.mjs > gen/rmx.mjs && node gen/rmx.mjs np` |
+| `ov.mjs` | '안내형 해결 · 그래픽' 페이지 (`OV*` 넘치는 날 3화면, `PGPath` 책갈피 길). `cat gen/head.mjs gen/ov.mjs > gen/ovx.mjs && node gen/ovx.mjs np` |
 | `static.cjs` | 보드 스크립트를 실행하지 않고 팔레트만 채운 정적 HTML (`static/np.html` 라이트, `static/npd.html` 다크) |
 | `serve.cjs` | 정적 HTML을 5299 포트로 띄우는 작은 서버 (`../static` 폴더) |
 

@@ -62,7 +62,7 @@ function FitNote({ t, date, expect, done }: { t: Task; date: string; expect: num
 
 function Status({ s, t, today }: { s: State; t: Task; today: string }) {
   const b = behindOf(s, t, today)
-  return b > 0 ? <b className="bad nowrap">{b}{t.unit} 밀림</b> : <span className="mu nowrap">예정대로</span>
+  return b > 0 ? <b className="behind nowrap">{b}{t.unit} 밀림</b> : <span className="mu nowrap">예정대로</span>
 }
 
 export function BookCard({ s, item, date, today, onEntry, onMenu }: { s: State; item: Item; date: string; today: string; onEntry: () => void; onMenu: () => void }) {
@@ -116,7 +116,7 @@ export function BookCard({ s, item, date, today, onEntry, onMenu }: { s: State; 
       {chapters.length > 0 && (
         <button className="bc-row bc-fold" aria-expanded={open} onClick={() => setOpen(!open)}>
           <b>단원별 진행</b>
-          <span><b>{chapters.filter((c) => c.doneDate).length}</b><span className="mu"> / {chapters.length}단원 끝</span>{reviews > 0 && <b className="bad"> · 복습 {reviews}</b>}<Icon name={open ? 'left' : 'right'} size={14} /></span>
+          <span><b>{chapters.filter((c) => c.doneDate).length}</b><span className="mu"> / {chapters.length}단원 끝</span>{reviews > 0 && <b className="behind"> · 복습 {reviews}</b>}<Icon name={open ? 'left' : 'right'} size={14} /></span>
         </button>
       )}
       {open && (

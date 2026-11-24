@@ -14,6 +14,10 @@ import { DayEnd } from './DayEnd.tsx'
 import { DoneChapterSheet } from './DoneChapter.tsx'
 import { BackupCard, DoneDayCard, EmptyCard, NewWeekCard, RestView, RoundCard, roundToday } from './TodayCards.tsx'
 import { GuideCard, OverCard, overDays, SuggestCard } from './Guide.tsx'
+import { buzz, SwipeRow, Toast, type ToastMsg } from './QuickLog.tsx'
+import { StreakBadge } from './Streak.tsx'
+import { endedExam, ExamWrap } from './ExamWrap.tsx'
+import { ExamEdit } from './ExamEdit.tsx'
 
 export interface Nav {
   date: string
@@ -108,6 +112,15 @@ function behindText(s: State, task: Task, today: string) {
   return b > 0 ? (task.kind === 'todo' ? '마감 지남' : `${b}${task.unit} 밀림`) : task.type === 'amount' ? '예정대로' : ''
 }
 
+const KIND_ICON = { book: 'book', lecture: 'lecture', time: 'clock', habit: 'repeat', todo: 'check' } as const
+/** 줄 오른쪽 숫자 하나: 남은 양 */
+const leftText = ({ task, rec, expect, rate }: Item) => {
+  if (rate >= 1) return <>끝</>
+  if (task.type === 'check') return <small>할 일</small>
+  if (task.type === 'time') return <>{hm(Math.max(0, expect - (rec?.sec ?? 0)))}<small> 남음</small></>
+  return <>{Math.max(0, expect - (rec?.done ?? 0))}<small>{task.unit} 남음</small></>
+}
+
 /** 행 오른쪽: 한 양 / 목표 */
 const amountText = ({ task, rec, expect }: Item) =>
   task.type === 'time' ? `${hm(rec?.sec ?? 0)} / ${hm(expect)}` : task.type === 'check' ? (rec?.checked ? '끝' : '') : `${rec?.done ?? 0} / ${expect}${task.unit}`
@@ -122,20 +135,62 @@ function goalText(s: State, { task, rec, expect }: Item, date: string) {
 }
 
 // ── 전체 탭 ────────────────────────────────────────────────
-function AllRows({ s, items, date, today, goTab, onEntry }: { s: State; items: Item[]; date: string; today: string; goTab: (k: TaskKind) => void; onEntry: (id: string) => void }) {
+function AllRows({ s, items, date, today, goTab, onEntry, say }: { s: State; items: Item[]; date: string; today: string; goTab: (k: TaskKind) => void; onEntry: (id: string) => void; say: (text: string, undo?: () => void) => void }) {
   const [showDone, setShowDone] = useState(false)
   const open = items.filter((i) => i.rate < 1)
   const done = items.filter((i) => i.rate >= 1)
+  const [openId, setOpenId] = useState<string | null>(null)
+  /** 밀어서 기록: 목표만큼 했다고 적고 4초 동안 되돌릴 수 있게 한다 */
+  const quick = (i: Item) => {
+    const { task, rec, expect } = i
+    if (task.type === 'check') {
+      actions.toggleCheck(task.id, date)
+      buzz()
+      say(`${task.name} 끝`, () => actions.toggleCheck(task.id, date))
+    } else if (task.type === 'amount') {
+      const prev = rec?.done ?? 0
+      actions.setDone(task.id, date, Math.max(expect, prev))
+      buzz()
+      say(`${task.name} ${expect}${task.unit} 기록했어요`, () => actions.setDone(task.id, date, prev))
+    }
+  }
+  const canQuick = (i: Item) => date <= today && i.rate < 1 && ((i.task.type === 'amount' && i.expect > 0) || (i.task.type === 'check' && !i.rec?.checked))
   const row = (i: Item) => {
     const b = date === today ? behindText(s, i.task, today) : ''
+    const late = b.includes('밀림') || b.includes('지남')
+    const color = colorOf(s, i.task)
+    const isOpen = openId === i.task.id
+    const toggle = () => setOpenId(isOpen ? null : i.task.id)
     return (
-      <div key={i.task.id} className="prow" role="button" tabIndex={0} onClick={() => goTab(i.task.kind)} onKeyDown={(e) => e.key === 'Enter' && goTab(i.task.kind)}>
-        <div className="prow-main">
-          <div className="prow-1"><span className="prow-name">{i.task.name}</span><b>{pctOf(i.rate)}<small>%</small></b></div>
-          <div className="prow-2"><span className="ell">{goalText(s, i, date).replace(/ · .*함$/, '')}{b && b !== '예정대로' && <> · <span className={b.includes('밀림') || b.includes('지남') ? 'late-t' : ''}>{b}</span></>}{i.task.fitFrom?.[date] !== undefined && <> · <span className="fit-t">시간에 맞춰 줄임</span></>}</span><span className="prow-n">{amountText(i)}</span></div>
-          <div className="track" aria-hidden="true"><div style={{ width: `${pctOf(i.rate)}%`, background: colorOf(s, i.task) }} /></div>
+      <div key={i.task.id} className={`prow-w${isOpen ? ' open' : ''}`}>
+        <SwipeRow
+          right={canQuick(i) ? { label: '다 했어요', run: () => quick(i) } : undefined}
+          left={date <= today && i.task.type === 'amount' && i.rate < 1 ? { label: '직접 입력', run: () => onEntry(i.task.id) } : undefined}
+        >
+        <div className="prow" role="button" tabIndex={0} aria-expanded={isOpen} onClick={toggle} onKeyDown={(e) => e.key === 'Enter' && toggle()}>
+          <span className="kind-ic" style={{ background: `color-mix(in srgb, ${color} 18%, var(--sf))`, color }} aria-label={KIND_NAME[i.task.kind]}><Icon name={/문항|문제/.test(i.task.unit) ? 'pencil' : KIND_ICON[i.task.kind]} size={15} /></span>
+          <div className="prow-main">
+            <div className="prow-1"><span className="prow-name">{i.task.name}{late && <span className="flag">{b.includes('지남') ? '지남' : '밀림'}</span>}</span><b>{leftText(i)}</b></div>
+            <div className="track" aria-hidden="true"><div style={{ width: `${pctOf(i.rate)}%`, background: color }} /></div>
+          </div>
+          <RowAction s={s} item={i} date={date} today={today} onEntry={() => onEntry(i.task.id)} />
         </div>
-        <RowAction s={s} item={i} date={date} today={today} onEntry={() => onEntry(i.task.id)} />
+        </SwipeRow>
+        {isOpen && (
+          <div className="prow-more">
+            <div className="pm-grid">
+              <div><small>오늘 목표</small><b>{goalText(s, i, date).replace(/^목표 /, '').replace(/ · .*함$/, '')}</b></div>
+              <div><small>했어요</small><b>{amountText(i) || '아직'}</b></div>
+              <div><small>밀린 양</small><b>{late ? b.replace(' 밀림', '') : '없음'}</b></div>
+            </div>
+            {i.task.fitFrom?.[date] !== undefined && <p className="pm-note">가능 시간에 맞춰 오늘 양을 줄였어요</p>}
+            <div className="pm-act">
+              {canQuick(i) && <button className="chip dark" onClick={() => quick(i)}>{i.task.type === 'check' ? '했어요' : '목표만큼 했어요'}</button>}
+              {date <= today && i.task.type === 'amount' && <button className="chip" onClick={() => onEntry(i.task.id)}>직접 입력</button>}
+              <button className="chip" onClick={() => goTab(i.task.kind)}>{KIND_NAME[i.task.kind]} 탭에서 자세히</button>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -261,6 +316,19 @@ export function Today({ nav }: { nav: Nav }) {
   const [dayEnd, setDayEnd] = useState(false)
   const [chapterDone, setChapterDone] = useState<{ taskId: string; chapterId: string } | null>(null)
   const [showResting, setShowResting] = useState(false)
+  const [toast, setToast] = useState<ToastMsg | null>(null)
+  const say = (text: string, undo?: () => void) => setToast({ id: Date.now(), text, undo })
+  const [wrap, setWrap] = useState(false)
+  const [newExam, setNewExam] = useState(false)
+  const [hideEnd, setHideEnd] = useState(false)
+  const ended = date === today && !hideEnd ? endedExam(s, today) : null
+  // 계획 하나가 끝나면 짧게 진동
+  const doneRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (date !== today) { doneRef.current = null; return }
+    if (doneRef.current !== null && stats.goalsDone > doneRef.current) buzz(20)
+    doneRef.current = stats.goalsDone
+  }, [stats.goalsDone, date, today])
   const find = (id: string | null) => [...active, ...resting].find((i) => i.task.id === id)
   const menuItem = find(menu)
   const entryItem = find(entry)
@@ -299,7 +367,7 @@ export function Today({ nav }: { nav: Nav }) {
           )}
           {s.tasks.length === 0 && <EmptyCard newPlan={() => nav.editTask(null)} />}
           {s.tasks.length > 0 && active.length === 0 && <p className="empty">이 날은 계획이 없습니다.</p>}
-          {active.length > 0 && <AllRows s={s} items={active} date={date} today={today} goTab={setTab} onEntry={setEntry} />}
+          {active.length > 0 && <AllRows s={s} items={active} date={date} today={today} goTab={setTab} onEntry={setEntry} say={say} />}
           {resting.length > 0 && (
             <>
               <button className="fold" aria-expanded={showResting} onClick={() => setShowResting(!showResting)}>쉬는 계획 {resting.length}개 · {showResting ? '접기' : '펼치기'}</button>
@@ -341,7 +409,16 @@ export function Today({ nav }: { nav: Nav }) {
         </div>
       </header>
 
+      {date === today && !isRest && <div className="th-s"><StreakBadge s={s} today={today} /></div>}
+
       <div className="wd-wrap">
+        {ended && (
+          <section className="tcard weekcard" role="region" aria-label="시험 끝">
+            <div className="tc-meta"><b className="big16">시험이 끝났어요</b></div>
+            <p className="sm mu">{ended.name} 수고했어요. 점수를 적고 끝난 계획을 정리해요.</p>
+            <div className="two"><button className="chip dark" onClick={() => setWrap(true)}>정리하기</button><button className="chip" onClick={() => setHideEnd(true)}>나중에</button></div>
+          </section>
+        )}
         {date === today && <BackupCard s={s} today={today} />}
         {date === today && <GuideSlot s={s} today={today} />}
         {date === today && dow(today) === 1 && s.settings.weekCardSeen !== today && !isRest && <NewWeekCard s={s} today={today} goProgress={nav.goProgress} />}
@@ -370,6 +447,9 @@ export function Today({ nav }: { nav: Nav }) {
       {chapterDone && <DoneChapterSheet taskId={chapterDone.taskId} chapterId={chapterDone.chapterId} onClose={() => setChapterDone(null)} />}
       {dayEnd && <DayEnd date={date} today={today} onClose={() => setDayEnd(false)} goTomorrow={() => { setDayEnd(false); setDate(addDays(today, 1)) }} />}
       {extend && <ExtendSheet task={extend} onClose={() => setExtend(null)} />}
+      {wrap && ended && <ExamWrap s={s} exam={ended} today={today} onClose={() => setWrap(false)} onNext={() => setNewExam(true)} />}
+      {newExam && <ExamEdit examId={null} onClose={() => setNewExam(false)} />}
+      <Toast t={toast} onClose={() => setToast(null)} />
     </div>
   )
 }

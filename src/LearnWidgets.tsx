@@ -58,11 +58,15 @@ export function ProgressWidget({ s, size, date, today, stats }: { s: State; size
           <div className="t-seg">{items.slice(0, 6).map((i) => <i key={i.task.id}><b style={{ width: `${Math.round(i.rate * 100)}%`, background: colorOf(s, i.task) }} /></i>)}</div>
           <span className="t-sub">{endText}</span>
         </>}
-        {size === 's2' && <div className="t-cols"><div className="l"><span className="t-num">{pct ?? '—'}<small>%</small></span><span className="t-sub">{endText}</span></div><div className="r">{rows(4, false)}</div></div>}
+        {size === 's2' && <div className="t-cols"><div className="l"><span className="t-num">{pct ?? '—'}<small>%</small></span><span className="t-sub">{endText}</span></div><div className="r"><Sessions s={s} date={date} /></div></div>}
         {size === 's4' && <>
           <span className="t-num">{pct ?? '—'}<small>% · {items.length}개 중 {doneN}개 끝</small></span>
           <Sessions s={s} date={date} />
-          <div className="t-list">{rows(4, true)}</div>
+          <div className="t-kv">
+            <div><small>공부한 시간</small><b>{hm(stats.sec)}</b></div>
+            <div><small>남은 공부</small><b>{stats.remain > 0 ? hm(stats.remain) : '없음'}</b></div>
+            <div><small>남은 계획</small><b>{items.length - doneN}개</b></div>
+          </div>
           {next && date === today && <button className="t-act" onClick={() => startTimer(s, next.task, today)}>다음: {next.task.name} 시작</button>}
         </>}
       </Tile>

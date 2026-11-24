@@ -3,7 +3,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { addDays, diffDays, dow } from './date.ts'
 import { liveExpect, secPerUnit, sumDone, type Task } from './logic.ts'
-import { examDeadline, planProgress } from './progress.ts'
+import { examDeadline, examProgress, planProgress } from './progress.ts'
 import { actions, balanceOf, offFor, planOf, windowsFor, type Exam, type State } from './store.ts'
 import { winSum, type Win } from './wizard.ts'
 import { Icon } from './Icon.tsx'
@@ -170,6 +170,7 @@ export function SlackCard({ s, exam, today }: { s: State; exam: Exam; today: str
     <section className="gcard g-slack" aria-label="시험까지 여유">
       <span className="g-lab">{exam.name} {mdKo(exam.date)}</span>
       <b className="g-head">D-{diffDays(today, exam.date)}{rows[0].slack < 0 ? ` · ${rows[0].t.name}이 시험 뒤에 끝나요` : rows[0].slack === 0 ? ` · ${rows[0].t.name}은 여유가 없어요` : ' · 모두 시험 전에 끝나요'}</b>
+      {(() => { const p = examProgress(s, exam, today); return p ? <span className="g-body mu">범위 진도 <b style={{ color: 'var(--ink)' }}>{Math.round(p.done * 100)}%</b> · 오늘까지 예정 {Math.round(p.planned * 100)}%</span> : null })()}
       {over.length > 0 && <span className="g-body">앞으로 2주 중 {over.length === 1 ? `${dayKo(over[0].date)}` : `${over.length}일`}이 가능 시간을 넘어요. 오늘 탭에서 고칠 수 있어요.</span>}
       <div className="g-list">
         {rows.map((r) => (

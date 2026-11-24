@@ -45,7 +45,7 @@
 .segs { display: flex; gap: 2px; padding: 2px; border-radius: 10px; background: var(--chip); }
 .segs button { position: relative; flex: 1; min-width: 0; height: 32px; border-radius: 8px; color: var(--ink); font-size: 14px; font-weight: 500; }
 .segs button.on { background: var(--segon); box-shadow: 0 1px 2px rgba(0,0,0,.12); font-weight: 700; }
-.late { position: absolute; top: 6px; margin-left: 2px; width: 6px; height: 6px; border-radius: 3px; background: var(--bad); }
+.late { position: absolute; top: 6px; margin-left: 2px; width: 6px; height: 6px; border-radius: 3px; background: var(--ink); }
 .tbody { padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
 .sec-h { display: flex; align-items: baseline; justify-content: space-between; padding: 8px 4px 0; }
 .sec-h h2 { font-size: 17px; line-height: 24px; }
@@ -62,7 +62,9 @@
 .prow-1 b small { font-size: 12px; font-weight: 500; color: var(--mu); }
 .prow-2 { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; line-height: 18px; color: var(--mu); margin-top: 2px; }
 .prow-n { color: var(--ink); white-space: nowrap; flex: none; }
-.late-t { color: var(--bad); font-weight: 600; }
+/* 밀림은 먹색 굵게. 빨강은 시험 뒤로 밀릴 때만 */
+.late-t { color: var(--ink); font-weight: 700; }
+.behind { color: var(--ink); font-weight: 700; }
 .strong { color: var(--ink); font-weight: 700; }
 .track { height: 5px; border-radius: 3px; background: var(--trk); margin-top: 8px; overflow: hidden; }
 .track > div { height: 100%; border-radius: 3px; }
@@ -307,3 +309,18 @@ input.switch:disabled { opacity: .4; }
 .mini-b.end { background: var(--bg); color: var(--ink); }
 .fit-t { color: var(--rib); }
 .bc-note .ok { color: var(--ink); font-weight: 600; }
+
+/* 오늘 목록: 줄마다 숫자 하나, 눌러서 펼치기 */
+.prow-w { border-bottom: 1px solid var(--hl); }
+.plist .prow-w:last-child { border-bottom: 0; }
+.prow-w .prow { border-bottom: 0; }
+.kind-ic { width: 28px; height: 28px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.prow-name .flag { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 6px; background: var(--chip); font-size: 12px; font-weight: 700; color: var(--ink); margin-left: 6px; vertical-align: 2px; }
+.prow-w .track { margin-top: 6px; }
+.prow-more { padding: 4px 16px 14px 56px; background: var(--pg); }
+.pm-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 10px; }
+.pm-grid small { display: block; font-size: 12px; line-height: 16px; color: var(--mu); }
+.pm-grid b { font-size: 14px; line-height: 20px; }
+.pm-grid .mu { color: var(--mu); font-weight: 500; }
+.pm-note { margin: 8px 0 0; font-size: 13px; line-height: 18px; color: var(--mu); }
+.prow-more .chip { margin-top: 10px; }

@@ -194,7 +194,7 @@ export function More({ editTask, openDiary }: { editTask: (t: Task) => void; ope
               const n = diffDays(today, e.date)
               return (
                 <button key={e.id} className="msheet-row" onClick={() => { setExam(e.id); setPage(null) }}>
-                  <span className="grow">{e.name}{e.selected && <small> · 오늘 탭에 표시</small>}</span><b>{n === 0 ? 'D-DAY' : n > 0 ? `D-${n}` : `D+${-n}`}</b>
+                  <span className="grow">{e.name}{e.selected && <small> · 오늘 탭에 표시</small>}{e.closedAt && <small> · {Object.entries(e.scores ?? {}).map(([c, v]) => `${s.categories.find((x) => x.id === c)?.name ?? ''} ${v}`).join(' · ') || '끝남'}</small>}</span><b>{e.closedAt ? '끝' : n === 0 ? 'D-DAY' : n > 0 ? `D-${n}` : `D+${-n}`}</b>
                 </button>
               )
             })}

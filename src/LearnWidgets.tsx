@@ -112,7 +112,7 @@ export function Sessions({ s, date, big, plan, ticks, review = 0 }: { s: State; 
   const showTicks = big || ticks
   const tk: [number, string][] = [[6 * 60, '오전 6시'], [12 * 60, '정오'], [18 * 60, '오후 6시'], [24 * 60, '밤 12시']]
   const nowTick = plan && fut.length > 0 && nowM > H0 && nowM < 24 * 60 ? nowM : null
-  const ticksShown = tk.filter(([m]) => nowTick === null || Math.abs(pos(m) - pos(nowTick)) > 13)
+  const ticksShown = tk.filter(([m]) => nowTick === null || Math.abs(pos(m) - pos(nowTick)) > 20)
   return (
     <div className={`t-ses${big ? ' big' : ''}`}>
       {big ? <span className="t-sm">{total ? `모두 ${hm(total)}` : '아직 공부한 기록이 없어요'}{fut.length > 0 && (review >= 60 ? ' · 옅은 칸은 남은 계획 · 주황 칸은 복습' : ' · 옅은 칸은 남은 계획')}</span> : <span className="t-sm">공부한 때 · {total ? hm(total) : '아직 없어요'}{fut.length > 0 && ticks ? (review >= 60 ? ' · 옅은 칸 남은 계획 · 주황 복습' : ' · 옅은 칸은 남은 계획') : ''}</span>}

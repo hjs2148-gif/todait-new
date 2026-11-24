@@ -154,7 +154,6 @@
 .dc-ask { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 16px; background: var(--pg); margin: 12px 0; }
 .dc-ask b { font-size: 16px; }
 .dc-ask small { font-size: 13px; line-height: 19px; color: var(--mu); }
-.c2 { position: relative; }
 .rdots { position: absolute; left: 0; right: 0; bottom: 3px; display: flex; justify-content: center; gap: 2px; pointer-events: none; }
 .rdots i { width: 5px; height: 5px; border-radius: 3px; background: var(--rib); }
 .c2.rheavy { box-shadow: inset 0 0 0 1.5px var(--rib); }
@@ -168,4 +167,9 @@
 .rv-ic.sm { width: 24px; height: 24px; border-radius: 7px; }
 .end-recall .rv-g3 { margin: 2px 0 0; }
 .end-recall .linkish { align-self: flex-start; font-size: 13px; color: var(--mu); }
-.c2 .cbar2.empty { padding: 0; margin: 0; min-height: 0; white-space: normal; }
+
+/* 새 계획 버튼: 엄지 쪽 (다음 공부 줄 위). 일기 탭의 .fab과 다른 이름 */
+.today-fab { position: fixed; right: max(16px, calc(50% - 244px)); bottom: calc(var(--tabs) + 86px + env(safe-area-inset-bottom)); z-index: 8; width: 56px; height: 56px; border-radius: 28px; border: 0; background: var(--ink); color: var(--bg); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(0,0,0,.24); }
+.page.has-fab { padding-bottom: calc(var(--tabs) + 160px + env(safe-area-inset-bottom)); }
+.wd-edit { display: flex; justify-content: center; }
+.wd-edit .chip { height: 32px; font-size: 13px; color: var(--mu); background: none; box-shadow: inset 0 0 0 1px var(--hl); }

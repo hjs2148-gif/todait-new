@@ -401,13 +401,11 @@ export function Today({ nav }: { nav: Nav }) {
   }
 
   return (
-    <div className="page today">
+    <div className="page today has-fab">
       <header className="th">
         <h1>{title}</h1>
         <div className="th-r">
           {date !== today && <button className="chip" onClick={() => setDate(today)}>오늘로</button>}
-          <button className="chip" onClick={nav.editWidgets}>편집</button>
-          <button className="sq ink" onClick={() => nav.editTask(null)} aria-label="새 계획"><Icon name="plus" size={18} /></button>
         </div>
       </header>
 
@@ -427,6 +425,7 @@ export function Today({ nav }: { nav: Nav }) {
         {allDone && !isRest && <DoneDayCard s={s} today={today} stats={stats} openDayEnd={() => setDayEnd(true)} tomorrow={() => setDate(addDays(today, 1))} />}
         {!isRest && <Widgets s={s} date={date} today={today} stats={stats} />}
         {date === today && !isRest && <ReviewLine s={s} today={today} go={() => { openProgressView('review'); nav.goProgress() }} />}
+        {!isRest && <div className="wd-edit"><button className="chip" onClick={nav.editWidgets}>위젯 편집</button></div>}
       </div>
 
       {isRest && <div className="tbody"><RestView s={s} date={date} today={today} /></div>}
@@ -453,6 +452,8 @@ export function Today({ nav }: { nav: Nav }) {
       {wrap && ended && <ExamWrap s={s} exam={ended} today={today} onClose={() => setWrap(false)} onNext={() => setNewExam(true)} />}
       {newExam && <ExamEdit examId={null} onClose={() => setNewExam(false)} />}
       <Toast t={toast} onClose={() => setToast(null)} />
+      {/* 새 계획: 엄지가 닿는 오른쪽 아래 (알림이 떠 있는 동안은 숨김) */}
+      {!toast && <button className="today-fab" onClick={() => nav.editTask(null)} aria-label="새 계획"><Icon name="plus" size={26} /></button>}
     </div>
   )
 }

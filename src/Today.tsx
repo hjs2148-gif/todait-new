@@ -18,6 +18,8 @@ import { buzz, SwipeRow, Toast, type ToastMsg } from './QuickLog.tsx'
 import { StreakBadge } from './Streak.tsx'
 import { endedExam, ExamWrap } from './ExamWrap.tsx'
 import { ExamEdit } from './ExamEdit.tsx'
+import { ReviewLine } from './ReviewTab.tsx'
+import { openProgressView } from './Progress.tsx'
 
 export interface Nav {
   date: string
@@ -424,6 +426,7 @@ export function Today({ nav }: { nav: Nav }) {
         {date === today && dow(today) === 1 && s.settings.weekCardSeen !== today && !isRest && <NewWeekCard s={s} today={today} goProgress={nav.goProgress} />}
         {allDone && !isRest && <DoneDayCard s={s} today={today} stats={stats} openDayEnd={() => setDayEnd(true)} tomorrow={() => setDate(addDays(today, 1))} />}
         {!isRest && <Widgets s={s} date={date} today={today} stats={stats} />}
+        {date === today && !isRest && <ReviewLine s={s} today={today} go={() => { openProgressView('review'); nav.goProgress() }} />}
       </div>
 
       {isRest && <div className="tbody"><RestView s={s} date={date} today={today} /></div>}

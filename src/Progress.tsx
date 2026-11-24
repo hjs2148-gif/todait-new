@@ -1,12 +1,12 @@
 // 진도 탭 (RProg · RProgBook · RProgDone) 과 진도 자세히 (RDetail)
-import { gapAfter, GRADE_WORD, ladder, nextDue } from './recall.ts'
+import { RecallSheet, ReviewView } from './ReviewTab.tsx'
 import { useState } from 'react'
 import { SlackCard, slackRows } from './Guide.tsx'
 import { Icon } from './Icon.tsx'
 import { addDays, diffDays, todayISO } from './date.ts'
 import { sumDone, type Grade, type Task } from './logic.ts'
 import {
-  avgGrade, chapterSpans, examDeadline, examProgress, isProgressTask, monthStack, planProgress, projectEnd, reviewDue,
+  avgGrade, chapterSpans, examDeadline, examProgress, isProgressTask, monthStack, planProgress, projectEnd, reviewDue, todayReviews,
   studyDaysBetween, taskSec, type PlanProgress,
 } from './progress.ts'
 import { actions, offFor, useStore, type Exam, type State } from './store.ts'
@@ -188,34 +188,6 @@ function Shelf({ s, done, doing }: { s: State; done: Task[]; doing: PlanProgress
   )
 }
 
-/** 단원 하나: 오늘 떠올려 본 결과 고르기 + 다음 복습일 */
-function ChapterSheet({ task, chapterId, onClose }: { task: Task; chapterId: string; onClose: () => void }) {
-  const c = task.chapters?.find((x) => x.id === chapterId)
-  if (!c) return null
-  const today = todayISO()
-  const l = ladder(c)
-  const todayG = c.recalls?.find((r) => r.d === today)?.g
-  const due = nextDue(c)
-  return (
-    <Sheet title={c.name} onClose={onClose}>
-      <p className="hint">{c.from}~{c.to}{task.unit}{c.doneDate ? ` · ${md(c.doneDate)} 끝` : ''}{l?.count ? ` · 떠올리기 ${l.count}번` : ''}</p>
-      {c.doneDate ? (
-        <>
-          <p className="hint">책을 덮고 핵심을 떠올려 본 뒤, 펼쳐서 맞춰 보고 골라요.</p>
-          <div className="grades big" role="group" aria-label="떠올려 보니">
-            {(['low', 'mid', 'high'] as Grade[]).map((g) => {
-              const gap = gapAfter(c, g)
-              return <button key={g} aria-pressed={todayG === g} className={todayG === g ? 'on' : ''} onClick={() => actions.recall(task.id, c.id, g, today)}>{GRADE_WORD[g]}<small className="blk">{gap === null ? '졸업' : gap === 1 ? '내일' : `${gap}일 뒤`}</small></button>
-            })}
-          </div>
-          <p className="hint">{due ? `다음 복습 ${md(due)}` : '졸업했어요 · 시험 전에 한 번만 다시 나와요'}</p>
-        </>
-      ) : <p className="hint">단원을 끝내면 다음 날부터 떠올리기로 복습해요.</p>}
-      <button className="primary" onClick={onClose}>닫기</button>
-    </Sheet>
-  )
-}
-
 // ── 진도 자세히 ────────────────────────────────────────────
 function Detail({ s, taskId, exam, today, onBack, editTask }: { s: State; taskId: string; exam: Exam | null; today: string; onBack: () => void; editTask: (t: Task) => void }) {
   const t = s.tasks.find((x) => x.id === taskId)
@@ -327,16 +299,20 @@ function Detail({ s, taskId, exam, today, onBack, editTask }: { s: State; taskId
           </>
         )}
       </div>
-      {chap && <ChapterSheet task={t} chapterId={chap} onClose={() => setChap(null)} />}
+      {chap && <RecallSheet s={s} taskId={t.id} chapterId={chap} today={today} onClose={() => setChap(null)} />}
     </div>
   )
 }
 
 // ── 진도 탭 ────────────────────────────────────────────────
+/** 다음에 진도 탭을 열 때 보여 줄 칸 (오늘 탭 복습 줄 → 복습 칸) */
+let openView: 'doing' | 'review' | 'done' | null = null
+export const openProgressView = (v: 'doing' | 'review' | 'done') => { openView = v }
+
 export function Progress({ editTask }: { editTask: (t: Task | null) => void }) {
   const s = useStore()
   const today = todayISO()
-  const [view, setView] = useState<'doing' | 'done'>('doing')
+  const [view, setView] = useState<'doing' | 'review' | 'done'>(() => { const v = openView ?? 'doing'; openView = null; return v })
   const [kind, setKind] = useState<'all' | 'book' | 'lecture'>('all')
   const [detail, setDetail] = useState<string | null>(null)
   const exam = s.exams.find((e) => e.selected) ?? null
@@ -344,6 +320,7 @@ export function Progress({ editTask }: { editTask: (t: Task | null) => void }) {
   const doing = tasks.filter((t) => !t.completed && sumDone(s.recs[t.id] ?? {}) < t.amount).map((t) => planProgress(s, t, today, exam))
   const done = tasks.filter((t) => !doing.some((p) => p.task.id === t.id)).sort((a, b) => (b.completedDate ?? '').localeCompare(a.completedDate ?? ''))
   const reviews = reviewDue(tasks, today)
+  const tr = todayReviews(s, today)
 
   if (detail) return <Detail s={s} taskId={detail} exam={exam} today={today} onBack={() => setDetail(null)} editTask={editTask} />
 
@@ -353,7 +330,6 @@ export function Progress({ editTask }: { editTask: (t: Task | null) => void }) {
     actions.saveExam({ ...s.exams[(i + 1) % s.exams.length], selected: true })
   }
   const shown = doing.filter((p) => kind === 'all' || p.task.kind === kind)
-  const shownReviews = reviews.filter((r) => kind === 'all' || r.task.kind === kind)
   const count = (k: 'book' | 'lecture') => doing.filter((p) => p.task.kind === k).length
   const lateIn = (k: 'all' | 'book' | 'lecture') => doing.some((p) => p.vsExam === 'late' && (k === 'all' || p.task.kind === k))
 
@@ -372,6 +348,7 @@ export function Progress({ editTask }: { editTask: (t: Task | null) => void }) {
         {view === 'doing' && <StackCard s={s} today={today} />}
         <div role="tablist" aria-label="보기" className="segs">
           <button role="tab" aria-selected={view === 'doing'} className={view === 'doing' ? 'on' : ''} onClick={() => setView('doing')}>진행 중 {doing.length}</button>
+          <button role="tab" aria-selected={view === 'review'} className={view === 'review' ? 'on' : ''} onClick={() => setView('review')}>복습{tr.list.length > 0 && <span className="rv-badge">{tr.list.length}</span>}</button>
           <button role="tab" aria-selected={view === 'done'} className={view === 'done' ? 'on' : ''} onClick={() => setView('done')}>끝낸 것 {done.length}</button>
         </div>
         {view === 'doing' ? (
@@ -385,23 +362,8 @@ export function Progress({ editTask }: { editTask: (t: Task | null) => void }) {
             </div>
             {shown.length === 0 && <p className="empty">{tasks.length === 0 ? '책이나 인강 계획을 만들면\n진도가 여기에 보여요.' : '진행 중인 계획이 없어요'}</p>}
             {shown.map((p) => <PlanCard key={p.task.id} s={s} p={p} exam={exam} open={() => setDetail(p.task.id)} />)}
-            {shownReviews.length > 0 && (
-              <>
-                <div className="sec-h"><h2>복습할 때가 된 단원</h2><small>이해도 낮은 순</small></div>
-                <section className="tcard tight">
-                  {shownReviews.slice(0, 8).map((r) => (
-                    <div key={r.task.id + r.chapter.id} className="rv" role="button" tabIndex={0} onClick={() => setDetail(r.task.id)}>
-                      <i className="dot" style={{ background: colorOf(s, r.task) }} />
-                      <span className="grow"><b className="blk ell">{r.index + 1}단원 {r.chapter.name}</b><small className="blk ell">{r.task.name} · {mdS(r.chapter.doneDate!)} 끝 · {r.days}일 지남</small></span>
-                      {r.chapter.grade && <span className={`rv-g${r.chapter.grade === 'low' ? ' behind strong' : ''}`}>이해 {GRADE_KO[r.chapter.grade]} <GradeBars g={r.chapter.grade} /></span>}
-                      
-                    </div>
-                  ))}
-                </section>
-              </>
-            )}
           </>
-        ) : (
+        ) : view === 'review' ? <ReviewView s={s} today={today} /> : (
           <>
             <Shelf s={s} done={done} doing={doing} />
             <div className="sec-h"><h2>끝낸 계획</h2><small>최근 끝낸 순</small></div>

@@ -184,6 +184,48 @@ export function reviewDue(tasks: Task[], today: string): ReviewItem[] {
   return out.sort((a, b) => LAST_ORDER[a.lastGrade ?? 'none'] - LAST_ORDER[b.lastGrade ?? 'none'] || a.due.localeCompare(b.due))
 }
 
+/** 복습 한 단원 예상 분: 그 단원을 공부하는 데 걸리는 시간의 약 15% (5~12분). 제품 가설값 */
+export function reviewMin(t: Task, c: Chapter, recs: Recs): number {
+  const sec = (c.to - c.from + 1) * secPerUnit(t, recs) * 0.15
+  return Math.max(5, Math.min(12, Math.round(sec / 60) || 8))
+}
+
+export type DueReview = ReviewItem & { min: number }
+
+/** 오늘 넣을 복습: 하루 상한(분)까지만. 오늘 이미 한 복습 시간은 상한에서 뺀다. 넘치는 것은 later */
+export function todayReviews(s: Pick<State, 'tasks' | 'recs' | 'settings'>, today: string) {
+  const empty = { list: [] as DueReview[], later: [] as DueReview[], min: 0, doneToday: 0, doneMin: 0 }
+  if (!s.settings.reviewOn) return empty
+  const tasks = s.tasks.filter((t) => !t.archived)
+  let doneToday = 0
+  let doneMin = 0
+  for (const t of tasks) for (const c of t.chapters ?? []) if (c.recalls?.some((r) => r.d === today)) { doneToday++; doneMin += reviewMin(t, c, s.recs[t.id] ?? {}) }
+  const all = reviewDue(tasks, today).map((r) => ({ ...r, min: reviewMin(r.task, r.chapter, s.recs[r.task.id] ?? {}) }))
+  const cap = Math.max(0, s.settings.reviewCapMin - doneMin)
+  let sum = 0
+  for (const r of all) {
+    if ((empty.list.length === 0 && doneToday === 0) || sum + r.min <= cap) { empty.list.push(r); sum += r.min } else empty.later.push(r)
+  }
+  return { ...empty, min: sum, doneToday, doneMin }
+}
+
+/** 앞으로 n일 동안 날마다 복습할 단원 수 (오늘 넘친 것은 내일에 더한다) */
+export function upcomingReviews(s: Pick<State, 'tasks' | 'recs' | 'settings'>, today: string, n = 7): { date: string; count: number }[] {
+  const days = Array.from({ length: n }, (_, i) => ({ date: addDays(today, i + 1), count: 0 }))
+  if (!s.settings.reviewOn) return days
+  for (const t of s.tasks) {
+    if (t.archived) continue
+    for (const c of t.chapters ?? []) {
+      const due = nextDue(c)
+      if (!due || due <= today) continue
+      const d = days.find((x) => x.date === due)
+      if (d) d.count++
+    }
+  }
+  if (days.length) days[0].count += todayReviews(s, today).later.length
+  return days
+}
+
 // ── 쌓은 것 ───────────────────────────────────────────────
 
 /** 이번 달(1일~오늘)에 쌓은 양: 단위별 합 + 끝낸 단원 수 */

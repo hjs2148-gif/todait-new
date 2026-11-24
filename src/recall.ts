@@ -4,7 +4,7 @@
 // 간격 숫자는 연구로 정해진 최적값이 아니라 제품의 출발값이다.
 // 다음 복습일은 저장하지 않고 기록에서 매번 계산한다 (계획·시험일을 바꿔도 어긋나지 않게).
 import { addDays } from './date.ts'
-import type { Chapter, Grade, Recall } from './logic.ts'
+import { sumDone, type Chapter, type Grade, type Recall, type Recs, type Task } from './logic.ts'
 
 export const STEPS = [1, 3, 7, 14, 30] as const
 export const GRADE_WORD: Record<Grade, string> = { low: '흐릿', mid: '절반', high: '잘' }
@@ -88,3 +88,38 @@ export const addRecall = (c: Chapter, d: string, g: Grade): Chapter => ({
   recalls: [...(c.recalls ?? []).filter((r) => r.d !== d), { d, g }],
   grade: g,
 })
+
+// ── 목차 없는 책·인강: 떠올리기 구간 ──
+
+/** 떠올리기 대상: 목차가 있으면 단원, 없으면 자동 구간 */
+export const reviewParts = (t: Task): Chapter[] => (t.chapters?.length ? t.chapters : t.units ?? [])
+/** 목록에 붙이는 이름 앞부분: 단원이면 'N단원 ', 구간이면 없음(이름에 범위가 있다) */
+export const partNo = (t: Task, i: number) => (t.chapters?.length ? `${i + 1}단원 ` : '')
+
+/** 구간 크기: 인강 3강, 문제집 25문항, 책 15쪽. 구간은 최대 20개 */
+export function unitSize(t: Task): number {
+  const base = t.kind === 'lecture' ? 3 : t.bookMode === 'workbook' || /문항|문제/.test(t.unit) ? 25 : 15
+  return Math.max(base, Math.ceil(t.amount / 20))
+}
+
+/** 구간을 나누고, 오늘까지 지나간 구간에 끝낸 날을 적는다.
+ *  처음 나눌 때 어제까지 이미 지나간 구간은 old로 두어 한꺼번에 복습이 쏟아지지 않게 한다 */
+export function syncUnits(t: Task, recs: Recs, date: string): Chapter[] | undefined {
+  if (t.chapters?.length || t.type !== 'amount' || (t.kind !== 'book' && t.kind !== 'lecture') || t.roundOf || t.amount <= 0) return t.units
+  const start = t.startPoint ?? 1
+  const pos = start + sumDone(recs) - 1
+  let units = t.units
+  if (!units) {
+    const before = start + sumDone(recs, date) - 1
+    const size = unitSize(t)
+    const unit = t.kind === 'lecture' ? '강' : t.unit
+    units = []
+    for (let from = start; from < start + t.amount; from += size) {
+      const to = Math.min(from + size - 1, start + t.amount - 1)
+      const title = t.kind === 'lecture' ? t.lectures?.[from - start]?.title : undefined
+      units.push({ id: `u${from}`, name: `${from}~${to}${unit}${title ? ` · ${title}` : ''}`, from, to, ...(to <= before ? { old: true } : {}) })
+    }
+  }
+  const next = units.map((u) => (u.old ? u : u.to <= pos ? (u.doneDate ? u : { ...u, doneDate: date }) : u.doneDate && !u.recalls?.length ? { ...u, doneDate: undefined } : u))
+  return next.some((u, i) => u !== units![i]) || !t.units ? next : t.units
+}

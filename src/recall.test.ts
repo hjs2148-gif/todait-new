@@ -59,3 +59,27 @@ assert.equal(nextDue(e2, '2026-11-19'), '2026-12-02')
 assert.equal(nextDue(g, '2027-03-20'), '2027-03-18')
 assert.equal(nextDue(g, null), null)
 console.log('recall exam ok')
+
+// 목차 없는 책·인강: 떠올리기 구간
+{
+  const { syncUnits, unitSize, reviewParts } = await import('./recall.ts')
+  const bk = { id: 'b', name: '책', type: 'amount', kind: 'book', bookMode: 'amount', unit: '쪽', startPoint: 11, amount: 60, perDay: 0, startDate: '2026-11-01', endDate: '2026-11-30', week: [true, true, true, true, true, true, true], repeatEvery: null, supplementDow: null, custom: {}, categoryId: null, notifyTime: null, completed: false, completedDate: null, archived: false, order: 0, createdAt: 0 } as const
+  const rec = (n: number) => ({ done: n, sec: 0, checked: false })
+  assert.equal(unitSize(bk as never), 15)
+  // 어제까지 20쪽(11~30쪽), 오늘 12쪽 더(~42쪽) → 11~25는 예전(old), 26~40은 오늘 끝, 나머지는 아직
+  const u1 = syncUnits(bk as never, { '2026-11-10': rec(20), '2026-11-11': rec(12) }, '2026-11-11')!
+  assert.deepEqual(u1.map((u) => [u.name, !!u.old, u.doneDate ?? null]), [['11~25쪽', true, null], ['26~40쪽', false, '2026-11-11'], ['41~55쪽', false, null], ['56~70쪽', false, null]])
+  // 다음 날 14쪽 더(~56쪽) → 41~55쪽 끝, 그다음 날부터 떠올리기
+  const u2 = syncUnits({ ...bk, units: u1 } as never, { '2026-11-10': rec(20), '2026-11-11': rec(12), '2026-11-12': rec(14) }, '2026-11-12')!
+  assert.equal(u2[2].doneDate, '2026-11-12')
+  assert.equal(nextDue(u2[2]), '2026-11-13')
+  assert.equal(u2[1].doneDate, '2026-11-11') // 이미 끝난 구간은 그대로
+  assert.equal(ladder(u2[0]), null) // 예전 구간은 복습 안 함
+  // 목차가 있으면 구간을 만들지 않는다
+  assert.equal(syncUnits({ ...bk, chapters: [{ id: 'c', name: '1', from: 11, to: 70 }] } as never, {}, '2026-11-12'), undefined)
+  assert.equal(reviewParts({ ...bk, units: u2 } as never).length, 4)
+  // 인강은 3강씩, 이름에 강 제목
+  const lec = { ...bk, kind: 'lecture', unit: '강', startPoint: 1, amount: 7, lectures: [{ title: '오리엔테이션', min: 30 }, { title: '2강', min: 30 }, { title: '3강', min: 30 }, { title: '문법', min: 30 }] }
+  assert.deepEqual(syncUnits(lec as never, {}, '2026-11-12')!.map((u) => u.name), ['1~3강 · 오리엔테이션', '4~6강 · 문법', '7~7강'])
+  console.log('recall units ok')
+}

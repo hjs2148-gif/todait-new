@@ -29,6 +29,8 @@ export interface Chapter {
   recalls?: Recall[]
   /** 복습에 넣은 날: 이 날 이후 떠올리기 전까지는 사다리와 상관없이 복습할 단원 */
   pull?: string
+  /** 떠올리기 구간을 만들기 전에 이미 지나간 구간 (복습에 넣지 않는다) */
+  old?: boolean
   /** 단원 무게: 1 쉬움 · 2 보통(기본) · 3 어려움. 어려울수록 하루 쪽 수가 줄어든다 */
   weight?: 1 | 2 | 3
 }
@@ -48,6 +50,8 @@ export interface Lecture { title: string; min: number | null }
 export type OffFn = (date: string) => boolean
 
 export interface Task {
+  /** 목차 없는 책·인강의 떠올리기 구간 (자동으로 나눔, recall.ts syncUnits) */
+  units?: Chapter[]
   id: string
   name: string
   /** amount: 전체 분량을 기간에 나눠 하는 계획 / daily: 매일 일정 분량 / time: 매일 목표 시간 / check: 했는지만 체크 */

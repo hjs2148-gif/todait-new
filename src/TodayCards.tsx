@@ -1,4 +1,5 @@
 // 오늘 탭 맨 위에 때에 따라 나오는 카드들: 백업 알림 · 새 주 시작 · 목표 완료 · 쉬는 날 · 첫날 빈 화면
+import { reviewParts } from './recall.ts'
 import { Dur } from './ui.tsx'
 import { useRef, useState } from 'react'
 import { addDays, diffDays } from './date.ts'
@@ -61,7 +62,7 @@ export function NewWeekCard({ s, today, goProgress }: { s: State; today: string;
   const n = exam ? diffDays(today, exam.date) : null
   // 지난주 떠올리기 결과와 가장 밀린 계획
   const rc = { high: 0, mid: 0, low: 0 }
-  for (const t of s.tasks) for (const c of t.chapters ?? []) for (const r of c.recalls ?? []) if (r.d >= last.period.from && r.d <= last.period.to) rc[r.g]++
+  for (const t of s.tasks) for (const c of reviewParts(t)) for (const r of c.recalls ?? []) if (r.d >= last.period.from && r.d <= last.period.to) rc[r.g]++
   const rcN = rc.high + rc.mid + rc.low
   const worst = s.tasks.filter((t) => !t.archived && !t.completed).map((t) => ({ t, b: behindOf(s, t, today) })).filter((x) => x.b > 0 && x.t.type === 'amount').sort((a, b) => b.b / Math.max(b.t.amount, 1) - a.b / Math.max(a.t.amount, 1))[0]
   if (!s.tasks.length) return null

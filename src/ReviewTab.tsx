@@ -4,7 +4,7 @@ import { Icon } from './Icon.tsx'
 import { DOW_KO, dow } from './date.ts'
 import { sumDone, type Grade, type Task } from './logic.ts'
 import { reviewCap, reviewExam, todayReviews, upcomingReviews, type DueReview } from './progress.ts'
-import { gapAfter, GRADE_WORD, ladder, nextDue, recallsOf, STEPS } from './recall.ts'
+import { gapAfter, GRADE_WORD, ladder, nextDue, partNo, recallsOf, reviewParts, STEPS } from './recall.ts'
 import { actions, type State } from './store.ts'
 import { Sheet } from './ui.tsx'
 import { colorOf } from './view.ts'
@@ -35,15 +35,15 @@ function Pick3({ c, on, onPick }: { c: NonNullable<Task['chapters']>[number]; on
 /** 단원 하나: 사다리 · 떠올리기 기록 · 오늘 떠올려 보기 */
 export function RecallSheet({ s, taskId, chapterId, today, onClose }: { s: State; taskId: string; chapterId: string; today: string; onClose: () => void }) {
   const task = s.tasks.find((t) => t.id === taskId)
-  const c = task?.chapters?.find((x) => x.id === chapterId)
+  const c = task ? reviewParts(task).find((x) => x.id === chapterId) : undefined
   if (!task || !c) return null
-  const idx = task.chapters!.indexOf(c)
+  const idx = reviewParts(task).indexOf(c)
   const l = ladder(c)
   const due = nextDue(c, reviewExam(s, today))
   const log = recallsOf(c).reverse()
   const todayG = c.recalls?.find((r) => r.d === today)?.g
   return (
-    <Sheet title={`${idx + 1}단원 ${c.name}`} dot={colorOf(s, task)} sub={`${task.name} · ${c.from}~${c.to}${task.unit}`} onClose={onClose}>
+    <Sheet title={`${partNo(task, idx)}${c.name}`} dot={colorOf(s, task)} sub={`${task.name} · ${c.from}~${c.to}${task.unit}`} onClose={onClose}>
       {!l ? <p className="hint">단원을 끝내면 다음 날부터 떠올리기로 복습해요.</p> : (
         <>
           <div className="rv-next"><span>다음 복습</span><b>{due ? (due <= today ? '오늘' : md(due)) : '졸업'}</b><small>{l.graduated ? '시험 전에 한 번만 다시 나와요' : l.lastGrade === 'low' ? '지난번 흐릿이라 금방 다시 물어요' : `지금 ${STEPS[l.step]}일 간격`}</small></div>
@@ -84,12 +84,13 @@ function ReviewRun({ s, list: start, today, onClose }: { s: State; list: DueRevi
       </Sheet>
     )
   }
-  const c = s.tasks.find((t) => t.id === r.task.id)?.chapters?.find((x) => x.id === r.chapter.id) ?? r.chapter
+  const live = s.tasks.find((t) => t.id === r.task.id)
+  const c = (live && reviewParts(live).find((x) => x.id === r.chapter.id)) ?? r.chapter
   const next = () => setI(i + 1)
   return (
     <Sheet title={`복습 ${i + 1} / ${list.length}`} onClose={onClose}>
       <div className="rv-card">
-        <small><i className="dot" style={{ background: colorOf(s, r.task) }} />{r.task.name} · {r.index + 1}단원</small>
+        <small><i className="dot" style={{ background: colorOf(s, r.task) }} />{r.task.name}{r.task.chapters?.length ? ` · ${r.index + 1}단원` : ''}</small>
         <b>{r.chapter.name}</b>
         <small>{r.chapter.from}~{r.chapter.to}{r.task.unit} · {whyOf(r)}</small>
       </div>
@@ -111,7 +112,7 @@ export function ReviewView({ s, today }: { s: State; today: string }) {
   const tr = todayReviews(s, today)
   const up = upcomingReviews(s, today, 7)
   const maxUp = Math.max(...up.map((x) => x.count), 1)
-  const books = s.tasks.filter((t) => !t.archived && !t.roundOf && t.chapters?.some((c) => c.doneDate))
+  const books = s.tasks.filter((t) => !t.archived && !t.roundOf && reviewParts(t).some((c) => c.doneDate))
   // 살펴볼 단원: 연속 흐릿, 느낌과 정답률이 다른 문제집 단원
   const watch: { t: Task; c: NonNullable<Task['chapters']>[number]; why: string; pull?: boolean }[] = []
   let grads = 0
@@ -120,7 +121,7 @@ export function ReviewView({ s, today }: { s: State; today: string }) {
     const right = recs.reduce((a, r) => a + (r.right ?? 0), 0)
     const wrong = recs.reduce((a, r) => a + (r.wrong ?? 0), 0)
     const lowAcc = t.bookMode === 'workbook' && right + wrong >= 20 && right / (right + wrong) < 0.7
-    for (const c of t.chapters ?? []) {
+    for (const c of reviewParts(t)) {
       const l = ladder(c)
       if (!l) continue
       if (l.graduated) grads++
@@ -154,7 +155,7 @@ export function ReviewView({ s, today }: { s: State; today: string }) {
           {tr.list.map((r) => (
             <div key={r.task.id + r.chapter.id} className="rv" role="button" tabIndex={0} onClick={() => setOpen({ t: r.task.id, c: r.chapter.id })} onKeyDown={(e) => e.key === 'Enter' && setOpen({ t: r.task.id, c: r.chapter.id })}>
               <i className="dot" style={{ background: colorOf(s, r.task) }} />
-              <span className="grow"><b className="blk ell">{r.chapter.name}</b><small className="blk ell">{r.task.name} · {r.index + 1}단원 · {whyOf(r)}</small></span>
+              <span className="grow"><b className="blk ell">{r.chapter.name}</b><small className="blk ell">{r.task.name}{r.task.chapters?.length ? ` · ${r.index + 1}단원` : ''} · {whyOf(r)}</small></span>
               <Stairs step={r.step} />
               <small className="rv-min">{r.min}분</small>
             </div>
@@ -178,13 +179,15 @@ export function ReviewView({ s, today }: { s: State; today: string }) {
         <>
           <div className="sec-h"><h2>계획별 기억</h2><small>끝낸 단원 기준</small></div>
           {books.map((t) => {
-            const done = t.chapters!.filter((c) => c.doneDate)
+            const parts = reviewParts(t)
+            const done = parts.filter((c) => c.doneDate)
+            const word = t.chapters?.length ? '단원' : '구간'
             const cnt = { high: 0, mid: 0, low: 0, none: 0 }
             for (const c of done) cnt[ladder(c)?.lastGrade ?? 'none']++
             const prog = Math.min(1, sumDone(s.recs[t.id] ?? {}) / Math.max(t.amount, 1))
             return (
               <section key={t.id} className="tcard rv-mem">
-                <div className="tc-meta"><span className="ell"><i className="dot" style={{ background: colorOf(s, t) }} /> <b>{t.name}</b></span><span>{done.length} / {t.chapters!.length}단원 끝</span></div>
+                <div className="tc-meta"><span className="ell"><i className="dot" style={{ background: colorOf(s, t) }} /> <b>{t.name}</b></span><span>{done.length} / {parts.filter((c) => !c.old).length}{word} 끝</span></div>
                 <div className="rv-bars">
                   <span>진도</span><div className="rv-trk"><i style={{ width: `${prog * 100}%`, background: colorOf(s, t) }} /></div><b>{Math.round(prog * 100)}%</b>
                   <span>기억</span>
@@ -254,7 +257,8 @@ export function EndRecall({ s, today }: { s: State; today: string }) {
   })
   const [got, setGot] = useState<Grade | null>(null)
   if (!pick) return null
-  const c = s.tasks.find((t) => t.id === pick.task.id)?.chapters?.find((x) => x.id === pick.chapter.id) ?? pick.chapter
+  const live = s.tasks.find((t) => t.id === pick.task.id)
+  const c = (live && reviewParts(live).find((x) => x.id === pick.chapter.id)) ?? pick.chapter
   const mark = () => actions.setSettings({ suggested: { ...s.settings.suggested, [key]: today } })
   const ago = pick.lastGrade === null ? (pick.days <= 1 ? '어제 끝낸 단원' : `${pick.days}일 전 끝낸 단원`) : '오늘 복습할 단원'
   return (

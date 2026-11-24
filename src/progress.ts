@@ -1,6 +1,6 @@
 // 진도 탭·진도 자세히가 쓰는 계산. React·IndexedDB와 무관해 node 테스트에서 바로 쓴다.
 // 원칙: %에는 늘 이름을 붙인다. 여기 숫자는 모두 "범위 진도"(분량 기준, 계획끼리는 예상 공부 시간 비중).
-import { ladder, nextDue } from './recall.ts'
+import { ladder, nextDue, reviewParts } from './recall.ts'
 import { addDays, diffDays, dow } from './date.ts'
 import { doneInRange, futurePlan, secPerUnit, sumDone, type Chapter, type Grade, type OffFn, type Recs, type Task } from './logic.ts'
 import { offFor, type Exam, type State } from './model.ts'
@@ -175,7 +175,7 @@ export function reviewDue(tasks: Task[], today: string, exam?: string | null): R
   for (const t of tasks) {
     // 2회독 계획은 그 자체가 복습이라 따로 떠올리기를 묻지 않는다
     if (t.archived || t.roundOf) continue
-    t.chapters?.forEach((c, index) => {
+    reviewParts(t).forEach((c, index) => {
       const due = nextDue(c, exam)
       if (!due || due > today) return
       const l = ladder(c)!
@@ -211,7 +211,7 @@ export function todayReviews(s: Pick<State, 'tasks' | 'recs' | 'settings' | 'exa
   const tasks = s.tasks.filter((t) => !t.archived)
   let doneToday = 0
   let doneMin = 0
-  for (const t of tasks) for (const c of t.chapters ?? []) if (c.recalls?.some((r) => r.d === today)) { doneToday++; doneMin += reviewMin(t, c, s.recs[t.id] ?? {}) }
+  for (const t of tasks) for (const c of reviewParts(t)) if (c.recalls?.some((r) => r.d === today)) { doneToday++; doneMin += reviewMin(t, c, s.recs[t.id] ?? {}) }
   const all = reviewDue(tasks, today, reviewExam(s, today)).map((r) => ({ ...r, min: reviewMin(r.task, r.chapter, s.recs[r.task.id] ?? {}) }))
   const cap = Math.max(0, reviewCap(s, today) - doneMin)
   let sum = 0
@@ -227,7 +227,7 @@ export function upcomingReviews(s: Pick<State, 'tasks' | 'recs' | 'settings' | '
   if (!s.settings.reviewOn) return days
   for (const t of s.tasks) {
     if (t.archived || t.roundOf) continue
-    for (const c of t.chapters ?? []) {
+    for (const c of reviewParts(t)) {
       const due = nextDue(c, reviewExam(s, today))
       if (!due || due <= today) continue
       const d = days.find((x) => x.date === due)
@@ -242,7 +242,7 @@ export function upcomingReviews(s: Pick<State, 'tasks' | 'recs' | 'settings' | '
 export function reviewCounts(s: Pick<State, 'tasks' | 'recs' | 'settings' | 'exams'>, today: string, from: string, to: string): Record<string, number> {
   const out: Record<string, number> = {}
   const add = (d: string, n = 1) => { if (d >= from && d <= to) out[d] = (out[d] ?? 0) + n }
-  for (const t of s.tasks) for (const c of t.chapters ?? []) for (const r of c.recalls ?? []) if (r.d < today) add(r.d)
+  for (const t of s.tasks) for (const c of reviewParts(t)) for (const r of c.recalls ?? []) if (r.d < today) add(r.d)
   if (!s.settings.reviewOn) return out
   const tr = todayReviews(s, today)
   add(today, tr.doneToday + tr.list.length)

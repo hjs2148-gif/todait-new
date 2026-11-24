@@ -52,3 +52,25 @@
 .xw-ck input { width: 20px; height: 20px; accent-color: var(--ink); }
 .sheet-body .two { display: flex; gap: 8px; margin-top: 8px; }
 .sheet-body .two .chip { flex: 1; height: 44px; justify-content: center; }
+
+/* 집중 화면 (스톱워치 전체 화면) */
+.focus { justify-content: flex-start; padding: calc(12px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom)); }
+.focus .fx { transition: opacity .6s ease; }
+.focus.dim .fx, .focus.dim .sw-pause, .focus.dim .sw-slide { opacity: .22; }
+.focus.dim .sw-plan { opacity: .55; transition: opacity .6s ease; }
+.sw-dnd { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border-radius: 18px; border: 0; background: var(--chip); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; }
+.sw-tip { margin: 8px 0 0; padding: 12px 14px; border-radius: 14px; background: var(--sf); font-size: 13px; line-height: 19px; color: var(--mu); text-align: left; box-shadow: 0 1px 2px var(--shd); }
+.sw-tip b { color: var(--ink); }
+.focus .sw-plan { margin-top: auto; }
+.sw-where { font-size: 13px; color: var(--mu); margin-top: -2px; }
+.focus .ringwrap { margin: 14px 0 6px; }
+.sw-stats { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 360px; gap: 8px; margin-top: 8px; }
+.sw-stats small { display: block; font-size: 12px; line-height: 16px; color: var(--mu); }
+.sw-stats b { font-size: 18px; line-height: 24px; }
+.sw-foot { margin-top: auto; padding-top: 18px; width: 100%; max-width: 360px; display: flex; gap: 10px; align-items: stretch; }
+.sw-pause { width: 64px; flex: none; border-radius: 20px; border: 0; background: var(--chip); color: var(--ink); display: flex; align-items: center; justify-content: center; }
+.sw-slide { flex: 1; height: 64px; border-radius: 20px; border: 0; background: var(--ink); color: var(--bg); font: inherit; font-size: 15px; font-weight: 700; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.sw-slide .grab { width: 36px; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--bg) 45%, transparent); }
+.sw-slide.nudge { animation: sw-nudge .6s ease; }
+@keyframes sw-nudge { 30% { transform: translateY(-14px); } 60% { transform: translateY(0); } 80% { transform: translateY(-5px); } }
+@media (prefers-reduced-motion: reduce) { .sw-slide.nudge { animation: none; } }

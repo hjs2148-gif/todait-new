@@ -180,3 +180,12 @@
 .t-kv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: auto; }
 .t-kv small { display: block; font-size: 12px; line-height: 16px; opacity: .7; }
 .t-kv b { font-size: 18px; line-height: 24px; }
+
+/* 시간 줄: 남은 계획은 옅게, 지금 표시 */
+.t-tl i.plan { opacity: .38; }
+.t-tl .t-now { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--ink); }
+.hero .t-tl .t-now { background: var(--bg); }
+.t-tk span.now { font-weight: 700; color: var(--ink); }
+.t-tk span.now:not(:first-child):not(:last-child) { transform: translateX(-50%); }
+.hero .t-tk span { color: color-mix(in srgb, var(--bg) 72%, transparent); }
+.hero .t-tk span.now { color: var(--bg); }

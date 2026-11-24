@@ -175,3 +175,8 @@
 .we-stack button { height: 34px; padding: 0 12px; border-radius: 17px; background: var(--chip); font-size: 13px; font-weight: 600; color: var(--ink); }
 .we-stack button.on { background: var(--ink); color: var(--bg); }
 .stk-page > .tile { padding-right: 26px; }
+
+/* 오늘 진행 2×2: 계획 목록 대신 숫자 세 칸 (목록은 아래 오늘 목표에 한 번만) */
+.t-kv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: auto; }
+.t-kv small { display: block; font-size: 12px; line-height: 16px; opacity: .7; }
+.t-kv b { font-size: 18px; line-height: 24px; }

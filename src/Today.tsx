@@ -108,6 +108,15 @@ function behindText(s: State, task: Task, today: string) {
   return b > 0 ? (task.kind === 'todo' ? '마감 지남' : `${b}${task.unit} 밀림`) : task.type === 'amount' ? '예정대로' : ''
 }
 
+const KIND_ICON = { book: 'book', lecture: 'lecture', time: 'clock', habit: 'repeat', todo: 'check' } as const
+/** 줄 오른쪽 숫자 하나: 남은 양 */
+const leftText = ({ task, rec, expect, rate }: Item) => {
+  if (rate >= 1) return <>끝</>
+  if (task.type === 'check') return <small>할 일</small>
+  if (task.type === 'time') return <>{hm(Math.max(0, expect - (rec?.sec ?? 0)))}<small> 남음</small></>
+  return <>{Math.max(0, expect - (rec?.done ?? 0))}<small>{task.unit} 남음</small></>
+}
+
 /** 행 오른쪽: 한 양 / 목표 */
 const amountText = ({ task, rec, expect }: Item) =>
   task.type === 'time' ? `${hm(rec?.sec ?? 0)} / ${hm(expect)}` : task.type === 'check' ? (rec?.checked ? '끝' : '') : `${rec?.done ?? 0} / ${expect}${task.unit}`
@@ -126,16 +135,34 @@ function AllRows({ s, items, date, today, goTab, onEntry }: { s: State; items: I
   const [showDone, setShowDone] = useState(false)
   const open = items.filter((i) => i.rate < 1)
   const done = items.filter((i) => i.rate >= 1)
+  const [openId, setOpenId] = useState<string | null>(null)
   const row = (i: Item) => {
     const b = date === today ? behindText(s, i.task, today) : ''
+    const late = b.includes('밀림') || b.includes('지남')
+    const color = colorOf(s, i.task)
+    const isOpen = openId === i.task.id
+    const toggle = () => setOpenId(isOpen ? null : i.task.id)
     return (
-      <div key={i.task.id} className="prow" role="button" tabIndex={0} onClick={() => goTab(i.task.kind)} onKeyDown={(e) => e.key === 'Enter' && goTab(i.task.kind)}>
-        <div className="prow-main">
-          <div className="prow-1"><span className="prow-name">{i.task.name}</span><b>{pctOf(i.rate)}<small>%</small></b></div>
-          <div className="prow-2"><span className="ell">{goalText(s, i, date).replace(/ · .*함$/, '')}{b && b !== '예정대로' && <> · <span className={b.includes('밀림') || b.includes('지남') ? 'late-t' : ''}>{b}</span></>}{i.task.fitFrom?.[date] !== undefined && <> · <span className="fit-t">시간에 맞춰 줄임</span></>}</span><span className="prow-n">{amountText(i)}</span></div>
-          <div className="track" aria-hidden="true"><div style={{ width: `${pctOf(i.rate)}%`, background: colorOf(s, i.task) }} /></div>
+      <div key={i.task.id} className={`prow-w${isOpen ? ' open' : ''}`}>
+        <div className="prow" role="button" tabIndex={0} aria-expanded={isOpen} onClick={toggle} onKeyDown={(e) => e.key === 'Enter' && toggle()}>
+          <span className="kind-ic" style={{ background: `color-mix(in srgb, ${color} 18%, var(--sf))`, color }} aria-label={KIND_NAME[i.task.kind]}><Icon name={/문항|문제/.test(i.task.unit) ? 'pencil' : KIND_ICON[i.task.kind]} size={15} /></span>
+          <div className="prow-main">
+            <div className="prow-1"><span className="prow-name">{i.task.name}{late && <span className="flag">{b.includes('지남') ? '지남' : '밀림'}</span>}</span><b>{leftText(i)}</b></div>
+            <div className="track" aria-hidden="true"><div style={{ width: `${pctOf(i.rate)}%`, background: color }} /></div>
+          </div>
+          <RowAction s={s} item={i} date={date} today={today} onEntry={() => onEntry(i.task.id)} />
         </div>
-        <RowAction s={s} item={i} date={date} today={today} onEntry={() => onEntry(i.task.id)} />
+        {isOpen && (
+          <div className="prow-more">
+            <div className="pm-grid">
+              <div><small>오늘 목표</small><b>{goalText(s, i, date).replace(/^목표 /, '').replace(/ · .*함$/, '')}</b></div>
+              <div><small>했어요</small><b>{amountText(i) || '아직'}</b></div>
+              <div><small>밀린 양</small><b>{late ? b.replace(' 밀림', '') : '없음'}</b></div>
+            </div>
+            {i.task.fitFrom?.[date] !== undefined && <p className="pm-note">가능 시간에 맞춰 오늘 양을 줄였어요</p>}
+            <button className="chip" onClick={() => goTab(i.task.kind)}>{KIND_NAME[i.task.kind]} 탭에서 자세히</button>
+          </div>
+        )}
       </div>
     )
   }

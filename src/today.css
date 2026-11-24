@@ -309,3 +309,18 @@ input.switch:disabled { opacity: .4; }
 .mini-b.end { background: var(--bg); color: var(--ink); }
 .fit-t { color: var(--rib); }
 .bc-note .ok { color: var(--ink); font-weight: 600; }
+
+/* 오늘 목록: 줄마다 숫자 하나, 눌러서 펼치기 */
+.prow-w { border-bottom: 1px solid var(--hl); }
+.plist .prow-w:last-child { border-bottom: 0; }
+.prow-w .prow { border-bottom: 0; }
+.kind-ic { width: 28px; height: 28px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.prow-name .flag { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 6px; background: var(--chip); font-size: 12px; font-weight: 700; color: var(--ink); margin-left: 6px; vertical-align: 2px; }
+.prow-w .track { margin-top: 6px; }
+.prow-more { padding: 4px 16px 14px 56px; background: var(--pg); }
+.pm-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 10px; }
+.pm-grid small { display: block; font-size: 12px; line-height: 16px; color: var(--mu); }
+.pm-grid b { font-size: 14px; line-height: 20px; }
+.pm-grid .mu { color: var(--mu); font-weight: 500; }
+.pm-note { margin: 8px 0 0; font-size: 13px; line-height: 18px; color: var(--mu); }
+.prow-more .chip { margin-top: 10px; }

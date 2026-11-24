@@ -1,3 +1,4 @@
+import { UpdateBanner } from './Update.tsx'
 import { useEffect, useState } from 'react'
 import { demoName, leaveDemo } from './demo.ts'
 import { Icon, type IconName } from './Icon.tsx'
@@ -79,6 +80,7 @@ export function App() {
       {widgets && <WidgetEdit onClose={() => setWidgets(false)} />}
       {draft && <DiaryForm draft={draft} onClose={() => setDraft(null)} />}
       <Stopwatch showStart={tab === 'today' && date === todayISO()} />
+      <UpdateBanner />
     </>
   )
 }

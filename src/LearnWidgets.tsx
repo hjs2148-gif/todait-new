@@ -1,5 +1,6 @@
 // 학습 위젯 (design/gen 의 WG*·WC* 시안): 칸 격자(작게 1×1 · 넓게 2×1 · 크게 2×2), 과목색 틴트 + 주인공 한 장.
 // 좁게 = 질문 하나에 답하는 숫자 하나, 넓게 = 이유 + 다음 행동, 크게 = 그 위에 자세한 내용. 누르면 자세히 시트.
+import { Dur } from './ui.tsx'
 import { useState, type ReactNode } from 'react'
 import { addDays, diffDays } from './date.ts'
 import type { Chapter, Task } from './logic.ts'
@@ -64,8 +65,8 @@ export function ProgressWidget({ s, size, date, today, stats }: { s: State; size
           <span className="t-num">{pct ?? '—'}<small>% · {items.length}개 중 {doneN}개 끝</small></span>
           <Sessions s={s} date={date} plan={plan} ticks review={stats.reviewSec} />
           <div className="t-kv">
-            <div><small>공부한 시간</small><b>{hm(stats.sec)}</b></div>
-            <div><small>남은 공부</small><b>{stats.remain > 0 ? hm(stats.remain) : '없음'}</b></div>
+            <div><small>공부한 시간</small><b><Dur sec={stats.sec} /></b></div>
+            <div><small>남은 공부</small><b>{stats.remain > 0 ? <Dur sec={stats.remain} /> : '없음'}</b></div>
             <div><small>남은 계획</small><b>{items.length - doneN}개</b></div>
           </div>
           {next && date === today && <button className="t-act" onClick={() => startTimer(s, next.task, today)}>다음: {next.task.name} 시작</button>}

@@ -1,3 +1,4 @@
+import { Dur } from './ui.tsx'
 import { useState } from 'react'
 import { HistEdit } from './HistEdit.tsx'
 import { Icon } from './Icon.tsx'
@@ -81,7 +82,7 @@ export function Calendar({ goTo }: { goTo: (date: string) => void }) {
         </section>
         {heavy && <section className="tcard rv-heavy"><b>{fmtDate(heavy.date)}에 복습 {heavy.count}단원이 몰려요</b><small>하루 상한을 넘는 단원은 다음 날로 나눠서 넣어요. 진도 탭 복습 칸에서 상한을 바꿀 수 있어요.</small></section>}
         <div className="trio3">
-          <section className="tcard"><b>{hm(monthSec)}</b><small>{m}월 공부</small></section>
+          <section className="tcard"><b><Dur sec={monthSec} /></b><small>{m}월 공부</small></section>
           <section className="tcard"><b>{gt ? `${Math.round((gd / gt) * 100)}%` : '—'}</b><small>평균 달성</small></section>
           <section className="tcard"><b>{studied}일</b><small>공부한 날</small></section>
         </div>

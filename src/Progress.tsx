@@ -11,20 +11,20 @@ import {
 } from './progress.ts'
 import { actions, offFor, useStore, type Exam, type State } from './store.ts'
 import { hm } from './todayData.ts'
-import { Sheet } from './ui.tsx'
+import { Sheet, Dur } from './ui.tsx'
 import { categoryOf, colorOf } from './view.ts'
 
 const md = (iso: string) => { const [, m, d] = iso.split('-'); return `${Number(m)}월 ${Number(d)}일` }
 const mdS = (iso: string) => { const [, m, d] = iso.split('-'); return `${Number(m)}.${Number(d)}` }
 const pct = (r: number) => `${Math.round(r * 100)}%`
-const GRADE_KO: Record<Grade, string> = { high: '상', mid: '중', low: '하' }
+const GRADE_KO: Record<Grade, string> = { high: '잘', mid: '절반', low: '흐릿' }
 
 /** 이해도 막대 3칸 */
 function GradeBars({ g }: { g: Grade }) {
   const n = g === 'high' ? 3 : g === 'mid' ? 2 : 1
   const c = g === 'low' ? 'var(--bad)' : 'var(--ink)'
   return (
-    <span className="gbars" aria-label={`이해 ${GRADE_KO[g]}`}>
+    <span className="gbars" aria-label={`떠올리기 ${GRADE_KO[g]}`}>
       {[6.6, 9.2, 11.8].map((h, i) => <i key={i} style={{ height: h, background: i < n ? c : 'var(--trk)' }} />)}
     </span>
   )
@@ -182,7 +182,7 @@ function Shelf({ s, done, doing }: { s: State; done: Task[]; doing: PlanProgress
       <div className="trio">
         <div><b>{done.length}권</b><small>끝낸 책·인강</small></div>
         <div><b>{chapters}개</b><small>끝낸 단원</small></div>
-        <div><b>{hm(allSec)}</b><small>쌓은 시간</small></div>
+        <div><b><Dur sec={allSec} /></b><small>쌓은 시간</small></div>
       </div>
     </section>
   )
@@ -290,7 +290,7 @@ function Detail({ s, taskId, exam, today, onBack, editTask }: { s: State; taskId
                       <small className="blk">{c.from}~{c.to}{u}{sp.start ? ` · ${mdS(sp.start)} ~ ${c.doneDate || (sp.planned && !cur) ? (sp.end ? mdS(sp.end) : '') : ''}` : ''}</small>
                     </span>
                     <small className="cm-r">
-                      {c.doneDate ? <>{sp.days ? `${sp.days}일 걸림` : ''}{review ? <span className="strong"> · 복습</span> : ''}{c.grade ? <> · 이해 {GRADE_KO[c.grade]}</> : ''}</> : cur ? <b>{sp.doneIn} / {len}{u}</b> : '예정'}
+                      {c.doneDate ? <>{sp.days ? `${sp.days}일 걸림` : ''}{review ? <span className="strong"> · 복습</span> : ''}{c.grade ? <> · 떠올리기 {GRADE_KO[c.grade]}</> : ''}</> : cur ? <b>{sp.doneIn} / {len}{u}</b> : '예정'}
                     </small>
                   </button>
                 )
@@ -376,7 +376,7 @@ export function Progress({ editTask }: { editTask: (t: Task | null) => void }) {
                   <div key={t.id} className="rv" role="button" tabIndex={0} onClick={() => setDetail(t.id)}>
                     <span className="cn on" style={{ background: colorOf(s, t), width: 22, height: 22, borderRadius: 11 }}><Icon name="check" size={13} /></span>
                     <span className="grow"><b className="blk ell">{t.name}</b><small className="blk">{mdS(t.startDate)} ~ {mdS(end)} · {diffDays(t.startDate, end) + 1}일</small></span>
-                    <span className="rv-r"><span className="blk">{t.amount}{t.unit} · {hm(taskSec(s.recs[t.id] ?? {}))}</span>{g && <small>평균 이해 {GRADE_KO[g]} <GradeBars g={g} /></small>}</span>
+                    <span className="rv-r"><span className="blk">{t.amount}{t.unit} · {hm(taskSec(s.recs[t.id] ?? {}))}</span>{g && <small>평균 떠올리기 {GRADE_KO[g]} <GradeBars g={g} /></small>}</span>
                   </div>
                 )
               })}

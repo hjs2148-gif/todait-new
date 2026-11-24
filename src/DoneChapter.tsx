@@ -5,7 +5,7 @@ import { chapterSpans } from './progress.ts'
 import { chapterSec } from './stats.ts'
 import { actions, offFor, useStore } from './store.ts'
 import { hm } from './todayData.ts'
-import { Sheet } from './ui.tsx'
+import { Sheet, Dur } from './ui.tsx'
 import { colorOf } from './view.ts'
 
 const md = (iso: string) => { const [, m, d] = iso.split('-'); return `${Number(m)}월 ${Number(d)}일` }
@@ -38,7 +38,7 @@ export function DoneChapterSheet({ taskId, chapterId, onClose }: { taskId: strin
       </div>
       <div className="trio3 flat">
         <div><b>{took ?? '—'}일</b><small>걸림 · 예정 {plannedDays}일</small></div>
-        <div><b>{hm(chapterSec(t, recs, span?.start ?? null, done))}</b><small>공부 시간</small></div>
+        <div><b><Dur sec={chapterSec(t, recs, span?.start ?? null, done)} /></b><small>공부 시간</small></div>
         <div><b>{finished} / {t.chapters.length}</b><small>단원 끝</small></div>
       </div>
       <div className="cbar dc-bar" aria-hidden="true">

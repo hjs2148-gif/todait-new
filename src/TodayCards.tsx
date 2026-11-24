@@ -1,4 +1,5 @@
 // 오늘 탭 맨 위에 때에 따라 나오는 카드들: 백업 알림 · 새 주 시작 · 목표 완료 · 쉬는 날 · 첫날 빈 화면
+import { Dur } from './ui.tsx'
 import { useRef, useState } from 'react'
 import { addDays, diffDays } from './date.ts'
 import { liveExpect } from './logic.ts'
@@ -65,7 +66,7 @@ export function NewWeekCard({ s, today, goProgress }: { s: State; today: string;
       <h2 className="wk-h">새 주가 시작됐어요</h2>
       <div className="wk-last">
         <div className="tc-meta"><b>지난주 {last.period.from.slice(5).replace('-', '.')} ~ {last.period.to.slice(8).replace(/^0/, '')}</b><span>{last.rate === null ? '목표 없음' : `달성 ${Math.round(last.rate * 100)}%`}</span></div>
-        <div className="wk-nums"><div><b>{hm(last.sec)}</b><small>공부 시간</small></div><div><b>{last.goalTotal}개</b><small>목표 · 개수</small></div></div>
+        <div className="wk-nums"><div><b><Dur sec={last.sec} /></b><small>공부 시간</small></div><div><b>{last.goalTotal}개</b><small>목표 · 개수</small></div></div>
         {(last.units.length > 0 || last.chapters > 0) && <div className="tc-sub">쌓은 것 {[...last.units.map((u) => `${u.n}${u.unit}`), ...(last.chapters ? [`${last.chapters}단원 끝`] : [])].join(' · ')}</div>}
       </div>
       {last.missed.length > 0 && <p className="fnote">지난주에 못 한 {last.missed.map((m) => `${m.n}${m.unit}`).join(' · ')}은 이번 주 목표에 나눠 넣었어요.</p>}

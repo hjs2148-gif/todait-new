@@ -135,10 +135,12 @@ export const finishClock = (remainSecs: number, now = new Date()) => {
   return `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`
 }
 
-/** 시:분 (예: 4:22) */
+/** 공부한 길이 (예: 4시간 22분 · 45분 · 2시간). 앱 전체에서 길이는 이 모양으로 쓴다. 시각은 '밤 10시 18분' */
 export const hm = (sec: number) => {
   const m = Math.round(Math.max(0, sec) / 60)
-  return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`
+  const h = Math.floor(m / 60)
+  const r = m % 60
+  return h ? (r ? `${h}시간 ${r}분` : `${h}시간`) : `${r}분`
 }
 
 export { examProgress } from './progress.ts'

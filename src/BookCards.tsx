@@ -125,12 +125,12 @@ export function BookCard({ s, item, date, today, onEntry, onMenu }: { s: State; 
             const c = sp.chapter
             const len = c.to - c.from + 1
             const isCur = !c.doneDate && sp.doneIn > 0
-            const g = c.grade === 'high' ? '상' : c.grade === 'mid' ? '중' : c.grade === 'low' ? '하' : ''
+            const g = c.grade === 'high' ? '잘' : c.grade === 'mid' ? '절반' : c.grade === 'low' ? '흐릿' : ''
             return (
               <li key={c.id} className={isCur ? 'cur' : ''}>
                 <span className={`cn${c.doneDate ? ' on' : ''}`} style={c.doneDate ? { background: color } : isCur ? { border: 0, background: `conic-gradient(${color} 0 ${Math.round((sp.doneIn / len) * 100)}%, var(--trk) 0)` } : undefined}>{c.doneDate && <Icon name="check" size={12} stroke={3.2} />}</span>
                 <span className="cl-name"><small>{i + 1}</small> {c.name}</span>
-                <span className="cl-meta">{c.doneDate ? `${mdS(c.doneDate)} 끝${g ? ` · 이해 ${g}` : ''}` : isCur ? `${sp.doneIn} / ${len}${t.unit}` : sp.start ? `${mdS(sp.start)} 시작` : '예정'}</span>
+                <span className="cl-meta">{c.doneDate ? `${mdS(c.doneDate)} 끝${g ? ` · 떠올리기 ${g}` : ''}` : isCur ? `${sp.doneIn} / ${len}${t.unit}` : sp.start ? `${mdS(sp.start)} 시작` : '예정'}</span>
               </li>
             )
           })}

@@ -1,3 +1,4 @@
+import { Dur } from './ui.tsx'
 import { useEffect, useRef, useState } from 'react'
 import { EndSheet } from './Entry.tsx'
 import { Icon } from './Icon.tsx'
@@ -178,8 +179,8 @@ export function Stopwatch({ showStart }: { showStart: boolean }) {
         </div>
       </div>
       <div className="sw-stats fx">
-        <div><small>오늘 공부</small><b>{hm(dayNow)}</b></div>
-        <div><small>이 계획 오늘</small><b>{hm(before + elapsed)}</b></div>
+        <div><small>오늘 공부</small><b><Dur sec={dayNow} /></b></div>
+        <div><small>이 계획 오늘</small><b><Dur sec={before + elapsed} /></b></div>
         <div><small>{leftAmt !== null ? '남은 양' : '남은 시간'}</small><b>{leftAmt !== null ? `${leftAmt}${task.unit}` : goal > 0 ? hm(Math.max(leftToGoal, 0)) : '—'}</b></div>
       </div>
       <div className="sw-foot">

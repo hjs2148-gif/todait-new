@@ -14,12 +14,11 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+# GitHub 공식 예제처럼 빌드와 배포를 나눈다. 업로드 직후 같은 작업에서 바로 배포하면
+# deploy-pages가 방금 올린 아티팩트를 못 찾는 실패("No artifacts named github-pages")가 났다.
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,5 +32,13 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v5

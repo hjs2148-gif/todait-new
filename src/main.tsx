@@ -14,6 +14,7 @@ import './moments.css'
 import './wizard.css'
 import './guide.css'
 import './learnwidgets.css'
+import './quick.css'
 
 const root = createRoot(document.getElementById('root')!)
 demoReady()

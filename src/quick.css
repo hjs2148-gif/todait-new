@@ -1,0 +1,54 @@
+/* 밀어서 기록 */
+.swp { position: relative; overflow: hidden; }
+.swp-r, .swp-l { position: absolute; inset: 0; display: flex; align-items: center; font-size: 15px; font-weight: 700; transition: opacity .1s; pointer-events: none; }
+.swp-r { background: var(--ink); color: var(--bg); padding-left: 14px; }
+.swp-l { background: var(--chip); color: var(--ink); justify-content: flex-end; padding-right: 14px; }
+.swp-o { position: relative; background: var(--sf); touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.prow-more .pm-act { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.prow-more .pm-act .chip { margin-top: 0; }
+.qtoast { position: fixed; left: 50%; transform: translateX(-50%); width: calc(100% - 24px); max-width: 496px; bottom: calc(var(--tabs) + 84px + env(safe-area-inset-bottom)); z-index: 9; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 8px 0 16px; border-radius: 16px; background: var(--ink); color: var(--bg); font-size: 14px; box-shadow: 0 6px 20px rgba(0,0,0,.2); box-sizing: border-box; animation: qt-in .2s ease-out; }
+.qtoast button { height: 36px; padding: 0 12px; border-radius: 10px; border: 0; font: inherit; font-size: 14px; font-weight: 700; background: color-mix(in srgb, var(--bg) 16%, transparent); color: var(--bg); }
+@keyframes qt-in { from { opacity: 0; transform: translate(-50%, 8px); } }
+
+/* 연속 책갈피 */
+.th-s { padding: 0 20px 2px; }
+.rib-b { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 10px; border-radius: 10px; border: 0; background: var(--ribt); color: var(--rib); font: inherit; font-size: 14px; font-weight: 700; }
+.bm { display: inline-block; width: 12px; height: 16px; background: currentColor; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%); }
+.sgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.sgrid span { height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--mu); background: var(--pg); }
+.sgrid span.h { background: none; height: 20px; }
+.sgrid span.fut { background: none; }
+.sgrid span.ok { background: var(--ribt); color: var(--rib); }
+.sgrid span.ok i { width: 10px; height: 13px; background: var(--rib); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%); }
+.sgrid span.rest { background: repeating-linear-gradient(135deg, var(--trk) 0 3px, transparent 3px 6px); box-shadow: inset 0 0 0 1px var(--trk); }
+.sgrid span.tdy { box-shadow: inset 0 0 0 2px var(--ink); color: var(--ink); font-weight: 700; }
+.sleg { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 12px 0 4px; font-size: 13px; color: var(--mu); }
+.sleg span { display: inline-flex; align-items: center; gap: 6px; }
+.sleg .sq { width: 12px; height: 12px; border-radius: 4px; background: var(--pg); display: inline-block; }
+.sleg .sq.ok { background: var(--rib); }
+.sleg .sq.rest { background: repeating-linear-gradient(135deg, var(--trk) 0 3px, transparent 3px 6px); box-shadow: inset 0 0 0 1px var(--trk); }
+
+/* 하루 끝: 책갈피가 꽂힌다 (한 번만) */
+.cheer { position: relative; overflow: hidden; }
+.cheer-rib { position: absolute; top: 0; right: 22px; width: 24px; height: 44px; background: var(--rib); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%); animation: rib-drop .6s cubic-bezier(.2, .9, .3, 1.1) both; }
+@keyframes rib-drop { from { transform: translateY(-48px); } }
+.tick.on { animation: tick-pop .3s ease-out; }
+@keyframes tick-pop { 40% { transform: scale(1.18); } }
+@media (prefers-reduced-motion: reduce) { .cheer-rib, .tick.on, .qtoast { animation: none; } }
+
+/* 시험 끝난 뒤 */
+.xw-sum { display: flex; flex-direction: column; gap: 4px; padding: 4px 0 14px; }
+.xw-sum b { font-size: 28px; line-height: 34px; }
+.xw-sum b small { font-size: 15px; font-weight: 600; color: var(--mu); margin: 0 2px; }
+.xw-sum span { color: var(--mu); font-size: 14px; }
+.xw-step { display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--hl); }
+.xw-step .no { width: 26px; height: 26px; border-radius: 13px; background: var(--ink); color: var(--bg); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none; }
+.xw-sc { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.xw-sc label { display: flex; align-items: center; gap: 8px; }
+.xw-nm { flex: 1; min-width: 0; font-size: 15px; }
+.xw-sc input { flex: none; width: 72px !important; height: 36px; border-radius: 10px; border: 0; background: var(--pg); color: var(--ink); font: inherit; font-size: 15px; font-weight: 700; text-align: right; padding: 0 10px; }
+.xw-ck { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.xw-ck label { display: flex; align-items: center; gap: 10px; min-height: 40px; font-size: 15px; }
+.xw-ck input { width: 20px; height: 20px; accent-color: var(--ink); }
+.sheet-body .two { display: flex; gap: 8px; margin-top: 8px; }
+.sheet-body .two .chip { flex: 1; height: 44px; justify-content: center; }

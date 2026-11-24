@@ -22,6 +22,10 @@ export interface Exam {
   scope: ExamScope[]
   /** 범위 계획이 비워 둘 날 전에 끝나게 종료일을 맞춘다 */
   fitEnd: boolean
+  /** 시험이 끝난 뒤 정리한 날 (있으면 끝난 시험) */
+  closedAt?: string
+  /** 과목(카테고리 id)별 점수 */
+  scores?: Record<string, string>
 }
 
 export interface Diary { id: string; date: string; taskId: string | null; body: string; photoIds: string[]; timestamp: number }

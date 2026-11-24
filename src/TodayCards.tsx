@@ -94,7 +94,8 @@ export function DoneDayCard({ s, today, stats, openDayEnd, tomorrow }: { s: Stat
   const record = best > 0 && stats.sec > best
   const dots = Math.min(Math.max(st.best, st.count + 1, 12), 24)
   return (
-    <section className="tcard weekcard" role="region" aria-label="오늘 목표 완료">
+    <section className="tcard weekcard cheer" role="region" aria-label="오늘 목표 완료">
+      <span className="cheer-rib" aria-hidden="true" />
       <div className="tc-meta"><b className="big16">목표를 다 채웠어요</b>{record && <b className="ribc">하루 최고 기록 · 전 기록 {hm(best)}</b>}</div>
       <div className="tc-meta"><span>연속 <b className="ribc">{st.count}일</b>째</span><span>{st.best > st.count ? `최고 기록 ${st.best}일까지 ${st.best - st.count}일` : '최고 기록이에요'}</span></div>
       <div className="dots" aria-hidden="true">{Array.from({ length: dots }, (_, i) => <i key={i} className={i < st.count ? 'on' : ''} />)}</div>

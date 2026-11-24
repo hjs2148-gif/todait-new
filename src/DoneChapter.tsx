@@ -44,10 +44,10 @@ export function DoneChapterSheet({ taskId, chapterId, onClose }: { taskId: strin
       <div className="cbar dc-bar" aria-hidden="true">
         {t.chapters.map((x) => <span key={x.id} style={{ flexGrow: x.to - x.from + 1 }}><span style={{ width: `${Math.max(0, Math.min(1, (pos - x.from + 1) / (x.to - x.from + 1))) * 100}%`, background: color }} /></span>)}
       </div>
-      <div className="dc-ask">
+      {!t.roundOf && <div className="dc-ask">
         <b>{md(askOn)}에 떠올리기로 물어볼게요</b>
         <small>지금 바로 묻지 않아요. 공부 직후엔 다 아는 것 같아서, 하루 뒤에 책을 덮고 떠올려 봐야 정확해요. 진도 탭 복습 칸에 나와요.</small>
-      </div>
+      </div>}
       {next && <div className="dc-next"><span className="grow">다음은 <b>{idx + 2}단원 {next.name}</b> · {next.from}{t.unit}부터</span><Icon name="right" size={16} /></div>}
       <button className="primary" onClick={save}>저장하고 이어서</button>
     </Sheet>

@@ -27,3 +27,19 @@ const ow = roundOffer([wb], () => ({ '2026-11-01': { done: 90, sec: 0, checked: 
 assert.deepEqual([ow.kind, ow.amount], ['wrong', 12])
 assert.deepEqual([roundTask(ow, 'c', 1, 0).bookMode, roundTask(ow, 'c', 1, 0).startPoint], ['amount', null])
 console.log('rounds ok')
+
+// 2회독 단원: 떠올리기 결과로 무게, 끝낸 날·기록은 가져가지 않음
+{
+  const { secondChapters } = await import('./rounds.ts')
+  const tc: Task = { ...t, chapters: [
+    { id: 'a', name: '1', from: 1, to: 30, doneDate: '2026-11-05', grade: 'low', recalls: [{ d: '2026-11-06', g: 'low' }] },
+    { id: 'b', name: '2', from: 31, to: 60, doneDate: '2026-11-10', grade: 'high' },
+    { id: 'c', name: '3', from: 61, to: 100, weight: 3 },
+  ] }
+  assert.deepEqual(secondChapters(tc), [
+    { id: 'a', name: '1', from: 1, to: 30, weight: 3 },
+    { id: 'b', name: '2', from: 31, to: 60, weight: 1 },
+    { id: 'c', name: '3', from: 61, to: 100, weight: 3 },
+  ])
+  console.log('rounds second ok')
+}

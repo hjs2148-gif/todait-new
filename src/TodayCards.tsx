@@ -38,13 +38,14 @@ export function RoundCard({ s, today }: { s: State; today: string }) {
   const o = roundToday(s, today)
   if (!o) return null
   const second = o.kind === 'second'
+  const fog = second ? (o.task.chapters ?? []).filter((c) => c.grade === 'low').length : 0
   const answer = (yes: boolean) => {
     actions.saveTask({ ...o.task, rounds: roundDecision(o, yes) })
     if (yes) actions.saveTask(roundTask(o, uid(), Math.max(0, ...s.tasks.map((x) => x.order)) + 1, Date.now()))
   }
   return (
     <GuideCard lab={`${o.task.name} · ${o.task.completed ? '1회독 끝' : `1회독 ${o.daysLeft}일 남음`}`} head={second ? '2회독도 할까요?' : `틀린 ${o.amount}${o.task.unit}만 다시 풀까요?`}
-      body={`${second ? '다시 읽기보다 덮고 떠올리기 위주로 빠르게' : '맞힌 문항은 빼고 틀린 것만'} · ${md(o.from)} ~ ${md(o.to)}`}>
+      body={`${second ? '다시 읽기보다 덮고 떠올리기 위주로 빠르게' : '맞힌 문항은 빼고 틀린 것만'} · ${md(o.from)} ~ ${md(o.to)}${fog ? ` · 흐릿했던 ${fog}단원에 시간을 더 줘요` : ''}`}>
       <button className="g-s" onClick={() => answer(false)}>안 할래요</button>
       <button className="g-p" onClick={() => answer(true)}>{second ? '2회독 만들기' : '오답만 만들기'}</button>
     </GuideCard>

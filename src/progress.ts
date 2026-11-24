@@ -173,7 +173,8 @@ const LAST_ORDER: Record<Grade | 'none', number> = { low: 0, none: 1, mid: 2, hi
 export function reviewDue(tasks: Task[], today: string, exam?: string | null): ReviewItem[] {
   const out: ReviewItem[] = []
   for (const t of tasks) {
-    if (t.archived) continue
+    // 2회독 계획은 그 자체가 복습이라 따로 떠올리기를 묻지 않는다
+    if (t.archived || t.roundOf) continue
     t.chapters?.forEach((c, index) => {
       const due = nextDue(c, exam)
       if (!due || due > today) return
@@ -225,7 +226,7 @@ export function upcomingReviews(s: Pick<State, 'tasks' | 'recs' | 'settings' | '
   const days = Array.from({ length: n }, (_, i) => ({ date: addDays(today, i + 1), count: 0 }))
   if (!s.settings.reviewOn) return days
   for (const t of s.tasks) {
-    if (t.archived) continue
+    if (t.archived || t.roundOf) continue
     for (const c of t.chapters ?? []) {
       const due = nextDue(c, reviewExam(s, today))
       if (!due || due <= today) continue
@@ -235,6 +236,18 @@ export function upcomingReviews(s: Pick<State, 'tasks' | 'recs' | 'settings' | '
   }
   if (days.length) days[0].count += todayReviews(s, today).later.length
   return days
+}
+
+/** 달력용 날짜별 복습 단원 수: 지난날은 떠올린 단원, 오늘은 한 것 + 남은 것, 앞날은 다음 복습일이 그 날인 단원(단원마다 다음 한 번만) */
+export function reviewCounts(s: Pick<State, 'tasks' | 'recs' | 'settings' | 'exams'>, today: string, from: string, to: string): Record<string, number> {
+  const out: Record<string, number> = {}
+  const add = (d: string, n = 1) => { if (d >= from && d <= to) out[d] = (out[d] ?? 0) + n }
+  for (const t of s.tasks) for (const c of t.chapters ?? []) for (const r of c.recalls ?? []) if (r.d < today) add(r.d)
+  if (!s.settings.reviewOn) return out
+  const tr = todayReviews(s, today)
+  add(today, tr.doneToday + tr.list.length)
+  for (const u of upcomingReviews(s, today, Math.max(0, diffDays(today, to)))) if (u.count) add(u.date, u.count)
+  return out
 }
 
 // ── 쌓은 것 ───────────────────────────────────────────────

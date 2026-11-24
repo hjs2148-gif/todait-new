@@ -111,7 +111,7 @@ export function ReviewView({ s, today }: { s: State; today: string }) {
   const tr = todayReviews(s, today)
   const up = upcomingReviews(s, today, 7)
   const maxUp = Math.max(...up.map((x) => x.count), 1)
-  const books = s.tasks.filter((t) => !t.archived && t.chapters?.some((c) => c.doneDate))
+  const books = s.tasks.filter((t) => !t.archived && !t.roundOf && t.chapters?.some((c) => c.doneDate))
   // 살펴볼 단원: 연속 흐릿, 느낌과 정답률이 다른 문제집 단원
   const watch: { t: Task; c: NonNullable<Task['chapters']>[number]; why: string; pull?: boolean }[] = []
   let grads = 0
@@ -241,5 +241,32 @@ export function ReviewLine({ s, today, go }: { s: State; today: string; go: () =
       <span className="grow"><b className="blk">복습 {tr.list.length}단원 · {tr.min}분</b><small className="blk ell">{first.chapter.name}{tr.list.length > 1 ? ` 외 ${tr.list.length - 1}개` : ''} · 진도 탭에서</small></span>
       <Icon name="right" size={16} />
     </button>
+  )
+}
+
+/** 공부를 끝내고 기록할 때 한 번: 오늘 복습할 단원 하나를 떠올려 보기 (하루 한 번, 건너뛰면 복습 칸에 남는다) */
+export function EndRecall({ s, today }: { s: State; today: string }) {
+  const key = `endRecall:${today}`
+  const [pick] = useState(() => {
+    if (s.settings.suggested[key]) return null
+    const l = todayReviews(s, today).list
+    return l.find((r) => r.lastGrade === null) ?? l[0] ?? null
+  })
+  const [got, setGot] = useState<Grade | null>(null)
+  if (!pick) return null
+  const c = s.tasks.find((t) => t.id === pick.task.id)?.chapters?.find((x) => x.id === pick.chapter.id) ?? pick.chapter
+  const mark = () => actions.setSettings({ suggested: { ...s.settings.suggested, [key]: today } })
+  const ago = pick.lastGrade === null ? (pick.days <= 1 ? '어제 끝낸 단원' : `${pick.days}일 전 끝낸 단원`) : '오늘 복습할 단원'
+  return (
+    <section className="end-recall">
+      <small><span className="rv-ic sm"><Icon name="repeat" size={14} /></span>잠깐, {ago}</small>
+      <b>{pick.chapter.name}, 책 덮고 핵심 세 가지를 떠올려 보면?</b>
+      {got ? <p className="sm mu">{GRADE_WORD[got]}이면 {gapWord(gapAfter({ ...c, recalls: c.recalls?.filter((r) => r.d !== today) }, got))} 다시 물어요.</p> : (
+        <>
+          <Pick3 c={c} onPick={(g) => { actions.recall(pick.task.id, pick.chapter.id, g, today); mark(); setGot(g) }} />
+          <button type="button" className="linkish" onClick={() => { mark(); setGot(null) }}>다음에 (진도 탭 복습 칸에 남아요)</button>
+        </>
+      )}
+    </section>
   )
 }

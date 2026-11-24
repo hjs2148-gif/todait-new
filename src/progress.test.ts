@@ -102,3 +102,22 @@ assert.equal(fp[0].perDayNew, 15) // 90쪽 / 6일 (3~8일)
 const early = fitPreview({ ...emptyState(), tasks: [{ ...base, endDate: '2026-11-06' }], recs: {} }, { ...exam('2026-11-10'), blankDays: 1 }, '2026-11-03')
 assert.equal(early[0].same, true)
 console.log('progress tests passed')
+
+// 하루 복습 상한: 시험 2주 전부터 늘어 직전엔 1.5배
+{
+  const { emptyState } = await import('./model.ts')
+  const { reviewCap, todayReviews } = await import('./progress.ts')
+  const st = emptyState()
+  assert.equal(reviewCap(st, '2026-11-04'), 30)
+  const near = { ...st, exams: [{ id: 'e', name: '기말', date: '2026-11-11', selected: true, blankDays: 0, scope: [], fitEnd: false }] }
+  assert.equal(reviewCap(near, '2026-11-04'), 38)
+  assert.equal(reviewCap(near, '2026-11-11'), 45)
+  // 상한까지만 오늘에, 나머지는 later. 끄면 없음
+  const ch = (id: string, d: string) => ({ id, name: id, from: 1, to: 40, doneDate: d })
+  const tk = { ...toc, id: 'r', bookMode: 'toc' as const, chapters: ['a', 'b', 'c', 'd', 'e'].map((x) => ch(x, '2026-11-01')) }
+  const tr = todayReviews({ ...st, tasks: [tk], recs: {} }, '2026-11-04')
+  assert.equal(tr.list.length + tr.later.length, 5)
+  assert.ok(tr.min <= 30 && tr.list.length >= 1 && tr.later.length >= 1)
+  assert.equal(todayReviews({ ...st, tasks: [tk], recs: {}, settings: { ...st.settings, reviewOn: false } }, '2026-11-04').list.length, 0)
+  console.log('progress review ok')
+}

@@ -59,10 +59,10 @@ export function ProgressWidget({ s, size, date, today, stats }: { s: State; size
           <div className="t-seg">{items.slice(0, 6).map((i) => <i key={i.task.id}><b style={{ width: `${Math.round(i.rate * 100)}%`, background: colorOf(s, i.task) }} /></i>)}</div>
           <span className="t-sub">{endText}</span>
         </>}
-        {size === 's2' && <div className="t-cols"><div className="l"><span className="t-num">{pct ?? '—'}<small>%</small></span><span className="t-sub">{endText}</span></div><div className="r"><Sessions s={s} date={date} plan={plan} /></div></div>}
+        {size === 's2' && <div className="t-cols"><div className="l"><span className="t-num">{pct ?? '—'}<small>%</small></span><span className="t-sub">{endText}</span></div><div className="r"><Sessions s={s} date={date} plan={plan} review={stats.reviewSec} /></div></div>}
         {size === 's4' && <>
           <span className="t-num">{pct ?? '—'}<small>% · {items.length}개 중 {doneN}개 끝</small></span>
-          <Sessions s={s} date={date} plan={plan} ticks />
+          <Sessions s={s} date={date} plan={plan} ticks review={stats.reviewSec} />
           <div className="t-kv">
             <div><small>공부한 시간</small><b>{hm(stats.sec)}</b></div>
             <div><small>남은 공부</small><b>{stats.remain > 0 ? hm(stats.remain) : '없음'}</b></div>
@@ -75,7 +75,7 @@ export function ProgressWidget({ s, size, date, today, stats }: { s: State; size
         <WSheet icon="progress" title="오늘 진행" onClose={() => setOpen(false)} big={<>{pct ?? '—'}<small>%</small></>}
           sub={<>{items.length}개 중 {doneN}개 끝{end && <> · 이대로면 <b>{end}</b> 끝</>}</>}
           foot={next && date === today ? <button className="primary" onClick={() => { startTimer(s, next.task, today); setOpen(false) }}>다음: {next.task.name} 시작</button> : undefined}>
-          <WSec title="오늘 시간 줄"><Sessions s={s} date={date} big plan={plan} /></WSec>
+          <WSec title="오늘 시간 줄"><Sessions s={s} date={date} big plan={plan} review={stats.reviewSec} /></WSec>
           <WSec title="계획별" right={`${doneN} / ${items.length}`}><div className="t-list in-sheet">{rows(items.length, true)}</div></WSec>
         </WSheet>
       )}
@@ -83,7 +83,7 @@ export function ProgressWidget({ s, size, date, today, stats }: { s: State; size
   )
 }
 /** 오늘 공부한 때: 6시~24시 줄에 과목색 블록 */
-export function Sessions({ s, date, big, plan, ticks }: { s: State; date: string; big?: boolean; plan?: Item[]; ticks?: boolean }) {
+export function Sessions({ s, date, big, plan, ticks, review = 0 }: { s: State; date: string; big?: boolean; plan?: Item[]; ticks?: boolean; review?: number }) {
   const hs = s.histories.filter((h) => h.date === date)
   const total = hs.reduce((a, h) => a + (h.endedAt - h.startedAt) / 1000, 0)
   const min = (ms: number) => { const d = new Date(ms); return d.getHours() * 60 + d.getMinutes() }
@@ -99,6 +99,8 @@ export function Sessions({ s, date, big, plan, ticks }: { s: State; date: string
   const fut: { id: string; a: number; b: number; c: string }[] = []
   if (plan) {
     let cur = nowM
+    // 오늘 남은 복습이 먼저 (책갈피색)
+    if (review >= 60) { fut.push({ id: '_review', a: cur, b: cur + review / 60, c: 'var(--rib)' }); cur += review / 60 }
     for (const i of [...plan].sort((p, q) => behindOf(s, q.task, date) - behindOf(s, p.task, date) || p.task.order - q.task.order)) {
       let len = remainSec(s, i) / 60
       if (s.timer?.taskId === i.task.id) len = Math.max(0, len - (nowMs - s.timer.startedAt) / 60000)
@@ -113,7 +115,7 @@ export function Sessions({ s, date, big, plan, ticks }: { s: State; date: string
   const ticksShown = tk.filter(([m]) => nowTick === null || Math.abs(pos(m) - pos(nowTick)) > 13)
   return (
     <div className={`t-ses${big ? ' big' : ''}`}>
-      {big ? <span className="t-sm">{total ? `모두 ${hm(total)}` : '아직 공부한 기록이 없어요'}{fut.length > 0 && ' · 옅은 칸은 남은 계획'}</span> : <span className="t-sm">공부한 때 · {total ? hm(total) : '아직 없어요'}{fut.length > 0 && ticks ? ' · 옅은 칸은 남은 계획' : ''}</span>}
+      {big ? <span className="t-sm">{total ? `모두 ${hm(total)}` : '아직 공부한 기록이 없어요'}{fut.length > 0 && (review >= 60 ? ' · 옅은 칸은 남은 계획 · 주황 칸은 복습' : ' · 옅은 칸은 남은 계획')}</span> : <span className="t-sm">공부한 때 · {total ? hm(total) : '아직 없어요'}{fut.length > 0 && ticks ? (review >= 60 ? ' · 옅은 칸 남은 계획 · 주황 복습' : ' · 옅은 칸은 남은 계획') : ''}</span>}
       <div className="t-tl" aria-hidden="true">
         {hs.map((h) => { const a = min(h.startedAt); const b = Math.max(a + 6, min(h.endedAt)); return <i key={h.id} style={{ left: x(a), width: `calc(${x(b)} - ${x(a)})`, background: colorOfId(h.taskId) }} /> })}
         {live && <i style={{ left: x(live.a), width: `calc(${x(Math.max(live.b, live.a + 3))} - ${x(live.a)})`, background: live.c }} />}

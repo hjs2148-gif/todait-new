@@ -53,14 +53,23 @@ export function gapAfter(c: Chapter, g: Grade): number | null {
   return step >= STEPS.length - 1 ? null : STEPS[step + 1]
 }
 
-/** 다음 복습일. 졸업했거나 아직 안 끝낸 단원이면 null */
-export function nextDue(c: Chapter): string | null {
+/** 다음 복습일. 졸업했거나 아직 안 끝낸 단원이면 null.
+ *  시험일(exam)을 주면: 다음 복습이 시험을 넘기면 시험 이틀 전으로 당기고, 졸업한 단원도 시험 전 일주일 안에 한 번 떠올리게 한다
+ *  (기억해야 하는 기간에 맞춰 간격을 줄이는 쪽이 낫다는 연구에 기댄 제품 규칙) */
+export function nextDue(c: Chapter, exam?: string | null): string | null {
   const l = ladder(c)
   if (!l) return null
   const pulled = c.pull && !recallsOf(c).some((r) => r.d >= c.pull!) ? c.pull : null
-  if (l.graduated) return pulled
-  const due = addDays(l.last, STEPS[l.step])
-  return pulled && pulled < due ? pulled : due
+  const before = exam ? addDays(exam, -2) : null
+  let due: string | null = l.graduated ? null : addDays(l.last, STEPS[l.step])
+  if (before && l.last < before) {
+    // 다음 복습이 시험을 넘기면 시험 이틀 전으로
+    if (due !== null && due > before) due = before
+    // 졸업한 단원은 시험 전 일주일 안에 한 번도 안 떠올렸을 때만
+    if (due === null && l.last < addDays(exam!, -7)) due = before
+  }
+  if (pulled && (due === null || pulled < due)) due = pulled
+  return due
 }
 
 /** 예전 기록(이해도 + 복습한 날)을 떠올리기 기록으로 옮긴다. 이미 recalls가 있으면 그대로 */

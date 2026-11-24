@@ -47,3 +47,15 @@ assert.deepEqual(legacyRecalls(ch({ grade: 'low', reviews: ['2026-11-13'] })), [
 assert.equal(legacyRecalls(ch()), undefined)
 assert.deepEqual(legacyRecalls(ch({ recalls: [] })), [])
 console.log('recall ok')
+
+// 시험일 맞춤: 다음 복습이 시험을 넘기면 시험 이틀 전으로
+const e1 = addRecall(addRecall(ch(), '2026-11-11', 'high'), '2026-11-14', 'high') // 다음은 11.21 (7일)
+assert.equal(nextDue(e1, '2026-11-19'), '2026-11-17')
+assert.equal(nextDue(e1, '2026-12-20'), '2026-11-21') // 시험이 멀면 그대로
+// 시험 이틀 전 이후에 떠올렸으면 더 당기지 않는다
+const e2 = addRecall(e1, '2026-11-18', 'high')
+assert.equal(nextDue(e2, '2026-11-19'), '2026-12-02')
+// 졸업한 단원도 시험 전에 한 번
+assert.equal(nextDue(g, '2027-03-20'), '2027-03-18')
+assert.equal(nextDue(g, null), null)
+console.log('recall exam ok')

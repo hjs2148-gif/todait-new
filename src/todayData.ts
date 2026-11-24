@@ -3,6 +3,7 @@ import { addDays } from './date.ts'
 import { expectIfOnTrack, liveExpect, secPerUnit, type Task, type TaskKind } from './logic.ts'
 import { minGoalMet, offFor, subjectVar, type State } from './store.ts'
 import { daySec, itemsOn, type Item } from './view.ts'
+import { todayReviews } from './progress.ts'
 
 export const KIND_TABS: ['all' | TaskKind, string][] = [
   ['all', '전체'], ['book', '책'], ['lecture', '인강'], ['time', '시간'], ['habit', '습관'], ['todo', '할 일'],
@@ -48,7 +49,10 @@ export interface DayStats {
   timeRate: number | null
   goalsDone: number
   goalsTotal: number
+  /** 남은 공부(초): 남은 계획 + 오늘 남은 복습 */
   remain: number
+  /** 그중 오늘 남은 복습(초) */
+  reviewSec: number
 }
 
 export function dayStats(s: State, date: string, today: string): DayStats {
@@ -56,9 +60,12 @@ export function dayStats(s: State, date: string, today: string): DayStats {
   let target = 0
   let remain = 0
   for (const i of active) { target += targetSec(s, i); remain += remainSec(s, i) }
+  // 오늘은 남은 복습 시간도 더한다 ("이대로면 ○시 끝"·남은 공부·시간 줄이 같은 계산을 쓴다)
+  const reviewSec = date === today && !(date in s.settings.restDays) ? todayReviews(s, today).min * 60 : 0
+  remain += reviewSec
   const sec = daySec(s, date)
   return {
-    active, resting, sec, target, remain,
+    active, resting, sec, target, remain, reviewSec,
     timeRate: target > 0 ? sec / target : null,
     goalsDone: active.filter((i) => i.rate >= 1).length,
     goalsTotal: active.length,

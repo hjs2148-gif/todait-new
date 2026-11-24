@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Icon } from './Icon.tsx'
 import { DOW_KO, dow } from './date.ts'
 import { sumDone, type Grade, type Task } from './logic.ts'
-import { todayReviews, upcomingReviews, type DueReview } from './progress.ts'
+import { reviewCap, reviewExam, todayReviews, upcomingReviews, type DueReview } from './progress.ts'
 import { gapAfter, GRADE_WORD, ladder, nextDue, recallsOf, STEPS } from './recall.ts'
 import { actions, type State } from './store.ts'
 import { Sheet } from './ui.tsx'
@@ -39,7 +39,7 @@ export function RecallSheet({ s, taskId, chapterId, today, onClose }: { s: State
   if (!task || !c) return null
   const idx = task.chapters!.indexOf(c)
   const l = ladder(c)
-  const due = nextDue(c)
+  const due = nextDue(c, reviewExam(s, today))
   const log = recallsOf(c).reverse()
   const todayG = c.recalls?.find((r) => r.d === today)?.g
   return (
@@ -161,7 +161,7 @@ export function ReviewView({ s, today }: { s: State; today: string }) {
           ))}
         </section>
       )}
-      {tr.later.length > 0 && <p className="rv-later">{tr.later.length}단원은 하루 {s.settings.reviewCapMin}분을 넘어서 <b>내일 이후로 나눠요</b>. 흐릿했던 것부터 먼저 넣었어요.</p>}
+      {tr.later.length > 0 && <p className="rv-later">{tr.later.length}단원은 하루 {reviewCap(s, today)}분을 넘어서 <b>내일 이후로 나눠요</b>. 흐릿했던 것부터 먼저 넣었어요.</p>}
 
       <div className="sec-h"><h2>다가오는 복습</h2><small>7일</small></div>
       <section className="tcard rv-up" aria-label="다가오는 7일 복습 단원 수">
@@ -217,6 +217,7 @@ export function ReviewView({ s, today }: { s: State; today: string }) {
       <div className="sec-h"><h2>복습 설정</h2></div>
       <section className="tcard">
         <div className="tc-meta"><span>하루 복습 상한</span><span>넘치면 다음 날로 나눠요</span></div>
+        {reviewCap(s, today) > s.settings.reviewCapMin && <small className="mu">시험이 가까워서 지금은 {reviewCap(s, today)}분까지 넣어요</small>}
         <div className="segs" role="group" aria-label="하루 복습 상한">
           {caps.map((m) => <button key={m} aria-pressed={s.settings.reviewCapMin === m} className={s.settings.reviewCapMin === m ? 'on' : ''} onClick={() => actions.setSettings({ reviewCapMin: m })}>{m}분</button>)}
         </div>

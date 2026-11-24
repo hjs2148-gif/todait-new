@@ -1,4 +1,5 @@
 // 진도 탭 (RProg · RProgBook · RProgDone) 과 진도 자세히 (RDetail)
+import { gapAfter, GRADE_WORD, ladder, nextDue } from './recall.ts'
 import { useState } from 'react'
 import { SlackCard, slackRows } from './Guide.tsx'
 import { Icon } from './Icon.tsx'
@@ -187,21 +188,30 @@ function Shelf({ s, done, doing }: { s: State; done: Task[]; doing: PlanProgress
   )
 }
 
-/** 끝낸 단원 고치기: 이해도, 오늘 복습함 */
+/** 단원 하나: 오늘 떠올려 본 결과 고르기 + 다음 복습일 */
 function ChapterSheet({ task, chapterId, onClose }: { task: Task; chapterId: string; onClose: () => void }) {
   const c = task.chapters?.find((x) => x.id === chapterId)
   if (!c) return null
   const today = todayISO()
+  const l = ladder(c)
+  const todayG = c.recalls?.find((r) => r.d === today)?.g
+  const due = nextDue(c)
   return (
     <Sheet title={c.name} onClose={onClose}>
-      <p className="hint">{c.from}~{c.to}{task.unit}{c.doneDate ? ` · ${md(c.doneDate)} 끝` : ''}{c.reviews?.length ? ` · 복습 ${c.reviews.length}번` : ''}</p>
-      <div className="grades big" role="group" aria-label="이해도">
-        {(['high', 'mid', 'low'] as Grade[]).map((g) => (
-          <button key={g} aria-pressed={c.grade === g} className={c.grade === g ? 'on' : ''} onClick={() => actions.setGrade(task.id, c.id, c.grade === g ? undefined : g)}>{GRADE_KO[g]}</button>
-        ))}
-      </div>
-      <p className="hint">이해도가 낮을수록 복습 날이 빨리 와요 (하 3일 · 중 7일 · 상 14일)</p>
-      <button className="primary" disabled={!c.doneDate || c.reviews?.includes(today)} onClick={() => { actions.addReview(task.id, c.id, today); onClose() }}>{c.reviews?.includes(today) ? '오늘 복습했어요' : '오늘 복습함'}</button>
+      <p className="hint">{c.from}~{c.to}{task.unit}{c.doneDate ? ` · ${md(c.doneDate)} 끝` : ''}{l?.count ? ` · 떠올리기 ${l.count}번` : ''}</p>
+      {c.doneDate ? (
+        <>
+          <p className="hint">책을 덮고 핵심을 떠올려 본 뒤, 펼쳐서 맞춰 보고 골라요.</p>
+          <div className="grades big" role="group" aria-label="떠올려 보니">
+            {(['low', 'mid', 'high'] as Grade[]).map((g) => {
+              const gap = gapAfter(c, g)
+              return <button key={g} aria-pressed={todayG === g} className={todayG === g ? 'on' : ''} onClick={() => actions.recall(task.id, c.id, g, today)}>{GRADE_WORD[g]}<small className="blk">{gap === null ? '졸업' : gap === 1 ? '내일' : `${gap}일 뒤`}</small></button>
+            })}
+          </div>
+          <p className="hint">{due ? `다음 복습 ${md(due)}` : '졸업했어요 · 시험 전에 한 번만 다시 나와요'}</p>
+        </>
+      ) : <p className="hint">단원을 끝내면 다음 날부터 떠올리기로 복습해요.</p>}
+      <button className="primary" onClick={onClose}>닫기</button>
     </Sheet>
   )
 }
@@ -384,7 +394,7 @@ export function Progress({ editTask }: { editTask: (t: Task | null) => void }) {
                       <i className="dot" style={{ background: colorOf(s, r.task) }} />
                       <span className="grow"><b className="blk ell">{r.index + 1}단원 {r.chapter.name}</b><small className="blk ell">{r.task.name} · {mdS(r.chapter.doneDate!)} 끝 · {r.days}일 지남</small></span>
                       {r.chapter.grade && <span className={`rv-g${r.chapter.grade === 'low' ? ' behind strong' : ''}`}>이해 {GRADE_KO[r.chapter.grade]} <GradeBars g={r.chapter.grade} /></span>}
-                      <button className="chip" onClick={(e) => { e.stopPropagation(); actions.addReview(r.task.id, r.chapter.id, today) }}>복습함</button>
+                      
                     </div>
                   ))}
                 </section>

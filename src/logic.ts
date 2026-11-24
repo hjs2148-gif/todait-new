@@ -11,6 +11,8 @@ export type TaskKind = 'book' | 'lecture' | 'time' | 'habit' | 'todo'
 export type BookMode = 'toc' | 'workbook' | 'amount'
 /** 이해도 상·중·하 */
 export type Grade = 'high' | 'mid' | 'low'
+/** 떠올리기 한 번: 흐릿(low) · 절반(mid) · 잘(high) */
+export interface Recall { d: string; g: Grade }
 
 export interface Chapter {
   id: string
@@ -21,8 +23,12 @@ export interface Chapter {
   /** 단원을 끝낸 날 */
   doneDate?: string
   grade?: Grade
-  /** 복습한 날들 */
+  /** 복습한 날들 (예전 기록. 지금은 recalls를 쓴다) */
   reviews?: string[]
+  /** 떠올리기 기록: 책을 덮고 떠올려 본 날과 결과. 다음 복습일은 이것으로 계산한다 (recall.ts) */
+  recalls?: Recall[]
+  /** 복습에 넣은 날: 이 날 이후 떠올리기 전까지는 사다리와 상관없이 복습할 단원 */
+  pull?: string
   /** 단원 무게: 1 쉬움 · 2 보통(기본) · 3 어려움. 어려울수록 하루 쪽 수가 줄어든다 */
   weight?: 1 | 2 | 3
 }

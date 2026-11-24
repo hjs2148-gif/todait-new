@@ -1,7 +1,8 @@
 // 저장되는 데이터의 모양과 옛 기록 옮기기(마이그레이션).
 // IndexedDB·React와 무관한 순수 코드라 node 테스트에서 바로 불러 쓸 수 있다.
 import { addDays } from './date.ts'
-import { isPausedOn, type OffFn, type Recs, type Task, type TaskKind } from './logic.ts'
+import { isPausedOn, type Chapter, type OffFn, type Recs, type Task, type TaskKind } from './logic.ts'
+import { legacyRecalls } from './recall.ts'
 import type { StudyWindows } from './wizard.ts'
 
 export const STATE_VERSION = 2
@@ -41,7 +42,7 @@ export const timerElapsed = (t: Timer, now: number) => Math.max(0, ((t.pausedAt 
 
 export type WidgetId =
   | 'stack'
-  | 'progress' | 'review' | 'slack' | 'recall' | 'wrong' | 'umap'
+  | 'progress' | 'slack' | 'wrong' | 'umap'
   | 'today' | 'left' | 'exam' | 'week' | 'streak'
   | 'subjects' | 'weekGoal' | 'tomorrow' | 'memo' | 'quickStart'
 /** 위젯 크기: 작게 1×1 · 넓게 2×1 · 크게 2×2 (칸 = 화면 반 너비 × 164px) */
@@ -49,18 +50,16 @@ export type WidgetSize = 's1' | 's2' | 's4'
 /** items: 스마트 스택에 겹친 위젯들 (id가 'stack'일 때만) */
 export interface WidgetSlot { id: WidgetId; size: WidgetSize; items?: WidgetId[] }
 /** 스마트 스택 기본 구성 */
-export const STACK_DEFAULT: WidgetId[] = ['progress', 'recall', 'tomorrow']
+export const STACK_DEFAULT: WidgetId[] = ['progress', 'slack', 'tomorrow']
 /** 위젯마다 고를 수 있는 크기 (앞이 기본) */
 export const WIDGET_SIZES: Record<WidgetId, WidgetSize[]> = {
   stack: ['s2', 's1', 's4'],
-  progress: ['s4', 's2', 's1'], review: ['s1', 's2'], slack: ['s1', 's2', 's4'], recall: ['s2', 's1', 's4'], wrong: ['s1', 's2'], umap: ['s1', 's4'],
+  progress: ['s4', 's2', 's1'], slack: ['s2', 's1', 's4'], wrong: ['s1', 's2'], umap: ['s1', 's4'],
   today: ['s2', 's1'], left: ['s1'], exam: ['s1'], week: ['s1', 's2'], streak: ['s1', 's2'], subjects: ['s1', 's2'], weekGoal: ['s1'], tomorrow: ['s1', 's2'], memo: ['s1', 's2'], quickStart: ['s1'],
 }
 export const DEFAULT_WIDGETS: WidgetSlot[] = [
   { id: 'progress', size: 's4' },
-  { id: 'review', size: 's1' },
-  { id: 'slack', size: 's1' },
-  { id: 'recall', size: 's2' },
+  { id: 'slack', size: 's2' },
 ]
 /** 예전 기본 위젯 (그대로 쓰고 있었다면 새 기본으로 바꾼다) */
 const OLD_DEFAULT = 'today,left,exam,week,streak'
@@ -78,6 +77,10 @@ export interface Settings {
   theme: 'system' | 'light' | 'dark'
   /** 연속 공부로 치는 하루 최소 공부 시간(초) */
   streakMinSec: number
+  /** 떠올리기 복습을 쓸지 (끄면 오늘 탭 복습 줄·복습 시간이 빠진다) */
+  reviewOn: boolean
+  /** 하루 복습에 넣을 최대 분 */
+  reviewCapMin: number
   widgets: WidgetSlot[]
   todayTab: TodayTab
   /** 밀린 분량 시트를 띄우지 않고 남은 날에 나눈다 */
@@ -158,6 +161,8 @@ export const defaultSettings = (): Settings => ({
   dailyNotifyTime: '08:00',
   theme: 'system',
   streakMinSec: 600,
+  reviewOn: true,
+  reviewCapMin: 30,
   widgets: DEFAULT_WIDGETS.map((w) => ({ ...w })),
   todayTab: 'all',
   autoSpread: false,
@@ -208,6 +213,8 @@ export function migrate(raw: unknown): State {
       ...kind,
       custom: isObj(t.custom) ? t.custom : {},
       week: Array.isArray(t.week) && t.week.length === 7 ? t.week : [true, true, true, true, true, true, true],
+      // 예전 이해도·복습 날짜 → 떠올리기 기록
+      ...(Array.isArray(t.chapters) ? { chapters: t.chapters.map((c: Chapter) => { const r = legacyRecalls(c); return r ? { ...c, recalls: r } : c }) } : {}),
       archived: !!t.archived,
     } as Task
   })
@@ -221,6 +228,9 @@ export function migrate(raw: unknown): State {
 
   const settings: Settings = { ...base.settings, ...(isObj(s.settings) ? s.settings : {}) }
   if (!Array.isArray(settings.widgets) || settings.widgets.length === 0) settings.widgets = base.settings.widgets
+  // 오늘 복습·떠올리기 위젯은 진도 탭 복습 칸으로 옮겼다. 빠지는 자리는 시험 여유 위젯을 넓혀 채운다 (한 번만)
+  const hadReview = (settings.widgets as { id: string }[]).some((w) => w && (w.id === 'review' || w.id === 'recall'))
+  if (hadReview) settings.widgets = (settings.widgets as WidgetSlot[]).map((w) => (w && w.id === 'slack' && w.size === 's1' ? { ...w, size: 's2' } : w))
   // 예전 넓게/작게(wide) → 크기(size). 예전 기본 구성 그대로면 새 학습 위젯 기본으로
   settings.widgets = (settings.widgets as (WidgetSlot & { wide?: boolean })[])
     .filter((w) => w && w.id in WIDGET_SIZES)

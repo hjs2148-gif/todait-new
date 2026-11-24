@@ -206,13 +206,7 @@ export function suggestions(s: State, today: string): Sug[] {
   const yday = addDays(today, -1)
   const answer = (key: string) => () => actions.setSettings({ suggested: { ...s.settings.suggested, [key]: today } })
   const live = s.tasks.filter((t) => !t.archived && !t.completed)
-  // 1. 단원을 끝낸 다음 날: 덮고 떠올려 보기 → 이해도
-  for (const t of live) t.chapters?.forEach((c, i) => {
-    const key = `recall:${t.id}:${c.id}`
-    if (c.doneDate !== yday || c.grade || s.settings.suggested[key]) return
-    const pick = (g: 'low' | 'mid' | 'high') => () => { actions.setGrade(t.id, c.id, g); answer(key)() }
-    out.push({ key, lab: `어제 끝낸 ${i + 1}단원 ${c.name}`, head: '책을 덮고 떠올려 보면?', body: '고른 대로 복습 날짜를 잡아요.', acts: [['흐릿해요', pick('low'), 'c'], ['절반쯤', pick('mid'), 'c'], ['잘 나요', pick('high'), 'c']] })
-  })
+  // (단원을 끝낸 다음 날 떠올리기는 진도 탭 복습 칸에서 묻는다)
   // 2. 계획을 만들고 1주 뒤: 실제 속도
   const exam = s.exams.find((e) => e.selected) ?? null
   for (const t of live) {
@@ -235,7 +229,7 @@ export function suggestions(s: State, today: string): Sug[] {
     if (right + wrong < 20 || !sure.length || right / (right + wrong) >= 0.7) continue
     const pct = Math.round((right / (right + wrong)) * 100)
     out.push({ key, lab: t.name, head: `정답률이 ${pct}%예요`, body: `잘 안다고 고른 단원이 ${sure.length}개 있어요. 틀린 문항 위주로 복습을 넣을까요?`,
-      acts: [['괜찮아요', answer(key), 's'], ['복습 넣기', () => { for (const c of sure) actions.setGrade(t.id, c.id, 'mid'); answer(key)() }, 'p']] })
+      acts: [['괜찮아요', answer(key), 's'], ['복습 넣기', () => { for (const c of sure) actions.pullReview(t.id, c.id, today); answer(key)() }, 'p']] })
   }
   // 4. 기록이 2주 쌓였을 때: 요일별 실제 공부 시간 → 공부 가능 시간
   const win = s.settings.studyWindows

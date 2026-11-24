@@ -1,4 +1,5 @@
 // 앱 상태와 IndexedDB 저장. 서버 없이 이 기기 브라우저에만 저장된다.
+import { addRecall } from './recall.ts'
 import { useSyncExternalStore } from 'react'
 import { addDays, dow, todayISO } from './date.ts'
 import { applyBalance, balance } from './balance.ts'
@@ -226,8 +227,12 @@ export const actions = {
   // 단원 이해도·복습
   setGrade: (taskId: string, chapterId: string, grade: Grade | undefined) =>
     setState((s) => patchChapter(s, taskId, chapterId, (c) => ({ ...c, grade }))),
-  addReview: (taskId: string, chapterId: string, date: string) =>
-    setState((s) => patchChapter(s, taskId, chapterId, (c) => ({ ...c, reviews: [...(c.reviews ?? []), date] }))),
+  /** 떠올리기 결과 기록 (흐릿·절반·잘). 다음 복습일이 이것으로 정해진다 */
+  recall: (taskId: string, chapterId: string, g: Grade, date: string) =>
+    setState((s) => patchChapter(s, taskId, chapterId, (c) => addRecall(c, date, g))),
+  /** 사다리와 상관없이 이 날부터 복습할 단원에 넣는다 */
+  pullReview: (taskId: string, chapterId: string, date: string) =>
+    setState((s) => patchChapter(s, taskId, chapterId, (c) => ({ ...c, pull: date }))),
   // 멈추기·다시 시작
   pauseTask: (id: string, date: string) =>
     setState((s) => patchTask(s, id, (t) => ({ ...t, archived: true, pauses: [...(t.pauses ?? []), { from: date, to: null }] }))),

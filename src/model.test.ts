@@ -144,3 +144,16 @@ const mg = { tasks: [{ id: 'm', minGoal: 5 } as never], recs: { m: { '2026-11-02
 assert.deepEqual([minGoalMet(mg, '2026-11-02'), minGoalMet(mg, '2026-11-03'), minGoalMet(mg, '2026-11-04')], [true, false, false])
 
 console.log('model tests passed')
+
+// 오늘 복습·떠올리기 위젯은 빠지고, 시험 여유 위젯이 넓어진다 (한 번만)
+const mw = migrate({ ...emptyState(), settings: { ...emptyState().settings, widgets: [{ id: 'progress', size: 's4' }, { id: 'review', size: 's1' }, { id: 'slack', size: 's1' }, { id: 'recall', size: 's2' }] } })
+assert.deepEqual(mw.settings.widgets, [{ id: 'progress', size: 's4' }, { id: 'slack', size: 's2' }])
+// 이미 정리된 뒤 사용자가 작게 고른 크기는 그대로
+const mw2 = migrate({ ...mw, settings: { ...mw.settings, widgets: [{ id: 'slack', size: 's1' }] } })
+assert.deepEqual(mw2.settings.widgets, [{ id: 'slack', size: 's1' }])
+// 예전 이해도·복습 날짜 → 떠올리기 기록
+const mc = migrate({ ...emptyState(), tasks: [{ id: 't', name: 'a', type: 'amount', chapters: [{ id: 'c', name: '1', from: 1, to: 5, doneDate: '2026-11-01', grade: 'mid', reviews: ['2026-11-08'] }] }] })
+assert.deepEqual(mc.tasks[0].chapters![0].recalls, [{ d: '2026-11-01', g: 'mid' }, { d: '2026-11-08', g: 'mid' }])
+assert.equal(mc.settings.reviewOn, true)
+assert.equal(mc.settings.reviewCapMin, 30)
+console.log('model recall ok')

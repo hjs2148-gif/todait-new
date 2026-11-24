@@ -2,7 +2,7 @@
 import type { WidgetSlot } from './model.ts'
 import type { State } from './store.ts'
 import type { DayStats } from './todayData.ts'
-import { MapWidget, ProgressWidget, RecallWidget, ReviewWidget, SlackWidget, WrongWidget } from './LearnWidgets.tsx'
+import { MapWidget, ProgressWidget, SlackWidget, WrongWidget } from './LearnWidgets.tsx'
 import { ExamWidget2, LeftWidget2, MemoWidget2, QuickStartWidget2, SmartStack, StreakWidget2, SubjectsWidget2, TimeWidget, TomorrowWidget2, WeekGoalWidget2, WeekWidget2 } from './MoreWidgets.tsx'
 
 export function renderWidget(slot: WidgetSlot, s: State, date: string, today: string, stats: DayStats): JSX.Element | null {
@@ -11,9 +11,7 @@ export function renderWidget(slot: WidgetSlot, s: State, date: string, today: st
   switch (slot.id) {
     case 'stack': return <SmartStack key={k} slot={slot} render={(x) => renderWidget(x, s, date, today, stats)} />
     case 'progress': return <ProgressWidget key={k} s={s} size={z} date={date} today={today} stats={stats} />
-    case 'review': return <ReviewWidget key={k} s={s} size={z} today={today} />
     case 'slack': return <SlackWidget key={k} s={s} size={z} today={today} />
-    case 'recall': return <RecallWidget key={k} s={s} size={z} today={today} />
     case 'wrong': return <WrongWidget key={k} s={s} size={z} today={today} />
     case 'umap': return <MapWidget key={k} s={s} size={z} />
     case 'today': return <TimeWidget key={k} s={s} size={z} date={date} stats={stats} />

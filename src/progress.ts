@@ -1,5 +1,6 @@
 // 진도 탭·진도 자세히가 쓰는 계산. React·IndexedDB와 무관해 node 테스트에서 바로 쓴다.
 // 원칙: %에는 늘 이름을 붙인다. 여기 숫자는 모두 "범위 진도"(분량 기준, 계획끼리는 예상 공부 시간 비중).
+import { ladder, nextDue } from './recall.ts'
 import { addDays, diffDays, dow } from './date.ts'
 import { doneInRange, futurePlan, secPerUnit, sumDone, type Chapter, type Grade, type OffFn, type Recs, type Task } from './logic.ts'
 import { offFor, type Exam, type State } from './model.ts'
@@ -164,25 +165,23 @@ export function examProgress(s: Pick<State, 'tasks' | 'recs'>, exam: Exam, today
 
 // ── 복습 ──────────────────────────────────────────────────
 
-/** 이해도별 복습 간격(일). 이해가 낮을수록 빨리 */
-export const REVIEW_GAP: Record<Grade | 'none', number> = { low: 3, mid: 7, high: 14, none: 7 }
-const GRADE_ORDER: Record<Grade | 'none', number> = { low: 0, none: 1, mid: 2, high: 3 }
+export interface ReviewItem { task: Task; chapter: Chapter; index: number; since: string; days: number; due: string; step: number; lastGrade: Grade | null; lowRun: number }
 
-export interface ReviewItem { task: Task; chapter: Chapter; index: number; since: string; days: number }
+const LAST_ORDER: Record<Grade | 'none', number> = { low: 0, none: 1, mid: 2, high: 3 }
 
-/** 복습할 때가 된 단원. 이해도 낮은 순, 같으면 오래된 순 */
+/** 오늘(까지) 복습할 단원: 떠올리기 사다리로 다음 복습일이 된 단원. 지난번 흐릿 → 처음 → 절반 → 잘, 같으면 오래 밀린 순 */
 export function reviewDue(tasks: Task[], today: string): ReviewItem[] {
   const out: ReviewItem[] = []
   for (const t of tasks) {
     if (t.archived) continue
     t.chapters?.forEach((c, index) => {
-      if (!c.doneDate) return
-      const since = [c.doneDate, ...(c.reviews ?? [])].sort().pop()!
-      const days = diffDays(since, today)
-      if (days >= REVIEW_GAP[c.grade ?? 'none']) out.push({ task: t, chapter: c, index, since, days })
+      const due = nextDue(c)
+      if (!due || due > today) return
+      const l = ladder(c)!
+      out.push({ task: t, chapter: c, index, since: l.last, days: diffDays(l.last, today), due, step: l.step, lastGrade: l.lastGrade, lowRun: l.lowRun })
     })
   }
-  return out.sort((a, b) => GRADE_ORDER[a.chapter.grade ?? 'none'] - GRADE_ORDER[b.chapter.grade ?? 'none'] || b.days - a.days)
+  return out.sort((a, b) => LAST_ORDER[a.lastGrade ?? 'none'] - LAST_ORDER[b.lastGrade ?? 'none'] || a.due.localeCompare(b.due))
 }
 
 // ── 쌓은 것 ───────────────────────────────────────────────

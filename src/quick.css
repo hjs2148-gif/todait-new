@@ -184,3 +184,10 @@
 .upd small { font-size: 12px; color: color-mix(in srgb, var(--bg) 65%, transparent); }
 .upd button { white-space: nowrap; height: 36px; padding: 0 12px; border-radius: 10px; border: 0; background: var(--bg); color: var(--ink); font: inherit; font-size: 14px; font-weight: 700; flex: none; }
 .upd button.x { width: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; background: none; color: color-mix(in srgb, var(--bg) 70%, transparent); }
+
+/* 새 주 카드: 지난주 떠올리기 · 가장 밀린 계획 */
+.wk-more { display: flex; flex-direction: column; gap: 0; border-radius: 14px; background: var(--pg); padding: 2px 12px; }
+.wk-more > div { display: flex; align-items: center; gap: 10px; min-height: 42px; font-size: 14px; }
+.wk-more > div + div { border-top: 1px solid var(--hl); }
+.wk-g { font-size: 13px; color: var(--mu); white-space: nowrap; }
+.wk-g b { color: var(--ink); }

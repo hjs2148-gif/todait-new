@@ -12,7 +12,7 @@
   - 저장소 `hjs2148-gif/todait-new`, `main` 푸시 시 `.github/workflows/deploy.yml`로 자동 배포.
   - 커밋 작성자는 GitHub noreply 주소 사용.
 - 현재 배포된 앱은 **새 디자인**(2026-11-22 배포, 커밋 `21e407b`·`55183fc`·`af4a589`). 자세한 현황은 10번.
-- 배포가 "No artifacts named github-pages" 로 실패하면 GitHub 쪽 일시 오류다. 빈 커밋을 푸시해 다시 돌리면 된다(이 컴퓨터엔 `gh` 없음).
+- 배포가 "No artifacts named github-pages" 로 실패하던 문제는 2026-11-24에 고침: `deploy.yml`을 빌드·배포 두 작업으로 나누고(공식 예제 방식) Pages 도구를 v5로 올림. 같은 작업 안에서 업로드 직후 배포하면 아티팩트를 못 찾았다. 그래도 실패하면 Actions에서 Re-run.
 
 ## 2. 구현된 기능 (첫 버전 기준, 기록용 — 지금은 10번 참고)
 

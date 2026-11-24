@@ -78,7 +78,7 @@ export function EntrySheet({ s, item, date, onClose, onFinish }: { s: State; ite
       <div className="entry-sub">{curChapter ? `${chapterNo}단원 ${curChapter.name} · ` : ''}오늘 {hasPos ? `${startFrom}~${goalTo}${task.unit}` : `${expect}${unit}`}</div>
       <div className="entry-q">어디까지 했나요?</div>
       <Stepper label={hasPos ? '쪽' : unit} value={hasPos ? pos : v} unit={task.unit || unit} min={hasPos ? base : 0} max={hasPos ? base + room : room} onChange={(n) => set(n)} />
-      <p className="entry-left">오늘 <b>{v}</b> / {expect}{unit} · {v >= expect ? '목표를 채웠어요' : <b className="bad">{expect - v}{unit} 남음</b>}</p>
+      <p className="entry-left">오늘 <b>{v}</b> / {expect}{unit} · {v >= expect ? '목표를 채웠어요' : <b className="behind">{expect - v}{unit} 남음</b>}</p>
       {showCells && <Cells from={startFrom} to={goalTo} pos={pos} color={color} onPick={set} />}
       <div className="chips">
         <button type="button" onClick={() => set(hasPos ? goalTo : expect)}>{hasPos ? `${goalTo}${task.unit}까지 · 오늘 목표` : '오늘 목표만큼'}</button>

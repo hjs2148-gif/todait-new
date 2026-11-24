@@ -1,6 +1,6 @@
 // 진도 탭 (RProg · RProgBook · RProgDone) 과 진도 자세히 (RDetail)
 import { useState } from 'react'
-import { SlackCard } from './Guide.tsx'
+import { SlackCard, slackRows } from './Guide.tsx'
 import { Icon } from './Icon.tsx'
 import { addDays, diffDays, todayISO } from './date.ts'
 import { sumDone, type Grade, type Task } from './logic.ts'
@@ -258,7 +258,7 @@ function Detail({ s, taskId, exam, today, onBack, editTask }: { s: State; taskId
         </div>
         <section className="tcard">
           <div className="ex-big"><b>{p.done} <small>/ {t.amount}{u}</small></b><span className="push">{pct(p.rate)}</span></div>
-          <div className="tc-sub">예정 {p.planned}{u} · {p.behind > 0 ? <b className="bad">{p.behind}{u} 늦음</b> : p.behind < 0 ? `${-p.behind}${u} 앞섬` : '예정대로'}</div>
+          <div className="tc-sub">예정 {p.planned}{u} · {p.behind > 0 ? <b className="behind">{p.behind}{u} 늦음</b> : p.behind < 0 ? `${-p.behind}${u} 앞섬` : '예정대로'}</div>
           <PlanBar s={s} p={p} tall />
         </section>
         <div className="wd-grid">
@@ -357,8 +357,8 @@ export function Progress({ editTask }: { editTask: (t: Task | null) => void }) {
         </div>
       </header>
       <div className="tbody">
-        {view === 'doing' && exam && <ExamCard s={s} exam={exam} plans={doing} reviews={reviews.length} today={today} />}
-        {view === 'doing' && exam && <SlackCard s={s} exam={exam} today={today} />}
+        {/* 시험 카드는 한 장: 여유 목록이 있으면 그것으로(진도 %는 한 줄로), 없으면 예전 진도 카드 */}
+        {view === 'doing' && exam && (slackRows(s, exam, today).length ? <SlackCard s={s} exam={exam} today={today} /> : <ExamCard s={s} exam={exam} plans={doing} reviews={reviews.length} today={today} />)}
         {view === 'doing' && <StackCard s={s} today={today} />}
         <div role="tablist" aria-label="보기" className="segs">
           <button role="tab" aria-selected={view === 'doing'} className={view === 'doing' ? 'on' : ''} onClick={() => setView('doing')}>진행 중 {doing.length}</button>
@@ -383,7 +383,7 @@ export function Progress({ editTask }: { editTask: (t: Task | null) => void }) {
                     <div key={r.task.id + r.chapter.id} className="rv" role="button" tabIndex={0} onClick={() => setDetail(r.task.id)}>
                       <i className="dot" style={{ background: colorOf(s, r.task) }} />
                       <span className="grow"><b className="blk ell">{r.index + 1}단원 {r.chapter.name}</b><small className="blk ell">{r.task.name} · {mdS(r.chapter.doneDate!)} 끝 · {r.days}일 지남</small></span>
-                      {r.chapter.grade && <span className={`rv-g${r.chapter.grade === 'low' ? ' bad strong' : ''}`}>이해 {GRADE_KO[r.chapter.grade]} <GradeBars g={r.chapter.grade} /></span>}
+                      {r.chapter.grade && <span className={`rv-g${r.chapter.grade === 'low' ? ' behind strong' : ''}`}>이해 {GRADE_KO[r.chapter.grade]} <GradeBars g={r.chapter.grade} /></span>}
                       <button className="chip" onClick={(e) => { e.stopPropagation(); actions.addReview(r.task.id, r.chapter.id, today) }}>복습함</button>
                     </div>
                   ))}

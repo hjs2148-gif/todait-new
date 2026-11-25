@@ -1,0 +1,282 @@
+<title>Todait 새 화면 시안</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap">
+<style>
+/* 폰 한 화면 폭(390) 두 장: 오늘 탭 · 진도/통계 조각. 과목색 + 차가운/따뜻한 바탕 + 라이트/다크 */
+:root {
+  --bg: #f2f2f7; --sf: #ffffff; --ink: #1c1c1e; --mu: #6c6c72; --line: #e3e3e8; --trk: #ebebf0; --on: #ffffff;
+  --math: #2f6fec; --eng: #9a55e0; --kor: #1f9d5c; --sci: #0e9db3; --etc: #8e8e93; --bad: #e0352b;
+  --font: 'Pretendard Variable', Pretendard, 'Noto Sans KR', system-ui, -apple-system, sans-serif;
+}
+:root[data-bg=warm] { --bg: #f5f4f1; --line: #e6e3de; --trk: #ece9e4; --mu: #6b675f; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #000000; --sf: #1c1c1e; --ink: #f5f5f7; --mu: #a1a1a8; --line: #2c2c2f; --trk: #2c2c2f; --on: #ffffff;
+  --math: #5b8eff; --eng: #b98af5; --kor: #3fc67e; --sci: #3cc4d8; --etc: #98989f; --bad: #ff5a4f; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #000000; --sf: #1c1c1e; --ink: #f5f5f7; --mu: #a1a1a8; --line: #2c2c2f; --trk: #2c2c2f; --on: #ffffff;
+  --math: #5b8eff; --eng: #b98af5; --kor: #3fc67e; --sci: #3cc4d8; --etc: #98989f; --bad: #ff5a4f; color-scheme: dark; }
+@media (prefers-color-scheme: dark) { :root[data-bg=warm]:not([data-theme="light"]) { --bg: #121110; --sf: #1f1d1b; --line: #2f2c29; --trk: #2f2c29; } }
+:root[data-theme="dark"][data-bg=warm] { --bg: #121110; --sf: #1f1d1b; --line: #2f2c29; --trk: #2f2c29; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/22px var(--font); margin: 0; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 48px; }
+header { max-width: 820px; margin: 0 auto 18px; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; justify-content: space-between; }
+h1 { font-size: 22px; line-height: 28px; margin: 0 0 4px; font-weight: 800; letter-spacing: -0.02em; }
+header p { margin: 0; color: var(--mu); font-size: 14px; max-width: 46ch; }
+.ctl { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+.seg { display: inline-flex; background: var(--line); border-radius: 9px; padding: 2px; gap: 2px; }
+.seg button { border: 0; background: none; color: var(--ink); font: 500 13px/1 var(--font); height: 30px; padding: 0 12px; border-radius: 7px; cursor: pointer; }
+.seg button[aria-pressed=true] { background: var(--sf); font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.seg button:focus-visible { outline: 2px solid var(--math); }
+.lab { font-size: 12px; color: var(--mu); display: block; margin-bottom: 4px; }
+
+.cols { max-width: 820px; margin: 0 auto; display: grid; grid-template-columns: repeat(2, minmax(0, 390px)); gap: 24px; justify-content: center; }
+@media (max-width: 840px) { .cols { grid-template-columns: minmax(0, 390px); } }
+.col { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.col > h2 { font-size: 13px; color: var(--mu); margin: 0 0 2px; font-weight: 600; }
+.card { background: var(--sf); border-radius: 14px; padding: 14px 16px; }
+.cap { font-size: 13px; color: var(--mu); font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
+.big { font-size: 30px; line-height: 34px; font-weight: 800; letter-spacing: -0.02em; }
+.big small { font-size: 15px; font-weight: 600; margin-left: 1px; }
+.mu { color: var(--mu); font-size: 13px; }
+.today { display: flex; align-items: center; gap: 16px; }
+.today > svg { width: 132px; flex: none; }
+.today ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 13px; flex: 1; min-width: 0; }
+.today li { display: flex; align-items: center; gap: 6px; }
+.today li b { margin-left: auto; font-weight: 600; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.goal { display: flex; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 13px; color: var(--mu); }
+.goal b { color: var(--ink); }
+.btn { margin-top: 12px; height: 46px; border-radius: 12px; background: var(--ink); color: var(--sf); font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+.list { padding: 4px 16px; }
+.item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.item:last-child { border: 0; }
+.ico { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; flex: none; color: var(--on); font-size: 13px; font-weight: 800; }
+.item .t { flex: 1; min-width: 0; }
+.item .n { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .s { font-size: 12px; color: var(--mu); }
+.item .r { font-size: 13px; color: var(--mu); white-space: nowrap; }
+.item .r b { color: var(--ink); font-size: 15px; }
+.play { width: 34px; height: 34px; border-radius: 50%; background: var(--trk); display: grid; place-items: center; flex: none; }
+.ttl { font-weight: 700; font-size: 15.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+.foot { display: flex; justify-content: space-between; font-size: 13px; color: var(--mu); margin-top: 10px; }
+.foot b { color: var(--ink); }
+.late { color: var(--mu); font-size: 13px; white-space: nowrap; }
+svg { display: block; max-width: 100%; height: auto; overflow: visible; }
+svg text { font-family: var(--font); fill: var(--mu); font-size: 12px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 12px; color: var(--mu); }
+.note { max-width: 820px; margin: 26px auto 0; font-size: 13.5px; color: var(--mu); line-height: 21px; }
+.note b { color: var(--ink); }
+.swatch { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; }
+.swatch span { display: inline-flex; align-items: center; gap: 6px; }
+.swatch i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+</style>
+
+<header>
+  <div>
+    <h1>합친 시안</h1>
+    <p>오늘 링(A) · 단원 블록(C) · 이번 주 막대(C)를 과목색으로 합쳤어요. 바탕은 설정에서 고르는 걸 가정했어요.</p>
+  </div>
+  <div class="ctl">
+    <div><span class="lab">바탕 (더보기 설정)</span><div class="seg" id="bgSeg"><button data-v="cool" aria-pressed="true">차가운 회색</button><button data-v="warm" aria-pressed="false">따뜻하게</button></div></div>
+    <div><span class="lab">화면</span><div class="seg" id="thSeg"><button data-v="" aria-pressed="true">기기 설정</button><button data-v="light" aria-pressed="false">라이트</button><button data-v="dark" aria-pressed="false">다크</button></div></div>
+  </div>
+</header>
+
+<div class="cols">
+  <section class="col" id="L"><h2>오늘 탭</h2></section>
+  <section class="col" id="R"><h2>진도 탭 · 통계 탭</h2></section>
+</div>
+
+<div class="cols" style="margin-top:24px">
+  <section class="col" id="L2"><h2>진도 탭 · 다른 계획</h2></section>
+  <section class="col" id="R2"><h2>통계 탭 · 캘린더 탭</h2></section>
+</div>
+
+<div class="note">
+  <div class="swatch" style="margin-bottom:8px"><span><i style="background:var(--math)"></i>수학</span><span><i style="background:var(--eng)"></i>영어</span><span><i style="background:var(--kor)"></i>국어</span><span><i style="background:var(--sci)"></i>과학</span><span><i style="background:var(--etc)"></i>기타</span></div>
+  색은 <b>과목마다 하나</b>예요. 수학책 두 권은 같은 파랑이고 이름으로 구분해요. 시작 버튼은 과목색과 겹치지 않게 검정으로 뒀어요. 빨강은 여전히 아무 데도 안 썼어요.
+</div>
+
+<script>
+const SUB = { 수학:'var(--math)', 영어:'var(--eng)', 국어:'var(--kor)', 과학:'var(--sci)', 기타:'var(--etc)' };
+const svg = (w,h,inner,width='100%') => `<svg viewBox="0 0 ${w} ${h}" width="${width}" role="img">${inner}</svg>`;
+
+/* 오늘 링: 목표 246분 중 과목별 공부 시간 조각 */
+const GOAL = 246, DONE = [['수학',55],['과학',33],['영어',25]];
+function todayRing(){
+  const cx=66, cy=66, r=54, sw=16, C=2*Math.PI*r, gap=3;
+  let s=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--trk)" stroke-width="${sw}"/>`, acc=0;
+  DONE.forEach(([k,m])=>{ const len=m/GOAL*C;
+    s+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${SUB[k]}" stroke-width="${sw}" stroke-linecap="round"
+      stroke-dasharray="${Math.max(0,len-gap-sw)} ${C}" stroke-dashoffset="${-(acc+sw/2)}" transform="rotate(-90 ${cx} ${cy})"/>`; acc+=len; });
+  s+=`<text x="${cx}" y="${cy+2}" text-anchor="middle" style="font-size:26px;font-weight:800;fill:var(--ink)">43<tspan style="font-size:14px">%</tspan></text>
+      <text x="${cx}" y="${cy+21}" text-anchor="middle">시간</text>`;
+  return svg(132,132,s);
+}
+const fmt = m => m>=60 ? `${Math.floor(m/60)}시간 ${m%60}분` : `${m}분`;
+const todayCard = `<div class="card"><div class="cap"><span>11월 25일 수요일</span><span>이대로면 밤 10시 42분 끝</span></div>
+  <div class="today">${todayRing()}<ul>
+    ${DONE.map(([k,m])=>`<li><span class="dot" style="background:${SUB[k]}"></span>${k}<b>${fmt(m)}</b></li>`).join('')}
+    <li style="color:var(--mu)"><span class="dot" style="background:var(--trk)"></span>남은 공부<b style="color:var(--mu)">${fmt(GOAL-113)}</b></li>
+  </ul></div>
+  <div class="goal"><span>공부한 시간 <b>1시간 53분</b> / 4시간 6분</span><span>목표 <b>9개 중 2개</b></span></div>
+  <div class="btn">▶ 수학의 정석 수학II 이어서</div></div>`;
+
+const PLANS = [['수학','수학의 정석 수학II','6단원 부정적분','5','쪽 남음','책'],['수학','쎈 수학II','4단원 적분','15','문항 남음','책'],['영어','영어 독해 인강','21강 빈칸 추론','1','강 남음','강'],['국어','국어 비문학 독해','3단원','3','쪽 남음','책'],['과학','물리 개념 정리','','15','분 남음','시']];
+const listCard = `<div class="card list">${PLANS.map(([k,n,s,v,u,ic])=>`<div class="item"><span class="ico" style="background:${SUB[k]}">${ic}</span>
+  <div class="t"><div class="n">${n}</div><div class="s">${k}${s?' · '+s:''}</div></div><div class="r"><b>${v}</b>${u}</div><span class="play">${svg(12,12,'<path d="M2 1l9 5-9 5z" fill="var(--ink)"/>','12')}</span></div>`).join('')}</div>`;
+
+/* 진도: 단원 블록. 지금~오늘 예정 사이는 과목색 줄무늬(해야 할 만큼), 예정 지점 위에 작은 꼬리표 */
+let uid=0;
+function blocks(ch, now, plan, color, unit){
+  const tot=ch.reduce((a,b)=>a+b,0), W=340, g=4, tw=W-g*(ch.length-1), top=26, h=30; let s='', X=0, acc=0, px=0;
+  const id='st'+(uid++);
+  s+=`<defs><pattern id="${id}" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="${color}" opacity=".16"/><rect width="2.4" height="6" fill="${color}" opacity=".55"/></pattern></defs>`;
+  ch.forEach((c,i)=>{ const w=c/tot*tw, st=acc, en=acc+c, f= now>=en?1: now<=st?0:(now-st)/c;
+    const pf = plan>=en?1: plan<=st?0:(plan-st)/c;
+    s+=`<rect x="${X}" y="${top}" width="${w}" height="${h}" rx="5" fill="var(--trk)"/>`;
+    if(pf>f) s+=`<clipPath id="${id}c${i}"><rect x="${X}" y="${top}" width="${w}" height="${h}" rx="5"/></clipPath><rect clip-path="url(#${id}c${i})" x="${X+w*f}" y="${top}" width="${w*(pf-f)}" height="${h}" fill="url(#${id})"/>`;
+    if(f>0) s+=`<clipPath id="${id}d${i}"><rect x="${X}" y="${top}" width="${w}" height="${h}" rx="5"/></clipPath><rect clip-path="url(#${id}d${i})" x="${X}" y="${top}" width="${w*f}" height="${h}" fill="${color}"/>`;
+    s+=`<text x="${X+w/2}" y="${top+20}" text-anchor="middle" style="font-weight:700;fill:${f>=.5?'#fff':'var(--mu)'}">${i+1}</text>`;
+    if(plan>st && plan<=en) px=X+w*(plan-st)/c;
+    X+=w+g; acc+=c; });
+  const label=`오늘 ${plan}${unit}까지`, lw=label.length*11.5+16, lx=Math.min(Math.max(px-lw/2,0),W-lw);
+  s+=`<rect x="${lx}" y="0" width="${lw}" height="20" rx="10" fill="var(--ink)"/><text x="${lx+lw/2}" y="14" text-anchor="middle" style="fill:var(--sf);font-weight:600">${label}</text>
+      <path d="M${px-4} 19.5 L${px+4} 19.5 L${px} 24Z" fill="var(--ink)"/>`;
+  return svg(W,top+h+2,s);
+}
+const prog = (k,name,sub,now,tot,unit,late,ch,plan,end,exam)=>`<div class="card">
+  <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline"><div class="ttl"><span class="dot" style="background:${SUB[k]}"></span>${name}</div><span class="late">${late}</span></div>
+  <div class="mu" style="margin:2px 0 10px">${sub} · <b style="color:var(--ink)">${now}</b> / ${tot}${unit} · ${Math.round(now/tot*100)}%</div>
+  ${blocks(ch,now,plan,SUB[k],unit)}
+  <div class="foot"><span>계획대로면 <b>${end}</b> 끝</span><span>${exam}</span></div></div>`;
+
+/* 이번 주: 모든 날을 과목별로 쌓되, 지난 날은 연하게 · 오늘은 진하게. 막대 하나가 통째로 둥근 모양 */
+const ORDER=['수학','영어','국어','과학','기타'];
+const WEEK=[['목',{수학:50,영어:30,국어:30,과학:20}],['금',{수학:45,영어:20,국어:15,과학:30}],['토',{수학:30,영어:40,과학:35}],['일',{영어:20}],
+  ['월',{수학:30,국어:25,과학:40}],['화',{수학:40,영어:15,국어:15,과학:15}],['수',{수학:55,영어:25,과학:33}]];
+let wid=0;
+function week(sel=6){
+  const W=340,H=158,base=126,max=150,L=34,step=(W-L)/7,bw=24; const y=m=>base-m/max*(base-12); let s='';
+  [60,120].forEach(m=> s+=`<line x1="${L}" x2="${W}" y1="${y(m)}" y2="${y(m)}" stroke="var(--line)"/><text x="0" y="${y(m)+4}">${m/60}시간</text>`);
+  WEEK.forEach(([d,v],i)=>{ const cx=L+i*step+step/2, x=cx-bw/2, on=i===sel, id='wb'+(wid++);
+    const t=ORDER.reduce((a,k)=>a+(v[k]||0),0);
+    s+=`<clipPath id="${id}"><rect x="${x}" y="${y(t)}" width="${bw}" height="${base-y(t)}" rx="7"/></clipPath><g clip-path="url(#${id})" opacity="${on?1:.32}">`;
+    let acc=0; ORDER.forEach(k=>{ const m=v[k]; if(!m) return; const y1=y(acc+m), y0=y(acc);
+      s+=`<rect x="${x}" y="${y1}" width="${bw}" height="${y0-y1}" fill="${SUB[k]}"/>`;
+      if(acc>0) s+=`<rect x="${x}" y="${y0-1}" width="${bw}" height="2" fill="var(--sf)"/>`; acc+=m; });
+    s+=`</g>`;
+    if(on) s+=`<text x="${cx}" y="${y(t)-7}" text-anchor="middle" style="font-weight:700;fill:var(--ink)">${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}</text>`;
+    s+=`<text x="${cx}" y="${H-10}" text-anchor="middle" style="${on?'font-weight:700;fill:var(--ink)':''}">${d}</text>`;
+    if(on) s+=`<circle cx="${cx}" cy="${H-1}" r="2.5" fill="var(--ink)"/>`; });
+  return svg(W,H,s);
+}
+const dayLegend = (i=6)=>{ const v=WEEK[i][1]; return `<div class="legend" style="gap:4px 14px">${ORDER.filter(k=>v[k]).map(k=>`<span style="display:inline-flex;align-items:center;gap:5px"><i class="dot" style="background:${SUB[k]}"></i>${k} <b style="color:var(--ink);font-weight:600">${fmt(v[k])}</b></span>`).join('')}</div>`; };
+const weekCard = `<div class="card"><div class="cap"><span>이번 주 공부</span><span>지난주보다 1시간 40분 적음</span></div>
+  <div class="big">16<small>시간</small> 13<small>분</small></div><div style="margin-top:8px">${week()}</div>
+  ${dayLegend()}<div class="legend">오늘은 진하게, 지난 날은 연하게. 다른 날을 누르면 그날이 진해져요.</div></div>`;
+
+document.getElementById('L').insertAdjacentHTML('beforeend', todayCard + listCard);
+document.getElementById('R').insertAdjacentHTML('beforeend',
+  prog('수학','수학의 정석 수학II','6단원 부정적분',235,320,'쪽','예정보다 20쪽 뒤',[40,36,44,40,38,42,40,40],255,'12월 9일','시험 3일 전') +
+  prog('국어','국어 비문학 독해','3단원',111,180,'쪽','예정보다 21쪽 뒤',[30,32,28,30,30,30],132,'12월 7일','시험 5일 전') +
+  weekCard);
+
+
+/* ---------- 나머지 그림 ---------- */
+// 인강: 한 강 = 한 칸. 들은 강은 과목색, 지금~오늘 예정은 빗금, 남은 강은 회색
+function lectures(n, done, plan, color){
+  const cols=15, g=4, W=340, w=(W-g*(cols-1))/cols, h=18, top=26; const id='lc'+(uid++); let s='';
+  s+=`<defs><pattern id="${id}" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="${color}" opacity=".16"/><rect width="2.4" height="6" fill="${color}" opacity=".55"/></pattern></defs>`;
+  let px=0, py=0;
+  for(let i=0;i<n;i++){ const r=Math.floor(i/cols), c=i%cols, x=c*(w+g), y=top+r*(h+g);
+    const fill = i<done? color : i<plan? `url(#${id})` : 'var(--trk)';
+    s+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="${fill}"/>`;
+    if(i===plan-1){ px=x+w/2; py=y; } }
+  // 꼬리표는 첫 줄 위에, 예정 칸이 둘째 줄이면 작은 점으로 그 칸을 가리킴
+  const label=`오늘 ${plan}강까지`, lw=label.length*11.5+16, lx=Math.min(Math.max(px-lw/2,0),W-lw);
+  s+=`<rect x="${lx}" y="0" width="${lw}" height="20" rx="10" fill="var(--ink)"/><text x="${lx+lw/2}" y="14" text-anchor="middle" style="fill:var(--sf);font-weight:600">${label}</text>`;
+  if(py===top) s+=`<path d="M${px-4} 19.5 L${px+4} 19.5 L${px} 24Z" fill="var(--ink)"/>`;
+  else s+=`<circle cx="${px}" cy="${py+h/2}" r="3" fill="var(--ink)"/>`;
+  const rows=Math.ceil(n/cols); return svg(W, top+rows*(h+g), s);
+}
+const lecCard = `<div class="card">
+  <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline"><div class="ttl"><span class="dot" style="background:var(--eng)"></span>영어 독해 인강 (수능 대비 완성)</div><span class="late">예정보다 6강 뒤</span></div>
+  <div class="mu" style="margin:2px 0 10px">21강 빈칸 추론 · <b style="color:var(--ink)">20</b> / 30강 · 67%</div>
+  ${lectures(30,20,26,'var(--eng)')}
+  <div class="foot"><span>계획대로면 <b>12월 5일</b> 끝</span><span>시험 7일 전</span></div></div>`;
+
+// 문제집: 단원 블록과 같은 모양, 안에 정답률을 작게
+const wbCard = `<div class="card">
+  <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline"><div class="ttl"><span class="dot" style="background:var(--math)"></span>쎈 수학II</div><span class="late">예정보다 48문항 뒤</span></div>
+  <div class="mu" style="margin:2px 0 10px">4단원 적분 · <b style="color:var(--ink)">304</b> / 480문항 · 63%</div>
+  ${blocks([96,96,96,96,96],304,352,'var(--math)','문항')}
+  <div class="foot"><span>정답률 <b>1단원 92%</b> · 2단원 84% · 3단원 71%</span><span>시험 4일 전</span></div></div>`;
+
+// 11월에 쌓은 것: 숫자 + 같은 블록 말투의 작은 막대
+const piled = `<div class="card"><div class="cap"><span>11월에 쌓은 것</span><span>25일 동안</span></div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+  ${[['258','쪽','var(--math)'],['226','문항','var(--math)'],['15','강','var(--eng)'],['6','단원 끝','var(--ink)']].map(([n,u,c])=>`<div><div style="height:4px;width:22px;border-radius:2px;background:${c};margin-bottom:8px"></div><div style="font-size:22px;font-weight:800;line-height:26px">${n}</div><div class="mu" style="font-size:12px">${u}</div></div>`).join('')}
+  </div></div>`;
+
+// 목표 달성: 오늘 링과 같은 링(한 색 = 먹색), 옆에 숫자
+function goalRing(f){ const cx=34,cy=34,r=27,sw=10,C=2*Math.PI*r;
+  return svg(68,68,`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--trk)" stroke-width="${sw}"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--ink)" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${C*f} ${C}" transform="rotate(-90 ${cx} ${cy})"/>`,'68'); }
+const tiles = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+  <div class="card"><div class="cap"><span>목표 달성 · 개수</span></div><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div><div class="big">66<small>%</small></div><div class="mu">47개 중 31개</div></div>${goalRing(.66)}</div></div>
+  <div class="card"><div class="cap"><span>연속 공부</span></div><div class="big">41<small>일</small></div>
+    ${svg(140,22,Array.from({length:7},(_,i)=>`<rect x="${i*20}" y="4" width="16" height="16" rx="4" fill="${i<6?'var(--ink)':'none'}" stroke="${i<6?'none':'var(--ink)'}" stroke-width="1.5" stroke-dasharray="${i<6?'':'3 2'}"/>`).join(''))}
+    <div class="mu" style="margin-top:4px">오늘 10분이면 42일째</div></div></div>`;
+
+// 과목 비중: 한 줄짜리 둥근 막대 + 목록
+const SHARE=[['과학',327],['영어',257],['수학',228],['국어',92],['기타',70]];
+function shareBar(){ const tot=SHARE.reduce((a,b)=>a+b[1],0), W=340, h=14; let s=`<clipPath id="shr"><rect width="${W}" height="${h}" rx="7"/></clipPath><g clip-path="url(#shr)">`, X=0;
+  SHARE.forEach(([k,m],i)=>{ const w=m/tot*W; s+=`<rect x="${X}" width="${w}" height="${h}" fill="${SUB[k]}"/>`; if(i) s+=`<rect x="${X-1}" width="2" height="${h}" fill="var(--sf)"/>`; X+=w; });
+  return svg(W,h,s+'</g>'); }
+const shareCard = (()=>{ const tot=SHARE.reduce((a,b)=>a+b[1],0); return `<div class="card"><div class="cap"><span>과목 비중</span><span>이번 주 16시간 13분</span></div>${shareBar()}
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin-top:12px;font-size:13px">${SHARE.map(([k,m])=>`<div style="display:flex;align-items:center;gap:6px"><span class="dot" style="background:${SUB[k]}"></span>${k}<span class="mu" style="margin-left:auto">${fmt(m)}</span><b style="width:34px;text-align:right">${Math.round(m/tot*100)}%</b></div>`).join('')}</div></div>`; })();
+
+// 집중 시간대: 둥근 칸, 먹색 진하기 4단계, 가장 많은 칸만 숫자
+const HM=[[0,0,0,2,3,0],[0,0,0,2,2,0],[0,0,0,2,1,0],[0,0,0,2,3,0],[0,0,0,2,2,0],[0,3,3,0,0,0],[0,1,0,0,0,0]];
+function heat(){ const L=26, W=340, cw=(W-L-5*4)/6, ch=20, g=4; let s='';
+  ['6시','9시','12시','15시','18시','21시'].forEach((t,i)=> s+=`<text x="${L+i*(cw+g)}" y="10">${t}</text>`);
+  '월화수목금토일'.split('').forEach((d,r)=>{ s+=`<text x="0" y="${18+r*(ch+g)+14}">${d}</text>`;
+    HM[r].forEach((v,c)=>{ s+=`<rect x="${L+c*(cw+g)}" y="${18+r*(ch+g)}" width="${cw}" height="${ch}" rx="5" fill="${v?'var(--ink)':'var(--trk)'}" opacity="${[1,.22,.5,.88][v]}"/>`; }); });
+  return svg(W,18+7*(ch+g),s); }
+const heatCard = `<div class="card"><div class="cap"><span>집중 시간대</span><span>진할수록 오래</span></div>${heat()}
+  <div class="foot"><span>가장 집중하는 때</span><b>오후 5시 ~ 저녁 8시</b></div></div>`;
+
+// 캘린더: 날짜 아래 작은 막대(그날 과목별 시간), 목표 달성은 날짜 숫자 굵기로
+const CAL = (()=>{ const out=[]; for(let d=1; d<=30; d++){ const seed=(d*37)%11; out.push(d>25?null: seed<2?{}:{수학:20+seed*4, 영어: seed%3?15:0, 국어: seed%4?0:20, 과학: seed%2?20:0}); } return out; })();
+function cal(){ const W=340, cw=W/7, ch=46; let s='';
+  '월화수목금토일'.split('').forEach((d,i)=> s+=`<text x="${i*cw+cw/2}" y="12" text-anchor="middle">${d}</text>`);
+  const start=6; // 11월 1일 = 일요일
+  CAL.forEach((v,i)=>{ const p=start+i, r=Math.floor(p/7), c=p%7, x=c*cw, y=22+r*ch, d=i+1, today=d===25;
+    if(today) s+=`<rect x="${x+cw/2-15}" y="${y-1}" width="30" height="22" rx="11" fill="var(--ink)"/>`;
+    s+=`<text x="${x+cw/2}" y="${y+15}" text-anchor="middle" style="font-size:13px;${today?'fill:var(--sf);font-weight:700':v===null?'':'fill:var(--ink)'}">${d}</text>`;
+    if(v && Object.keys(v).length){ const bw=30, bx=x+cw/2-bw/2, tot=ORDER.reduce((a,k)=>a+(v[k]||0),0); const id='cl'+i; let X=bx;
+      s+=`<clipPath id="${id}"><rect x="${bx}" y="${y+27}" width="${bw}" height="6" rx="3"/></clipPath><rect x="${bx}" y="${y+27}" width="${bw}" height="6" rx="3" fill="var(--trk)"/><g clip-path="url(#${id})">`;
+      const scale=Math.min(1,tot/120); ORDER.forEach(k=>{ const m=v[k]; if(!m) return; const w=m/tot*bw*scale; s+=`<rect x="${X}" y="${y+27}" width="${w}" height="6" fill="${SUB[k]}"/>`; X+=w; });
+      s+='</g>'; } });
+  return svg(W, 22+6*ch-10, s); }
+const calCard = `<div class="card"><div class="cap"><span>11월</span><span>막대 = 그날 과목별 공부 (2시간이면 꽉 참)</span></div>${cal()}</div>`;
+
+// 공부 잔디: 둥근 칸, 먹색 진하기
+function grass(){ const cols=26, s0=10, g=3; let s='';
+  for(let c=0;c<cols;c++) for(let r=0;r<7;r++){ const v=((c*7+r)*53)%5; const last=c===cols-1&&r>2;
+    s+=`<rect x="${c*(s0+g)+ (340-cols*(s0+g))/2}" y="${r*(s0+g)}" width="${s0}" height="${s0}" rx="3" fill="${v&&!last?'var(--ink)':'var(--trk)'}" opacity="${last?1:[1,.2,.4,.65,.9][v]}"/>`; }
+  return svg(340,7*(s0+g),s); }
+const grassCard = `<div class="card"><div class="cap"><span>공부 잔디</span><span>최근 26주</span></div>${grass()}
+  <div class="legend" style="justify-content:flex-end;align-items:center">적게 ${[.2,.4,.65,.9].map(o=>`<i style="background:var(--ink);opacity:${o};width:10px;height:10px;border-radius:3px;margin:0"></i>`).join('')} 많이</div></div>`;
+
+document.getElementById('L2').insertAdjacentHTML('beforeend', wbCard + lecCard + piled);
+document.getElementById('R2').insertAdjacentHTML('beforeend', tiles + shareCard + heatCard + calCard + grassCard);
+
+function seg(id, apply){ const el=document.getElementById(id); el.addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
+  el.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed', x===b)); apply(b.dataset.v); }); }
+const R=document.documentElement;
+seg('bgSeg', v=> v==='warm'? R.setAttribute('data-bg','warm') : R.removeAttribute('data-bg'));
+seg('thSeg', v=> v? R.setAttribute('data-theme',v) : R.removeAttribute('data-theme'));
+</script>

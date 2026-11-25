@@ -1,16 +1,13 @@
 // 단원을 끝냈을 때 (RDoneChapter): 과장된 효과 없이, 이해도를 묻고 복습 날짜를 알려 준다
-import { useState } from 'react'
 import { Icon } from './Icon.tsx'
 import { addDays, diffDays } from './date.ts'
-import type { Grade } from './logic.ts'
-import { chapterSpans, REVIEW_GAP } from './progress.ts'
+import { chapterSpans } from './progress.ts'
 import { chapterSec } from './stats.ts'
 import { actions, offFor, useStore } from './store.ts'
 import { hm } from './todayData.ts'
-import { Sheet } from './ui.tsx'
+import { Sheet, Dur } from './ui.tsx'
 import { colorOf } from './view.ts'
 
-const GRADES: [Grade, string, string][] = [['high', '상', '혼자 풀 수 있어요'], ['mid', '중', '조금 헷갈려요'], ['low', '하', '다시 봐야 해요']]
 const md = (iso: string) => { const [, m, d] = iso.split('-'); return `${Number(m)}월 ${Number(d)}일` }
 
 export function DoneChapterSheet({ taskId, chapterId, onClose }: { taskId: string; chapterId: string; onClose: () => void }) {
@@ -18,7 +15,6 @@ export function DoneChapterSheet({ taskId, chapterId, onClose }: { taskId: strin
   const t = s.tasks.find((x) => x.id === taskId)
   const idx = t?.chapters?.findIndex((c) => c.id === chapterId) ?? -1
   const c = t?.chapters?.[idx]
-  const [grade, setGrade] = useState<Grade | undefined>(c?.grade)
   if (!t || !c || !t.chapters) return null
   const recs = s.recs[t.id] ?? {}
   const done = c.doneDate ?? t.startDate
@@ -29,10 +25,10 @@ export function DoneChapterSheet({ taskId, chapterId, onClose }: { taskId: strin
   const next = t.chapters[idx + 1]
   const finished = t.chapters.filter((x) => x.doneDate).length
   const color = colorOf(s, t)
-  const reviewOn = addDays(done, REVIEW_GAP[grade ?? 'none'])
+  const askOn = addDays(done, 1)
   const pos = (t.startPoint ?? 1) + Object.values(recs).reduce((a, r) => a + r.done, 0) - 1
 
-  const save = () => { actions.setGrade(t.id, c.id, grade); onClose() }
+  const save = onClose
   return (
     <Sheet title={`${idx + 1}단원 끝`} onClose={save}>
       <div className="dc-hero">
@@ -42,19 +38,16 @@ export function DoneChapterSheet({ taskId, chapterId, onClose }: { taskId: strin
       </div>
       <div className="trio3 flat">
         <div><b>{took ?? '—'}일</b><small>걸림 · 예정 {plannedDays}일</small></div>
-        <div><b>{hm(chapterSec(t, recs, span?.start ?? null, done))}</b><small>공부 시간</small></div>
+        <div><b><Dur sec={chapterSec(t, recs, span?.start ?? null, done)} /></b><small>공부 시간</small></div>
         <div><b>{finished} / {t.chapters.length}</b><small>단원 끝</small></div>
       </div>
       <div className="cbar dc-bar" aria-hidden="true">
         {t.chapters.map((x) => <span key={x.id} style={{ flexGrow: x.to - x.from + 1 }}><span style={{ width: `${Math.max(0, Math.min(1, (pos - x.from + 1) / (x.to - x.from + 1))) * 100}%`, background: color }} /></span>)}
       </div>
-      <div className="entry-q left strongq">이 단원, 얼마나 알 것 같나요?</div>
-      <div className="gradeBig" role="radiogroup" aria-label="이해도">
-        {GRADES.map(([g, l, sub]) => (
-          <button key={g} role="radio" aria-checked={grade === g} className={grade === g ? 'on' : ''} onClick={() => setGrade(g)}><b>{l}</b><small>{sub}</small></button>
-        ))}
-      </div>
-      <p className="fnote">{grade ? <>'{GRADES.find((x) => x[0] === grade)![1]}'이면 <b className="ink">{REVIEW_GAP[grade]}일 뒤({md(reviewOn)})</b>에 복습할 단원으로 알려 드려요</> : '고르면 복습할 날을 알려 드려요'}</p>
+      {!t.roundOf && <div className="dc-ask">
+        <b>{md(askOn)}에 떠올리기로 물어볼게요</b>
+        <small>지금 바로 묻지 않아요. 공부 직후엔 다 아는 것 같아서, 하루 뒤에 책을 덮고 떠올려 봐야 정확해요. 진도 탭 복습 칸에 나와요.</small>
+      </div>}
       {next && <div className="dc-next"><span className="grow">다음은 <b>{idx + 2}단원 {next.name}</b> · {next.from}{t.unit}부터</span><Icon name="right" size={16} /></div>}
       <button className="primary" onClick={save}>저장하고 이어서</button>
     </Sheet>

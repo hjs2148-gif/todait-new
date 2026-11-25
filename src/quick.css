@@ -1,3 +1,4 @@
+:root { --ribt: color-mix(in srgb, var(--rib) 16%, var(--sf)); }
 /* 밀어서 기록 */
 .swp { position: relative; overflow: hidden; }
 .swp-r, .swp-l { position: absolute; inset: 0; display: flex; align-items: center; font-size: 15px; font-weight: 700; transition: opacity .1s; pointer-events: none; }
@@ -52,3 +53,141 @@
 .xw-ck input { width: 20px; height: 20px; accent-color: var(--ink); }
 .sheet-body .two { display: flex; gap: 8px; margin-top: 8px; }
 .sheet-body .two .chip { flex: 1; height: 44px; justify-content: center; }
+
+/* 집중 화면 (스톱워치 전체 화면) */
+.focus { justify-content: flex-start; padding: calc(12px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom)); }
+.focus .fx { transition: opacity .6s ease; }
+.focus.dim .fx, .focus.dim .sw-pause, .focus.dim .sw-slide { opacity: .22; }
+.focus.dim .sw-plan { opacity: .55; transition: opacity .6s ease; }
+.sw-dnd { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border-radius: 18px; border: 0; background: var(--chip); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; }
+.sw-tip { margin: 8px 0 0; padding: 12px 14px; border-radius: 14px; background: var(--sf); font-size: 13px; line-height: 19px; color: var(--mu); text-align: left; box-shadow: 0 1px 2px var(--shd); }
+.sw-tip b { color: var(--ink); }
+.focus .sw-plan { margin-top: auto; }
+.sw-where { font-size: 13px; color: var(--mu); margin-top: -2px; }
+.focus .ringwrap { margin: 14px 0 6px; }
+.sw-stats { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 360px; gap: 8px; margin-top: 8px; }
+.sw-stats small { display: block; font-size: 12px; line-height: 16px; color: var(--mu); }
+.sw-stats b { font-size: 18px; line-height: 24px; }
+.sw-foot { margin-top: auto; padding-top: 18px; width: 100%; max-width: 360px; display: flex; gap: 10px; align-items: stretch; }
+.sw-pause { width: 64px; flex: none; border-radius: 20px; border: 0; background: var(--chip); color: var(--ink); display: flex; align-items: center; justify-content: center; }
+.sw-slide { flex: 1; height: 64px; border-radius: 20px; border: 0; background: var(--ink); color: var(--bg); font: inherit; font-size: 15px; font-weight: 700; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.sw-slide .grab { width: 36px; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--bg) 45%, transparent); }
+.sw-slide.nudge { animation: sw-nudge .6s ease; }
+@keyframes sw-nudge { 30% { transform: translateY(-14px); } 60% { transform: translateY(0); } 80% { transform: translateY(-5px); } }
+@media (prefers-reduced-motion: reduce) { .sw-slide.nudge { animation: none; } }
+
+/* 복습 칸 (진도 탭) · 오늘 탭 복습 줄 */
+.rv-ic { width: 30px; height: 30px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; background: var(--ribt); color: var(--rib); flex: none; }
+.rv-line { display: flex; flex-direction: row; align-items: center; gap: 12px; padding: 12px 14px 12px 16px; text-align: left; width: 100%; color: var(--ink); }
+.rv-line b { font-size: 16px; line-height: 22px; }
+.rv-line small { font-size: 13px; line-height: 18px; color: var(--mu); }
+.rv-line > svg { color: var(--mu); }
+.rv-badge { display: inline-block; min-width: 18px; height: 18px; border-radius: 9px; background: var(--rib); color: #fff; font-size: 12px; line-height: 18px; font-weight: 700; margin-left: 5px; padding: 0 5px; }
+.rv-today .tc-meta { justify-content: flex-start; gap: 8px; }
+.rv-big { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.rv-big b { font-size: 34px; line-height: 40px; }
+.rv-big b small { font-size: 15px; font-weight: 600; color: var(--mu); margin: 0 6px 0 2px; }
+.rv-big .chip { height: 44px; padding: 0 22px; font-size: 16px; }
+.rv-none { margin: 0; color: var(--mu); font-size: 15px; }
+.rv-lv { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; flex: none; }
+.rv-lv i { display: block; width: 4px; border-radius: 1px; background: var(--trk); }
+.rv-lv i.f { background: var(--ink); }
+.rv-min { width: 34px; text-align: right; color: var(--mu); font-size: 13px; flex: none; }
+.rv-later { margin: 0 4px; font-size: 13px; line-height: 19px; color: var(--mu); }
+.rv-later b { color: var(--ink); }
+.rv-up { flex-direction: row; align-items: flex-end; gap: 6px; height: 108px; }
+.rv-up span { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%; }
+.rv-up i { display: block; width: 100%; border-radius: 5px; background: var(--trk); }
+.rv-up span.heavy i { background: var(--rib); }
+.rv-up small { font-size: 12px; color: var(--mu); }
+.rv-up small.n { color: var(--ink); font-weight: 600; min-height: 16px; }
+.rv-mem { gap: 10px; }
+.rv-mem .tc-meta .ell { min-width: 0; }
+.rv-bars { display: grid; grid-template-columns: 34px 1fr 64px; gap: 8px 10px; align-items: center; font-size: 13px; }
+.rv-bars > span { color: var(--mu); }
+.rv-bars > b { text-align: right; white-space: nowrap; }
+.rv-trk { height: 10px; border-radius: 5px; background: var(--trk); overflow: hidden; display: flex; gap: 2px; }
+.rv-trk i { display: block; height: 100%; border-radius: 5px; }
+.rv-trk.mem { background: none; }
+.m-high { background: var(--ink); }
+.m-mid { background: color-mix(in srgb, var(--ink) 45%, var(--sf)); }
+.m-low { background: var(--rib); }
+.m-none { background: repeating-linear-gradient(135deg, var(--trk) 0 3px, transparent 3px 6px); box-shadow: inset 0 0 0 1px var(--trk); }
+.rv-leg { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0 4px; font-size: 12px; color: var(--mu); }
+.rv-leg span { display: inline-flex; align-items: center; gap: 5px; }
+.rv-leg i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.rv-g3 { display: flex; gap: 8px; margin: 6px 0 10px; }
+.rv-g3 button { flex: 1; height: 58px; border-radius: 14px; border: 0; background: var(--chip); color: var(--ink); font: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.rv-g3 button b { font-size: 16px; }
+.rv-g3 button small { font-size: 12px; color: var(--mu); }
+.rv-g3 button.on { background: var(--ink); color: var(--bg); }
+.rv-g3 button.on small { color: color-mix(in srgb, var(--bg) 70%, transparent); }
+.rv-next { display: flex; flex-direction: column; gap: 2px; margin: 4px 0 12px; }
+.rv-next span { font-size: 13px; color: var(--mu); }
+.rv-next b { font-size: 28px; line-height: 34px; }
+.rv-next small { font-size: 13px; color: var(--mu); }
+.rv-lad { display: flex; align-items: flex-end; gap: 6px; height: 96px; margin-bottom: 10px; }
+.rv-lad span { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; justify-content: flex-end; height: 100%; }
+.rv-lad i { display: block; width: 100%; border-radius: 8px; background: var(--trk); }
+.rv-lad span.on i { background: var(--ink); }
+.rv-lad span.cur i { background: var(--rib); }
+.rv-lad small { font-size: 12px; color: var(--mu); white-space: nowrap; }
+.rv-lad span.cur small { color: var(--ink); font-weight: 700; }
+.rv-warn { margin: 0 0 12px; padding: 12px 14px; border-radius: 14px; background: var(--ribt); font-size: 14px; line-height: 20px; color: var(--ink); }
+.rv-log div { display: flex; align-items: center; gap: 12px; min-height: 36px; border-bottom: 1px solid var(--hl); font-size: 14px; }
+.rv-log div:last-child { border-bottom: 0; }
+.rv-log span { width: 44px; color: var(--mu); }
+.rv-log b { font-size: 12px; padding: 2px 8px; border-radius: 6px; background: var(--chip); }
+.rv-log b.g-low { background: var(--ribt); color: var(--rib); }
+.rv-card { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 16px; background: var(--pg); margin-bottom: 10px; }
+.rv-card b { font-size: 22px; line-height: 30px; }
+.rv-card small { font-size: 13px; color: var(--mu); display: inline-flex; align-items: center; gap: 6px; }
+.rv-how { display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px; }
+.rv-how b { font-size: 16px; }
+.rv-how ol { margin: 0; padding-left: 20px; font-size: 15px; line-height: 24px; }
+.rv-how small { font-size: 13px; color: var(--mu); }
+.rv-done { display: flex; flex-direction: column; gap: 4px; margin: 4px 0 10px; }
+.rv-done b { font-size: 34px; line-height: 40px; }
+.rv-done b small { font-size: 15px; color: var(--mu); margin-left: 4px; }
+.rv-done span { font-size: 15px; color: var(--mu); }
+.sheet-body .ghost.wide { width: 100%; height: 44px; border-radius: 12px; background: none; color: var(--mu); font-size: 14px; }
+.dc-ask { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 16px; background: var(--pg); margin: 12px 0; }
+.dc-ask b { font-size: 16px; }
+.dc-ask small { font-size: 13px; line-height: 19px; color: var(--mu); }
+.rdots { position: absolute; left: 0; right: 0; bottom: 3px; display: flex; justify-content: center; gap: 2px; pointer-events: none; }
+.rdots i { width: 5px; height: 5px; border-radius: 3px; background: var(--rib); }
+.c2.rheavy { box-shadow: inset 0 0 0 1.5px var(--rib); }
+.cal2-leg .rd { display: inline-block; width: 6px; height: 6px; border-radius: 3px; background: var(--rib); }
+.rv-heavy { gap: 4px; }
+.rv-heavy b { font-size: 15px; }
+.rv-heavy small { font-size: 13px; line-height: 19px; color: var(--mu); }
+.end-recall { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 16px; background: var(--pg); margin: 10px 0; }
+.end-recall small { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--mu); }
+.end-recall b { font-size: 16px; line-height: 23px; }
+.rv-ic.sm { width: 24px; height: 24px; border-radius: 7px; }
+.end-recall .rv-g3 { margin: 2px 0 0; }
+.end-recall .linkish { align-self: flex-start; font-size: 13px; color: var(--mu); }
+
+/* 새 계획 버튼: 엄지 쪽 (다음 공부 줄 위). 일기 탭의 .fab과 다른 이름 */
+.today-fab { position: fixed; right: max(16px, calc(50% - 244px)); bottom: calc(var(--tabs) + 86px + env(safe-area-inset-bottom)); z-index: 8; width: 56px; height: 56px; border-radius: 28px; border: 0; background: var(--ink); color: var(--bg); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(0,0,0,.24); }
+.page.has-fab { padding-bottom: calc(var(--tabs) + 160px + env(safe-area-inset-bottom)); }
+.wd-edit { display: flex; justify-content: center; }
+.wd-edit .chip { height: 32px; font-size: 13px; color: var(--mu); background: none; box-shadow: inset 0 0 0 1px var(--hl); }
+
+/* 숫자 칸: 큰 숫자 + 작은 단위 (화면마다 같은 모양) */
+.t-kv b small, .sw-stats b small, .trio b small, .trio3 b small, .wk-nums b small, .st-big b small, .trio3.flat b small { display: inline; font-size: 12px; line-height: 1; font-weight: 500; color: var(--mu); margin: 0 1px; }
+.hero .t-kv b small { color: color-mix(in srgb, var(--bg) 65%, transparent); }
+
+/* 새 버전 알림: 맨 위에 얇게 */
+.upd { position: fixed; left: 50%; transform: translateX(-50%); top: calc(8px + env(safe-area-inset-top)); width: calc(100% - 24px); max-width: 496px; z-index: 40; box-sizing: border-box; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 6px 0 14px; border-radius: 14px; background: var(--ink); color: var(--bg); font-size: 14px; box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+.upd .grow { display: flex; flex-direction: column; line-height: 18px; padding: 6px 0; }
+.upd small { font-size: 12px; color: color-mix(in srgb, var(--bg) 65%, transparent); }
+.upd button { white-space: nowrap; height: 36px; padding: 0 12px; border-radius: 10px; border: 0; background: var(--bg); color: var(--ink); font: inherit; font-size: 14px; font-weight: 700; flex: none; }
+.upd button.x { width: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; background: none; color: color-mix(in srgb, var(--bg) 70%, transparent); }
+
+/* 새 주 카드: 지난주 떠올리기 · 가장 밀린 계획 */
+.wk-more { display: flex; flex-direction: column; gap: 0; border-radius: 14px; background: var(--pg); padding: 2px 12px; }
+.wk-more > div { display: flex; align-items: center; gap: 10px; min-height: 42px; font-size: 14px; }
+.wk-more > div + div { border-top: 1px solid var(--hl); }
+.wk-g { font-size: 13px; color: var(--mu); white-space: nowrap; }
+.wk-g b { color: var(--ink); }

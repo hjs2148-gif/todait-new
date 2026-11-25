@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { Dur } from './ui.tsx'
+import { useEffect, useRef, useState } from 'react'
 import { EndSheet } from './Entry.tsx'
 import { Icon } from './Icon.tsx'
 import { fmtClock, todayISO } from './date.ts'
@@ -34,6 +35,11 @@ export function Stopwatch({ showStart }: { showStart: boolean }) {
   const [open, setOpen] = useState(true)
   const [ended, setEnded] = useState<Stopped | null>(null)
   const [picking, setPicking] = useState(false)
+  const [tip, setTip] = useState(false)
+  // 15초 동안 손대지 않으면 시계 말고는 흐리게 (집중)
+  const [dim, setDim] = useState(false)
+  const lastTouch = useRef(Date.now())
+  const wake = () => { lastTouch.current = Date.now(); if (dim) setDim(false) }
   const startedAt = timer?.startedAt
 
   // 새로 시작하면 전체 화면으로 연다
@@ -46,6 +52,12 @@ export function Stopwatch({ showStart }: { showStart: boolean }) {
   }, [timer])
 
   const running = !!timer && timer.pausedAt === undefined
+  useEffect(() => {
+    if (!running || !open) { setDim(false); return }
+    lastTouch.current = Date.now()
+    const iv = setInterval(() => { if (Date.now() - lastTouch.current > 15000) setDim(true) }, 1000)
+    return () => clearInterval(iv)
+  }, [running, open])
   useEffect(() => {
     if (!running || !open) return
     let lock: { release: () => Promise<void> } | undefined
@@ -121,13 +133,25 @@ export function Stopwatch({ showStart }: { showStart: boolean }) {
   const leftToGoal = goal - before - elapsed
   const dayNow = dayTotal.sec + elapsed
   const others = itemsOn(s, timer.date, today).active.filter((i) => i.task.id !== task.id && i.task.kind !== 'todo' && i.task.kind !== 'habit')
+  // 지금 어디부터 어디까지 (책·인강)
+  const recsAll = s.recs[task.id] ?? {}
+  const sumAll = Object.values(recsAll).reduce((a, r) => a + (r.done ?? 0), 0)
+  const todayDone = recsAll[timer.date]?.done ?? 0
+  const where = task.kind === 'time'
+    ? (goal > 0 ? `오늘 목표 ${hm(goal)}` : '')
+    : task.startPoint !== null && task.type === 'amount' && item
+      ? `${task.startPoint + sumAll}${task.unit}부터 · 오늘 ${task.startPoint + sumAll - todayDone + item.expect - 1}${task.unit}까지`
+      : item ? `오늘 ${item.expect}${task.unit}` : ''
+  const leftAmt = item && task.type === 'amount' && task.kind !== 'time' ? Math.max(item.expect - todayDone, 0) : null
   return (
-    <div className="stopwatch sw2" role="dialog" aria-label="스톱워치">
-      <div className="sw-top">
+    <div className={`stopwatch sw2 focus${dim ? ' dim' : ''}`} role="dialog" aria-label="집중 화면" onPointerDown={wake}>
+      <div className="sw-top fx">
         <button className="sq" onClick={() => setOpen(false)} aria-label="내리기"><Icon name="left" size={18} /></button>
-        <span className="sw-awake"><Icon name="phone" size={16} stroke={1.9} />화면 켜 둠</span>
+        <button className="sw-dnd" onClick={() => setTip(!tip)} aria-expanded={tip}><Icon name="moon" size={16} stroke={1.9} />방해 금지</button>
       </div>
+      {tip && <p className="sw-tip fx">폰의 <b>방해 금지</b>(갤럭시: 모드 및 루틴)를 켜면 다른 앱 알림이 안 와요. 이 앱이 대신 켤 수는 없어서, 공부 시작할 때 한 번 켜 주세요. 화면은 이 화면이 켜 둬요.</p>}
       <button className="sw-plan" onClick={() => setPicking(!picking)} aria-expanded={picking}><i className="dot" style={{ background: color }} />{task.name}{others.length > 0 && <Icon name="right" size={14} />}</button>
+      {where && <small className="sw-where fx">{where}</small>}
       {picking && others.length > 0 && (
         <div className="sw-pick">{others.map((i) => <button key={i.task.id} className="chip" onClick={() => { actions.switchTimerTask(i.task.id); setPicking(false) }}><i className="dot" style={{ background: colorOf(s, i.task) }} />{i.task.name}</button>)}</div>
       )}
@@ -151,19 +175,43 @@ export function Stopwatch({ showStart }: { showStart: boolean }) {
         <div className="sw-in">
           <small>{running ? '이번 공부' : '멈춤'} · {hhmm(startClock)} 시작</small>
           <b className="sw-clock">{mmss(elapsed)}</b>
-          <small>오늘 <b>{hm(before + elapsed)}</b>{goal > 0 ? ` / ${hm(goal)}` : ''}</small>
+          <small>{goal <= 0 ? '오늘 목표 시간 없음' : leftToGoal > 0 ? <>목표까지 <b>{Math.ceil(leftToGoal / 60)}분</b></> : <b>목표를 채웠어요</b>}</small>
         </div>
       </div>
-      <b className="sw-goal">{goal <= 0 ? '오늘 목표 시간이 없어요' : leftToGoal > 0 ? `목표까지 ${Math.ceil(leftToGoal / 60)}분` : '목표를 채웠어요'}</b>
-      <div className="sw-leg"><span><i style={{ background: color, opacity: 0.45 }} />앞서 한 {hm(before)}</span><span><i style={{ background: color }} />지금 {hm(elapsed)}</span></div>
-      <section className="tcard sw-day" aria-label="오늘 전체">
-        <div className="tc-meta"><span>오늘 전체</span><b>{hm(dayNow)}{dayTotal.target > 0 ? ` / ${hm(dayTotal.target)} · ${Math.round((dayNow / dayTotal.target) * 100)}%` : ''}</b></div>
-        <div className="trk-day"><span style={{ width: `${Math.min((dayNow / Math.max(dayTotal.target, dayNow, 1)) * 100, 100)}%` }} /></div>
-      </section>
-      <div className="sw-btns2">
-        <button onClick={toggle} aria-label={running ? '잠깐 멈춤' : '이어서'}><span className="rb"><Icon name={running ? 'pause' : 'play'} size={24} /></span>{running ? '잠깐 멈춤' : '이어서'}</button>
-        <button onClick={end} aria-label="끝내고 기록"><span className="rb ink"><Icon name="stop" size={24} /></span>끝내고 기록</button>
+      <div className="sw-stats fx">
+        <div><small>오늘 공부</small><b><Dur sec={dayNow} /></b></div>
+        <div><small>이 계획 오늘</small><b><Dur sec={before + elapsed} /></b></div>
+        <div><small>{leftAmt !== null ? '남은 양' : '남은 시간'}</small><b>{leftAmt !== null ? `${leftAmt}${task.unit}` : goal > 0 ? hm(Math.max(leftToGoal, 0)) : '—'}</b></div>
+      </div>
+      <div className="sw-foot">
+        <button className="sw-pause" onClick={toggle} aria-label={running ? '잠깐 멈춤' : '이어서'}><Icon name={running ? 'pause' : 'play'} size={22} /></button>
+        <SlideUp onDone={end} />
       </div>
     </div>
+  )
+}
+
+/** 위로 밀어야 끝나는 손잡이: 실수로 눌러 끝나는 걸 막는다. 키보드(Enter)로는 바로 끝낸다 */
+function SlideUp({ onDone }: { onDone: () => void }) {
+  const [dy, setDy] = useState(0)
+  const [nudge, setNudge] = useState(false)
+  const st = useRef<{ y: number; id: number } | null>(null)
+  const dyRef = useRef(0)
+  const GO = 90
+  const put = (v: number) => { dyRef.current = v; setDy(v) }
+  return (
+    <button
+      className={`sw-slide${nudge ? ' nudge' : ''}`}
+      aria-label="끝내고 기록 (위로 밀기)"
+      style={{ transform: dy ? `translateY(${-dy}px)` : undefined, transition: st.current ? 'none' : 'transform .2s ease' }}
+      onPointerDown={(e) => { st.current = { y: e.clientY, id: e.pointerId }; try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* 무시 */ } }}
+      onPointerMove={(e) => { if (st.current) put(Math.max(0, Math.min(140, st.current.y - e.clientY))) }}
+      onPointerUp={() => { const v = dyRef.current; st.current = null; put(0); if (v >= GO) onDone() }}
+      onPointerCancel={() => { st.current = null; put(0) }}
+      onClick={(e) => { if (e.detail === 0) { onDone(); return } if (dyRef.current < 4) { setNudge(true); setTimeout(() => setNudge(false), 600) } }}
+    >
+      <span className="grab" aria-hidden="true" />
+      <span>{dy >= GO ? '놓으면 끝나요' : '위로 밀어서 끝내고 기록'}</span>
+    </button>
   )
 }

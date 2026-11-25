@@ -1,12 +1,13 @@
 // 학습 위젯 (design/gen 의 WG*·WC* 시안): 칸 격자(작게 1×1 · 넓게 2×1 · 크게 2×2), 과목색 틴트 + 주인공 한 장.
 // 좁게 = 질문 하나에 답하는 숫자 하나, 넓게 = 이유 + 다음 행동, 크게 = 그 위에 자세한 내용. 누르면 자세히 시트.
+import { Dur } from './ui.tsx'
 import { useState, type ReactNode } from 'react'
 import { addDays, diffDays } from './date.ts'
 import type { Chapter, Task } from './logic.ts'
-import { reviewDue } from './progress.ts'
+import { nextDue } from './recall.ts'
 import { roundTask } from './rounds.ts'
 import { actions, uid, type State, type WidgetSize } from './store.ts'
-import { finishClock, hm, type DayStats } from './todayData.ts'
+import { behindOf, finishClock, hm, remainSec, type DayStats } from './todayData.ts'
 import { colorOf, type Item } from './view.ts'
 import { examFor, SlackCal, slackRows } from './Guide.tsx'
 import { IconChip, WSec, WSheet, type WIconName } from './WSheet.tsx'
@@ -46,6 +47,7 @@ export function ProgressWidget({ s, size, date, today, stats }: { s: State; size
   const end = date === today && stats.remain > 0 ? clockWord(finishClock(stats.remain)) : null
   const next = items.find((i) => i.rate < 1)
   const hero = size === 's4'
+  const plan = date === today ? items.filter((i) => i.rate < 1) : undefined
   const endText = end ? <>이대로면 <b>{end}</b> 끝</> : pct === 100 ? '오늘 다 했어요' : items.length ? '' : '오늘 할 계획이 없어요'
   const rows = (n: number, withV: boolean) => items.slice(0, n).map((i) => (
     <div key={i.task.id} className="t-row"><span className="t-dot" style={{ background: colorOf(s, i.task) }} /><span className="t-nm">{i.task.name}</span><Bar p={i.rate} color={colorOf(s, i.task)} />{withV && <span className="t-v">{amountText(i)}</span>}</div>
@@ -58,13 +60,13 @@ export function ProgressWidget({ s, size, date, today, stats }: { s: State; size
           <div className="t-seg">{items.slice(0, 6).map((i) => <i key={i.task.id}><b style={{ width: `${Math.round(i.rate * 100)}%`, background: colorOf(s, i.task) }} /></i>)}</div>
           <span className="t-sub">{endText}</span>
         </>}
-        {size === 's2' && <div className="t-cols"><div className="l"><span className="t-num">{pct ?? '—'}<small>%</small></span><span className="t-sub">{endText}</span></div><div className="r"><Sessions s={s} date={date} /></div></div>}
+        {size === 's2' && <div className="t-cols"><div className="l"><span className="t-num">{pct ?? '—'}<small>%</small></span><span className="t-sub">{endText}</span></div><div className="r"><Sessions s={s} date={date} plan={plan} review={stats.reviewSec} /></div></div>}
         {size === 's4' && <>
           <span className="t-num">{pct ?? '—'}<small>% · {items.length}개 중 {doneN}개 끝</small></span>
-          <Sessions s={s} date={date} />
+          <Sessions s={s} date={date} plan={plan} ticks review={stats.reviewSec} />
           <div className="t-kv">
-            <div><small>공부한 시간</small><b>{hm(stats.sec)}</b></div>
-            <div><small>남은 공부</small><b>{stats.remain > 0 ? hm(stats.remain) : '없음'}</b></div>
+            <div><small>공부한 시간</small><b><Dur sec={stats.sec} /></b></div>
+            <div><small>남은 공부</small><b>{stats.remain > 0 ? <Dur sec={stats.remain} /> : '없음'}</b></div>
             <div><small>남은 계획</small><b>{items.length - doneN}개</b></div>
           </div>
           {next && date === today && <button className="t-act" onClick={() => startTimer(s, next.task, today)}>다음: {next.task.name} 시작</button>}
@@ -74,7 +76,7 @@ export function ProgressWidget({ s, size, date, today, stats }: { s: State; size
         <WSheet icon="progress" title="오늘 진행" onClose={() => setOpen(false)} big={<>{pct ?? '—'}<small>%</small></>}
           sub={<>{items.length}개 중 {doneN}개 끝{end && <> · 이대로면 <b>{end}</b> 끝</>}</>}
           foot={next && date === today ? <button className="primary" onClick={() => { startTimer(s, next.task, today); setOpen(false) }}>다음: {next.task.name} 시작</button> : undefined}>
-          <WSec title="공부한 때"><Sessions s={s} date={date} big /></WSec>
+          <WSec title="오늘 시간 줄"><Sessions s={s} date={date} big plan={plan} review={stats.reviewSec} /></WSec>
           <WSec title="계획별" right={`${doneN} / ${items.length}`}><div className="t-list in-sheet">{rows(items.length, true)}</div></WSec>
         </WSheet>
       )}
@@ -82,51 +84,52 @@ export function ProgressWidget({ s, size, date, today, stats }: { s: State; size
   )
 }
 /** 오늘 공부한 때: 6시~24시 줄에 과목색 블록 */
-export function Sessions({ s, date, big }: { s: State; date: string; big?: boolean }) {
+export function Sessions({ s, date, big, plan, ticks, review = 0 }: { s: State; date: string; big?: boolean; plan?: Item[]; ticks?: boolean; review?: number }) {
   const hs = s.histories.filter((h) => h.date === date)
   const total = hs.reduce((a, h) => a + (h.endedAt - h.startedAt) / 1000, 0)
   const min = (ms: number) => { const d = new Date(ms); return d.getHours() * 60 + d.getMinutes() }
   const H0 = 6 * 60
-  const x = (m: number) => `${Math.max(0, Math.min(100, ((m - H0) / (18 * 60)) * 100))}%`
+  const pos = (m: number) => Math.max(0, Math.min(100, ((m - H0) / (18 * 60)) * 100))
+  const x = (m: number) => `${pos(m)}%`
+  const colorOfId = (id: string) => { const t = s.tasks.find((y) => y.id === id); return t ? colorOf(s, t) : 'var(--mu)' }
+  const nowMs = Date.now()
+  const nowM = min(nowMs)
+  // 지금 재고 있는 공부도 진하게
+  const live = s.timer && s.timer.date === date && s.timer.pausedAt === undefined ? { a: min(s.timer.startedAt), b: nowM, c: colorOfId(s.timer.taskId) } : null
+  // 남은 계획: 밀린 것부터, 계획 순서대로 지금부터 이어 붙인다 (이대로면 ○시 끝과 같은 계산)
+  const fut: { id: string; a: number; b: number; c: string }[] = []
+  if (plan) {
+    let cur = nowM
+    // 오늘 남은 복습이 먼저 (책갈피색)
+    if (review >= 60) { fut.push({ id: '_review', a: cur, b: cur + review / 60, c: 'var(--rib)' }); cur += review / 60 }
+    for (const i of [...plan].sort((p, q) => behindOf(s, q.task, date) - behindOf(s, p.task, date) || p.task.order - q.task.order)) {
+      let len = remainSec(s, i) / 60
+      if (s.timer?.taskId === i.task.id) len = Math.max(0, len - (nowMs - s.timer.startedAt) / 60000)
+      if (len < 1) continue
+      fut.push({ id: i.task.id, a: cur, b: cur + len, c: colorOf(s, i.task) })
+      cur += len
+    }
+  }
+  const showTicks = big || ticks
+  const tk: [number, string][] = [[6 * 60, '오전 6시'], [12 * 60, '정오'], [18 * 60, '오후 6시'], [24 * 60, '밤 12시']]
+  const nowTick = plan && fut.length > 0 && nowM > H0 && nowM < 24 * 60 ? nowM : null
+  const ticksShown = tk.filter(([m]) => nowTick === null || Math.abs(pos(m) - pos(nowTick)) > 20)
   return (
     <div className={`t-ses${big ? ' big' : ''}`}>
-      {big ? <span className="t-sm">{total ? `모두 ${hm(total)}` : '아직 공부한 기록이 없어요'}</span> : <span className="t-sm">공부한 때 · {total ? hm(total) : '아직 없어요'}</span>}
-      <div className="t-tl" aria-hidden="true">{hs.map((h) => { const t = s.tasks.find((x) => x.id === h.taskId); const a = min(h.startedAt); const b = Math.max(a + 6, min(h.endedAt)); return <i key={h.id} style={{ left: x(a), width: `calc(${x(b)} - ${x(a)})`, background: t ? colorOf(s, t) : 'var(--mu)' }} /> })}</div>
-      {big && <div className="t-tk" aria-hidden="true">{[6, 12, 18, 24].map((h) => <span key={h} style={{ left: x(h * 60) }}>{h === 24 ? '밤 12' : h > 12 ? `오후 ${h - 12}` : `오전 ${h}`}시</span>)}</div>}
+      {big ? <span className="t-sm">{total ? `모두 ${hm(total)}` : '아직 공부한 기록이 없어요'}{fut.length > 0 && (review >= 60 ? ' · 옅은 칸은 남은 계획 · 주황 칸은 복습' : ' · 옅은 칸은 남은 계획')}</span> : <span className="t-sm">공부한 때 · {total ? hm(total) : '아직 없어요'}{fut.length > 0 && ticks ? (review >= 60 ? ' · 옅은 칸 남은 계획 · 주황 복습' : ' · 옅은 칸은 남은 계획') : ''}</span>}
+      <div className="t-tl" aria-hidden="true">
+        {hs.map((h) => { const a = min(h.startedAt); const b = Math.max(a + 6, min(h.endedAt)); return <i key={h.id} style={{ left: x(a), width: `calc(${x(b)} - ${x(a)})`, background: colorOfId(h.taskId) }} /> })}
+        {live && <i style={{ left: x(live.a), width: `calc(${x(Math.max(live.b, live.a + 3))} - ${x(live.a)})`, background: live.c }} />}
+        {fut.map((f) => <i key={f.id} className="plan" style={{ left: x(f.a), width: `calc(${x(f.b)} - ${x(f.a)} - 2px)`, background: f.c }} />)}
+        {nowTick !== null && <b className="t-now" style={{ left: x(nowTick) }} />}
+      </div>
+      {showTicks && <div className="t-tk" aria-hidden="true">{[...ticksShown.map(([m, l]) => [m, l, ''] as const), ...(nowTick !== null ? [[nowTick, '지금', 'now'] as const] : [])].sort((p, q) => p[0] - q[0]).map(([m, l, c]) => <span key={l} className={c} style={{ left: x(m) }}>{l}</span>)}</div>}
     </div>
   )
 }
 
-// ── 오늘 복습 ──
+// 단원 지도에서 쓰는 떠올리기 결과 이름과 단계
 const GRADE: Record<string, [string, number]> = { low: ['흐릿', 0], mid: ['절반', 1], high: ['잘', 2] }
-export function ReviewWidget({ s, size, today }: { s: State; size: WidgetSize; today: string }) {
-  const [open, setOpen] = useState(false)
-  const due = reviewDue(s.tasks, today)
-  const first = due[0]
-  const row = (r: (typeof due)[number]) => (
-    <div key={r.task.id + r.chapter.id} className="t-row"><span className={`t-g g${r.chapter.grade ? GRADE[r.chapter.grade][1] : 'n'}`}>{r.chapter.grade ? GRADE[r.chapter.grade][0] : '모름'}</span><span className="t-nm">{r.chapter.name}</span><span className="t-v">{r.days ? `${r.days}일 지남` : '오늘'}</span></div>
-  )
-  return (
-    <>
-      <Tile size={size} icon="review" label={size === 's2' && due.length ? `오늘 복습 · ${due.length}단원` : '오늘 복습'} onOpen={due.length ? () => setOpen(true) : undefined}
-        right={size === 's2' && first ? <span className="t-r b">{first.chapter.name}부터 ›</span> : undefined}>
-        {size === 's1' && <><span className="t-num">{due.length}<small>단원</small></span><span className="t-sub">{first ? <>먼저 <b>{first.chapter.name}</b><br />{first.chapter.grade ? GRADE[first.chapter.grade][0] : '이해도 모름'} · {first.days}일 지남</> : '복습할 단원이 없어요'}</span></>}
-        {size === 's2' && (due.length ? <div className="t-list end">{due.slice(0, 3).map(row)}</div> : <span className="t-sub">복습할 단원이 없어요</span>)}
-      </Tile>
-      {open && (
-        <WSheet icon="review" title="오늘 복습" onClose={() => setOpen(false)} big={<>{due.length}<small>단원</small></>} sub="잊을 때쯤 다시 보면 오래 남아요. 덮고 떠올린 뒤 표시해요.">
-          <WSec title="복습할 때가 된 단원" right="흐릿한 것부터"><div className="t-list in-sheet">{due.map((r) => (
-            <div key={r.task.id + r.chapter.id} className="t-row tall">
-              <span className="t-nm"><b>{r.chapter.name}</b><small>{r.task.name} · {r.days}일 지남</small></span>
-              <span className={`t-g g${r.chapter.grade ? GRADE[r.chapter.grade][1] : 'n'}`}>{r.chapter.grade ? GRADE[r.chapter.grade][0] : '모름'}</span>
-              <button className="chip" onClick={() => actions.addReview(r.task.id, r.chapter.id, today)}>복습했어요</button>
-            </div>
-          ))}</div></WSec>
-        </WSheet>
-      )}
-    </>
-  )
-}
 
 // ── 시험까지 여유 ──
 export function SlackWidget({ s, size, today }: { s: State; size: WidgetSize; today: string }) {
@@ -149,44 +152,6 @@ export function SlackWidget({ s, size, today }: { s: State; size: WidgetSize; to
           <WSec title="계획별 여유" right="눌러서 달력 보기"><div className="t-list in-sheet">{rows.map((r) => <button key={r.t.id} className="t-rowbtn" onClick={() => setOpen(open === r.t.id ? null : r.t.id)}>{row(r)}</button>)}</div></WSec>
           {(() => { const sel = rows.find((r) => r.t.id === open) ?? r0; return sel ? <WSec title={`${sel.t.name} · 끝나는 날과 시험`}><SlackCal end={sel.end} exam={exam.date} today={today} /></WSec> : null })()}
           <p className="ws-note">여유는 이대로 끝나는 날부터 시험 전 마지막 공부일까지 남는 날이에요.</p>
-        </WSheet>
-      )}
-    </>
-  )
-}
-
-// ── 떠올리기 (인출 연습) ──
-type Done = { t: Task; c: Chapter; i: number }
-const recentDone = (s: State, today: string): Done[] => {
-  const out: Done[] = []
-  for (const t of s.tasks) if (!t.archived) t.chapters?.forEach((c, i) => { if (c.doneDate && diffDays(c.doneDate, today) <= 14 && c.doneDate < today) out.push({ t, c, i }) })
-  return out.sort((a, b) => b.c.doneDate!.localeCompare(a.c.doneDate!))
-}
-function G3({ d }: { d: Done }) {
-  return <div className="t-g3">{(['low', 'mid', 'high'] as const).map((g) => <button key={g} className={d.c.grade === g ? 'on' : ''} aria-pressed={d.c.grade === g} onClick={() => actions.setGrade(d.t.id, d.c.id, g)}>{GRADE[g][0]}</button>)}</div>
-}
-export function RecallWidget({ s, size, today }: { s: State; size: WidgetSize; today: string }) {
-  const [open, setOpen] = useState(false)
-  const list = recentDone(s, today)
-  const d = list.find((x) => !x.c.grade) ?? list[0]
-  const tint = d ? colorOf(s, d.t) : null
-  const ago = (x: Done) => { const n = diffDays(x.c.doneDate!, today); return n === 1 ? '어제' : `${n}일 전` }
-  if (!d) return <Tile size={size} icon="recall" label="떠올리기"><span className="t-sub">단원을 끝내면 다음 날 물어봐요</span></Tile>
-  const left = list.filter((x) => !x.c.grade).length
-  return (
-    <>
-      <Tile size={size} icon="recall" label={size === 's4' ? '떠올리기 · 책을 덮고 핵심 세 가지' : size === 's2' ? `떠올리기 · ${ago(d)} 끝낸 단원` : `${ago(d)} 끝낸 단원 · ${d.c.name}`} tint={tint} onOpen={() => setOpen(true)}>
-        {size === 's1' && <><span className="t-q">덮고 떠올려 보면?</span><div className="t-end"><G3 d={d} /></div></>}
-        {size === 's2' && <><span className="t-q big">{d.c.name}, 덮고 핵심 세 가지를 떠올려 보면?</span><div className="t-end"><G3 d={d} /></div></>}
-        {size === 's4' && <>{list.slice(0, 3).map((x) => <div key={x.t.id + x.c.id} className="t-rc"><span className="t-nm"><b>{x.c.name}</b><small>{ago(x)} 끝냄</small></span><G3 d={x} /></div>)}<span className="t-sub">고른 대로 복습 날짜를 잡아요.</span></>}
-      </Tile>
-      {open && (
-        <WSheet icon="recall" tint={tint} title="떠올리기" onClose={() => setOpen(false)} big={<>{left}<small>단원 남음</small></>}
-          sub="책을 덮고 핵심 세 가지를 떠올려 본 뒤 골라요. 다시 읽기보다 떠올리기가 오래 남아요.">
-          <WSec title="해 보는 법"><ol className="ws-steps"><li>책과 노트를 덮어요</li><li>단원 이름만 보고 핵심 세 가지를 말하거나 적어요</li><li>펼쳐서 맞춰 보고, 느낌대로 골라요</li></ol></WSec>
-          <WSec title="최근 2주 끝낸 단원"><div className="t-list in-sheet">{list.map((x) => (
-            <div key={x.t.id + x.c.id} className="t-row tall"><span className="t-dot" style={{ background: colorOf(s, x.t) }} /><span className="t-nm"><b>{x.c.name}</b><small>{x.t.name} · {ago(x)} 끝냄</small></span><span style={{ width: 168, flex: 'none' }}><G3 d={x} /></span></div>
-          ))}</div></WSec>
         </WSheet>
       )}
     </>
@@ -291,12 +256,12 @@ export function MapWidget({ s, size }: { s: State; size: WidgetSize }) {
         </>}
       </Tile>
       {open && (
-        <WSheet icon="umap" tint={colorOf(s, t)} title={`이해도 · ${t.name}`} onClose={() => setOpen(false)} big={<>{ch.filter((c) => c.grade === 'high').length}<small> / {ch.length}단원 잘 앎</small></>} sub="덮고 떠올려 본 느낌으로 골라요. 고른 대로 복습 날짜를 잡아요.">
+        <WSheet icon="umap" tint={colorOf(s, t)} title={`이해도 · ${t.name}`} onClose={() => setOpen(false)} big={<>{ch.filter((c) => c.grade === 'high').length}<small> / {ch.length}단원 잘 앎</small></>} sub="진도 탭 복습 칸에서 덮고 떠올려 본 결과로 칠해요.">
           {squares}
           {conf !== null && acc !== null && <WSec title="자신감 vs 정답률"><div className="t-cal in"><div><span>자신감</span><i style={{ width: `${conf * 60}%`, background: 'color-mix(in srgb, var(--ink) 40%, var(--sf))' }} /><b>{Math.round(conf * 100)}%</b></div><div><span>정답률</span><i style={{ width: `${acc * 60}%`, background: 'var(--ink)' }} /><b>{Math.round(acc * 100)}%</b></div></div></WSec>}
           <WSec title="단원별"><div className="t-list in-sheet">{ch.map((c, i) => (
             <div key={c.id} className="t-row tall"><span className="t-nm"><b>{i + 1}. {c.name}</b><small>{c.doneDate ? `${mdKo(c.doneDate)} 끝냄` : '아직'}</small></span>
-              {c.doneDate && <G3 d={{ t, c, i }} />}</div>
+              {c.doneDate && <span className="t-sm">{c.grade ? GRADE[c.grade][0] : '아직 안 떠올림'}{(() => { const n = nextDue(c); return n ? ` · 다음 ${mdKo(n)}` : ' · 졸업' })()}</span>}</div>
           ))}</div></WSec>
         </WSheet>
       )}

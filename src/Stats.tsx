@@ -1,4 +1,5 @@
 // 통계 (RStats) 와 자세한 통계 (RStatsMore)
+import { Dur } from './ui.tsx'
 import { useState } from 'react'
 import { Icon } from './Icon.tsx'
 import { addDays, diffDays, dow, todayISO, DOW_KO } from './date.ts'
@@ -14,7 +15,7 @@ import { colorOf } from './view.ts'
 const md = (iso: string) => { const [, m, d] = iso.split('-'); return `${Number(m)}월 ${Number(d)}일` }
 const mdS = (iso: string) => { const [, m, d] = iso.split('-'); return `${Number(m)}.${Number(d)}` }
 const pctS = (r: number | null) => (r === null ? '—' : `${Math.round(r * 100)}`)
-const GRADE_KO = { high: '상', mid: '중', low: '하' } as Record<string, string>
+const GRADE_KO = { high: '잘', mid: '절반', low: '흐릿' } as Record<string, string>
 
 const KINDS: [PeriodKind, string][] = [['week', '이번 주'], ['month', '이번 달'], ['exam', '시험까지']]
 const hourName = (h: number) => (h === 24 ? '자정' : h < 12 ? `오전 ${h}시` : h === 12 ? '낮 12시' : `${h < 18 ? '오후' : '저녁'} ${h - 12}시`)
@@ -106,7 +107,7 @@ export function Stats() {
         </div>
         <section className="tcard" aria-label="공부 시간">
           <div className="wd-t">{back > 0 ? '이 기간 공부' : kind === 'week' ? '이번 주 공부' : kind === 'month' ? '이번 달 공부' : '시험까지 공부'}</div>
-          <div className="st-big"><b>{hm(total)}</b>{diff !== null && <span>{diff >= 0 ? '↑' : '↓'} {kind === 'week' ? '지난주' : '지난달'}보다 {hm(Math.abs(diff))}</span>}</div>
+          <div className="st-big"><b><Dur sec={total} /></b>{diff !== null && <span>{diff >= 0 ? '↑' : '↓'} {kind === 'week' ? '지난주' : '지난달'}보다 {hm(Math.abs(diff))}</span>}</div>
           <DayBars s={s} p={p} />
         </section>
         <div className="wd-grid">
@@ -126,7 +127,7 @@ export function Stats() {
           <section className="wd" aria-label="끝낸 단원">
             <div className="wd-t">끝낸 단원</div>
             <div className="wd-num">{chs.length}<small> 개</small></div>
-            <div className="wd-sub">{chs[0] ? `${chs[0].name}${chs[0].grade ? ` · 이해 ${GRADE_KO[chs[0].grade]}` : ''}` : '아직 없어요'}</div>
+            <div className="wd-sub">{chs[0] ? `${chs[0].name}${chs[0].grade ? ` · 떠올리기 ${GRADE_KO[chs[0].grade]}` : ''}` : '아직 없어요'}</div>
           </section>
           <section className="wd" aria-label="연속 공부">
             <div className="wd-t">연속 공부</div>
@@ -237,8 +238,8 @@ function StatsMore({ s, today, onBack }: { s: State; today: string; onBack: () =
           <div className="tc-meta small"><span>{md(start)}</span><span>적게 → 많이</span><span>오늘</span></div>
         </section>
         <div className="trio3">
-          <section className="tcard"><b>{hm(total)}</b><small>{range === 'all' ? '전체' : range === '4' ? '4주' : '12주'} 공부</small></section>
-          <section className="tcard"><b>{hm(studied ? total / studied : 0)}</b><small>하루 평균</small></section>
+          <section className="tcard"><b><Dur sec={total} /></b><small>{range === 'all' ? '전체' : range === '4' ? '4주' : '12주'} 공부</small></section>
+          <section className="tcard"><b><Dur sec={studied ? total / studied : 0} /></b><small>하루 평균</small></section>
           <section className="tcard"><b>{best}일</b><small>최고 연속</small></section>
         </div>
         <section className="tcard" aria-label="요일별 평균">

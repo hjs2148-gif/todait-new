@@ -257,7 +257,7 @@ export function QuickStartWidget2({ s, size, today }: { s: State; size: WidgetSi
 }
 
 // ── 스마트 스택: 한 칸에 여러 장, 옆으로 넘기고 시간대에 맞는 장이 앞에 ──
-const PREFER: [number, WidgetId[]][] = [[12, ['progress', 'slack', 'review', 'today']], [20, ['progress', 'review', 'left', 'wrong']], [24, ['recall', 'tomorrow', 'review', 'progress']]]
+const PREFER: [number, WidgetId[]][] = [[12, ['progress', 'slack', 'today']], [20, ['progress', 'left', 'wrong']], [24, ['tomorrow', 'progress']]]
 export function SmartStack({ slot, render }: { slot: WidgetSlot; render: (s: WidgetSlot) => JSX.Element | null }) {
   const items = (slot.items ?? STACK_DEFAULT).filter((id) => WIDGET_SIZES[id]?.includes(slot.size))
   const hour = new Date().getHours()

@@ -1,4 +1,5 @@
 // 지난 기록 고치기 (RHistEdit). 캘린더에서 날짜를 고르고 계획을 누르면 열린다.
+import { Dur } from './ui.tsx'
 import { useState } from 'react'
 import { Stepper } from './Entry.tsx'
 import { Icon } from './Icon.tsx'
@@ -72,7 +73,7 @@ export function HistEdit({ date, taskId, onBack, onPick }: { date: string; taskI
       </header>
       <div className="tbody">
         <div className="trio3">
-          <section className="tcard"><b>{hm(secs)}</b><small>공부 시간</small></section>
+          <section className="tcard"><b><Dur sec={secs} /></b><small>공부 시간</small></section>
           <section className="tcard"><b>{g.total ? `${Math.round((g.done / g.total) * 100)}%` : '—'}</b><small>목표 달성 · 개수</small></section>
           <section className="tcard"><b>{g.done} / {g.total}</b><small>끝낸 목표</small></section>
         </div>

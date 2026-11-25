@@ -7,6 +7,9 @@
 | `np.mjs` | '새 계획 개편' 페이지 (`NP*` 보드: 간단하게·자세히·목차·붙여넣기·과목·가능 시간·필요할 때 제안) |
 | `head.mjs` + `wz-a.mjs` + `wz-toc.mjs` + `wz-b.mjs` | '안내형 계획 만들기' 페이지 (`WZ*` 보드). 네 파일을 이 순서로 이어 붙여 `wz.mjs`로 실행 (`wz-toc.mjs`는 3단계 목차 화면) |
 | `rm.mjs` | '남은 것' 페이지 (`RM*`: 넘치는 날 알림 · 해결 방법 · 여유 ○일). `cat gen/head.mjs gen/rm.mjs > gen/rmx.mjs && node gen/rmx.mjs np` |
+| `td.mjs` | '오늘 탭 · 지금 vs 바뀐 뒤' 페이지 (실제 앱 화면 사진 `TD*.png`를 보드로). `cat gen/head.mjs gen/td.mjs > gen/tdx.mjs && node gen/tdx.mjs np` |
+| `rv2.mjs` | '복습 자리 · 추천안' 페이지 (`RX*`: 오늘 탭 한 줄·진도 탭 복습 칸 두 장·단원 자세히·캘린더 점·공부 끝 떠올리기). `cat gen/head.mjs gen/dr.mjs gen/ap.mjs gen/rv.mjs gen/rv2.mjs > gen/rv2x.mjs && node gen/rv2x.mjs np` |
+| `rv.mjs` | '인출·복습 통합' 페이지 (`RV*`: 오늘 탭 복습 줄·복습 화면·단원 끝과 사다리·진도와 기억·복습 쌓임·2회독 무게). `cat gen/head.mjs gen/dr.mjs gen/ap.mjs gen/rv.mjs > gen/rvx.mjs && node gen/rvx.mjs np` |
 | `ap.mjs` | '잘나가는 앱에서 가져오기' 페이지 (`AP*`: 1초 기록·연속 기록·시험 끝난 뒤·끝냈을 때·집중 화면·시간 줄). `cat gen/head.mjs gen/dr.mjs gen/ap.mjs > gen/apx.mjs && node gen/apx.mjs np` |
 | `dr.mjs` | '디자인 검토 2·3' 페이지 (`DR*`: 오늘 탭 겹침·목록 숫자·모양 통일·같은 과목 구분·엄지 버튼·달력 일요일). `cat gen/head.mjs gen/dr.mjs > gen/drx.mjs && node gen/drx.mjs np` |
 | `ov.mjs` | '안내형 해결 · 그래픽' 페이지 (`OV*` 넘치는 날 3화면, `PGPath` 책갈피 길). `cat gen/head.mjs gen/ov.mjs > gen/ovx.mjs && node gen/ovx.mjs np` |

@@ -29,6 +29,15 @@ export function roundOffer(tasks: Task[], recsOf: (id: string) => Recs, today: s
   return null
 }
 
+/** 2회독 단원 무게: 떠올리기에서 흐릿했던 단원은 어렵게(하루 분량 적게 = 시간 더), 잘 떠오른 단원은 쉽게.
+ *  아직 안 떠올린 단원은 1회독 무게 그대로. 끝낸 날·떠올리기 기록은 새 계획에 가져가지 않는다 */
+export function secondChapters(t: Task): Task['chapters'] {
+  return t.chapters?.map((c) => ({
+    id: c.id, name: c.name, from: c.from, to: c.to,
+    weight: c.grade === 'low' ? 3 : c.grade === 'high' ? 1 : c.grade === 'mid' ? 2 : c.weight,
+  }))
+}
+
 /** 제안을 받아들였을 때 만드는 계획 */
 export function roundTask(o: RoundOffer, id: string, order: number, now: number): Task {
   const t = o.task
@@ -39,7 +48,7 @@ export function roundTask(o: RoundOffer, id: string, order: number, now: number)
     startDate: o.from, endDate: o.to, amount: o.amount,
     startPoint: second ? t.startPoint : null,
     bookMode: second ? t.bookMode : 'amount',
-    ...(second ? {} : { chapters: undefined, cuts: undefined, toc: undefined }),
+    ...(second ? { chapters: secondChapters(t) } : { chapters: undefined, cuts: undefined, toc: undefined }),
     custom: {}, fit: undefined, fitFrom: undefined, completed: false, completedDate: null, archived: false,
     rounds: undefined, roundOf: t.id, speed: second ? 2 : 1, minGoal: null, pauses: undefined,
   }

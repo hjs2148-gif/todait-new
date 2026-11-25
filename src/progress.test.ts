@@ -53,17 +53,18 @@ const part = examProgress({ tasks: [base], recs: { a: { '2026-11-02': rec(40, 40
 assert.equal(part.done, 0.8)
 assert.equal(examProgress({ tasks: [], recs: {} }, exam('2026-11-20'), today), null)
 
-// 복습할 단원: 이해 하 3일, 중 7일, 상 14일 (마지막 복습부터)
+// 복습할 단원: 떠올리기 사다리 (recall.test.ts). 지난번 흐릿 → 처음 → 절반 → 잘 순서
 const toc: Task = {
   ...base, id: 't', bookMode: 'toc',
   chapters: [
-    { id: 'c1', name: '1단원', from: 1, to: 12, doneDate: '2026-11-01', grade: 'low' },
-    { id: 'c2', name: '2단원', from: 13, to: 30, doneDate: '2026-11-01', grade: 'high' },
-    { id: 'c3', name: '3단원', from: 31, to: 60, doneDate: '2026-10-20', grade: 'mid', reviews: ['2026-11-03'] },
+    { id: 'c1', name: '1단원', from: 1, to: 12, doneDate: '2026-11-01', grade: 'low', recalls: [{ d: '2026-11-01', g: 'low' }] },
+    { id: 'c2', name: '2단원', from: 13, to: 30, doneDate: '2026-11-01', grade: 'high', recalls: [{ d: '2026-11-01', g: 'high' }] },
+    { id: 'c3', name: '3단원', from: 31, to: 60, doneDate: '2026-10-20', grade: 'mid', recalls: [{ d: '2026-10-20', g: 'mid' }, { d: '2026-11-03', g: 'mid' }] },
     { id: 'c4', name: '4단원', from: 61, to: 100, doneDate: '2026-10-25' },
+    { id: 'c5', name: '5단원', from: 101, to: 110, doneDate: '2026-10-31', grade: 'high', recalls: [{ d: '2026-11-04', g: 'high' }] },
   ],
 }
-assert.deepEqual(reviewDue([toc], today).map((r) => [r.chapter.id, r.days]), [['c1', 3], ['c4', 10]])
+assert.deepEqual(reviewDue([toc], today).map((r) => [r.chapter.id, r.days]), [['c1', 3], ['c4', 10], ['c3', 1], ['c2', 3]])
 assert.equal(avgGrade(toc), 'mid')
 
 // 이번 달에 쌓은 것
@@ -101,3 +102,22 @@ assert.equal(fp[0].perDayNew, 15) // 90쪽 / 6일 (3~8일)
 const early = fitPreview({ ...emptyState(), tasks: [{ ...base, endDate: '2026-11-06' }], recs: {} }, { ...exam('2026-11-10'), blankDays: 1 }, '2026-11-03')
 assert.equal(early[0].same, true)
 console.log('progress tests passed')
+
+// 하루 복습 상한: 시험 2주 전부터 늘어 직전엔 1.5배
+{
+  const { emptyState } = await import('./model.ts')
+  const { reviewCap, todayReviews } = await import('./progress.ts')
+  const st = emptyState()
+  assert.equal(reviewCap(st, '2026-11-04'), 30)
+  const near = { ...st, exams: [{ id: 'e', name: '기말', date: '2026-11-11', selected: true, blankDays: 0, scope: [], fitEnd: false }] }
+  assert.equal(reviewCap(near, '2026-11-04'), 38)
+  assert.equal(reviewCap(near, '2026-11-11'), 45)
+  // 상한까지만 오늘에, 나머지는 later. 끄면 없음
+  const ch = (id: string, d: string) => ({ id, name: id, from: 1, to: 40, doneDate: d })
+  const tk = { ...toc, id: 'r', bookMode: 'toc' as const, chapters: ['a', 'b', 'c', 'd', 'e'].map((x) => ch(x, '2026-11-01')) }
+  const tr = todayReviews({ ...st, tasks: [tk], recs: {} }, '2026-11-04')
+  assert.equal(tr.list.length + tr.later.length, 5)
+  assert.ok(tr.min <= 30 && tr.list.length >= 1 && tr.later.length >= 1)
+  assert.equal(todayReviews({ ...st, tasks: [tk], recs: {}, settings: { ...st.settings, reviewOn: false } }, '2026-11-04').list.length, 0)
+  console.log('progress review ok')
+}

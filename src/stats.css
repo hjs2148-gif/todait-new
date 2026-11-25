@@ -5,7 +5,7 @@
 .cal2-grid { row-gap: 2px; }
 .c2 { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 6px 0 10px; min-height: 58px; border-radius: 12px; }
 .c2 .n { font-size: 15px; line-height: 30px; width: 30px; height: 30px; border-radius: 15px; text-align: center; }
-.c2.sun .n, .cal2-head .sun { color: var(--bad); }
+.c2.sun .n, .cal2-head .sun { color: var(--mu); }
 .c2.future .n { color: var(--mu); }
 .c2.now .n { background: var(--ink); color: var(--bg); font-weight: 700; }
 .c2.sel .n { box-shadow: 0 0 0 2px var(--ink); }
@@ -13,7 +13,7 @@
 .c2 em { font-style: normal; font-size: 12px; line-height: 6px; color: var(--mu); height: 6px; display: flex; align-items: center; }
 .cbar2 { width: 72%; max-width: 32px; height: 4px; border-radius: 2px; background: transparent; overflow: hidden; }
 .cbar2 i { display: block; height: 100%; border-radius: 3px; }
-.cbar2.empty { background: transparent; }
+.cbar2.off { background: transparent; }
 .c2 u { width: 6px; height: 6px; border-radius: 3px; text-decoration: none; }
 .cal2-leg { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; line-height: 16px; color: var(--mu); margin-top: 4px; }
 .cal2-leg span { display: inline-flex; align-items: center; gap: 6px; }

@@ -1,29 +1,30 @@
 // 진도 탭 (RProg · RProgBook · RProgDone) 과 진도 자세히 (RDetail)
+import { RecallSheet, ReviewView } from './ReviewTab.tsx'
 import { useState } from 'react'
 import { SlackCard, slackRows } from './Guide.tsx'
 import { Icon } from './Icon.tsx'
 import { addDays, diffDays, todayISO } from './date.ts'
 import { sumDone, type Grade, type Task } from './logic.ts'
 import {
-  avgGrade, chapterSpans, examDeadline, examProgress, isProgressTask, monthStack, planProgress, projectEnd, reviewDue,
+  avgGrade, chapterSpans, examDeadline, examProgress, isProgressTask, monthStack, planProgress, projectEnd, reviewDue, todayReviews,
   studyDaysBetween, taskSec, type PlanProgress,
 } from './progress.ts'
 import { actions, offFor, useStore, type Exam, type State } from './store.ts'
 import { hm } from './todayData.ts'
-import { Sheet } from './ui.tsx'
+import { Sheet, Dur } from './ui.tsx'
 import { categoryOf, colorOf } from './view.ts'
 
 const md = (iso: string) => { const [, m, d] = iso.split('-'); return `${Number(m)}월 ${Number(d)}일` }
 const mdS = (iso: string) => { const [, m, d] = iso.split('-'); return `${Number(m)}.${Number(d)}` }
 const pct = (r: number) => `${Math.round(r * 100)}%`
-const GRADE_KO: Record<Grade, string> = { high: '상', mid: '중', low: '하' }
+const GRADE_KO: Record<Grade, string> = { high: '잘', mid: '절반', low: '흐릿' }
 
 /** 이해도 막대 3칸 */
 function GradeBars({ g }: { g: Grade }) {
   const n = g === 'high' ? 3 : g === 'mid' ? 2 : 1
   const c = g === 'low' ? 'var(--bad)' : 'var(--ink)'
   return (
-    <span className="gbars" aria-label={`이해 ${GRADE_KO[g]}`}>
+    <span className="gbars" aria-label={`떠올리기 ${GRADE_KO[g]}`}>
       {[6.6, 9.2, 11.8].map((h, i) => <i key={i} style={{ height: h, background: i < n ? c : 'var(--trk)' }} />)}
     </span>
   )
@@ -181,28 +182,9 @@ function Shelf({ s, done, doing }: { s: State; done: Task[]; doing: PlanProgress
       <div className="trio">
         <div><b>{done.length}권</b><small>끝낸 책·인강</small></div>
         <div><b>{chapters}개</b><small>끝낸 단원</small></div>
-        <div><b>{hm(allSec)}</b><small>쌓은 시간</small></div>
+        <div><b><Dur sec={allSec} /></b><small>쌓은 시간</small></div>
       </div>
     </section>
-  )
-}
-
-/** 끝낸 단원 고치기: 이해도, 오늘 복습함 */
-function ChapterSheet({ task, chapterId, onClose }: { task: Task; chapterId: string; onClose: () => void }) {
-  const c = task.chapters?.find((x) => x.id === chapterId)
-  if (!c) return null
-  const today = todayISO()
-  return (
-    <Sheet title={c.name} onClose={onClose}>
-      <p className="hint">{c.from}~{c.to}{task.unit}{c.doneDate ? ` · ${md(c.doneDate)} 끝` : ''}{c.reviews?.length ? ` · 복습 ${c.reviews.length}번` : ''}</p>
-      <div className="grades big" role="group" aria-label="이해도">
-        {(['high', 'mid', 'low'] as Grade[]).map((g) => (
-          <button key={g} aria-pressed={c.grade === g} className={c.grade === g ? 'on' : ''} onClick={() => actions.setGrade(task.id, c.id, c.grade === g ? undefined : g)}>{GRADE_KO[g]}</button>
-        ))}
-      </div>
-      <p className="hint">이해도가 낮을수록 복습 날이 빨리 와요 (하 3일 · 중 7일 · 상 14일)</p>
-      <button className="primary" disabled={!c.doneDate || c.reviews?.includes(today)} onClick={() => { actions.addReview(task.id, c.id, today); onClose() }}>{c.reviews?.includes(today) ? '오늘 복습했어요' : '오늘 복습함'}</button>
-    </Sheet>
   )
 }
 
@@ -308,7 +290,7 @@ function Detail({ s, taskId, exam, today, onBack, editTask }: { s: State; taskId
                       <small className="blk">{c.from}~{c.to}{u}{sp.start ? ` · ${mdS(sp.start)} ~ ${c.doneDate || (sp.planned && !cur) ? (sp.end ? mdS(sp.end) : '') : ''}` : ''}</small>
                     </span>
                     <small className="cm-r">
-                      {c.doneDate ? <>{sp.days ? `${sp.days}일 걸림` : ''}{review ? <span className="strong"> · 복습</span> : ''}{c.grade ? <> · 이해 {GRADE_KO[c.grade]}</> : ''}</> : cur ? <b>{sp.doneIn} / {len}{u}</b> : '예정'}
+                      {c.doneDate ? <>{sp.days ? `${sp.days}일 걸림` : ''}{review ? <span className="strong"> · 복습</span> : ''}{c.grade ? <> · 떠올리기 {GRADE_KO[c.grade]}</> : ''}</> : cur ? <b>{sp.doneIn} / {len}{u}</b> : '예정'}
                     </small>
                   </button>
                 )
@@ -317,16 +299,20 @@ function Detail({ s, taskId, exam, today, onBack, editTask }: { s: State; taskId
           </>
         )}
       </div>
-      {chap && <ChapterSheet task={t} chapterId={chap} onClose={() => setChap(null)} />}
+      {chap && <RecallSheet s={s} taskId={t.id} chapterId={chap} today={today} onClose={() => setChap(null)} />}
     </div>
   )
 }
 
 // ── 진도 탭 ────────────────────────────────────────────────
+/** 다음에 진도 탭을 열 때 보여 줄 칸 (오늘 탭 복습 줄 → 복습 칸) */
+let openView: 'doing' | 'review' | 'done' | null = null
+export const openProgressView = (v: 'doing' | 'review' | 'done') => { openView = v }
+
 export function Progress({ editTask }: { editTask: (t: Task | null) => void }) {
   const s = useStore()
   const today = todayISO()
-  const [view, setView] = useState<'doing' | 'done'>('doing')
+  const [view, setView] = useState<'doing' | 'review' | 'done'>(() => { const v = openView ?? 'doing'; openView = null; return v })
   const [kind, setKind] = useState<'all' | 'book' | 'lecture'>('all')
   const [detail, setDetail] = useState<string | null>(null)
   const exam = s.exams.find((e) => e.selected) ?? null
@@ -334,6 +320,7 @@ export function Progress({ editTask }: { editTask: (t: Task | null) => void }) {
   const doing = tasks.filter((t) => !t.completed && sumDone(s.recs[t.id] ?? {}) < t.amount).map((t) => planProgress(s, t, today, exam))
   const done = tasks.filter((t) => !doing.some((p) => p.task.id === t.id)).sort((a, b) => (b.completedDate ?? '').localeCompare(a.completedDate ?? ''))
   const reviews = reviewDue(tasks, today)
+  const tr = todayReviews(s, today)
 
   if (detail) return <Detail s={s} taskId={detail} exam={exam} today={today} onBack={() => setDetail(null)} editTask={editTask} />
 
@@ -343,7 +330,6 @@ export function Progress({ editTask }: { editTask: (t: Task | null) => void }) {
     actions.saveExam({ ...s.exams[(i + 1) % s.exams.length], selected: true })
   }
   const shown = doing.filter((p) => kind === 'all' || p.task.kind === kind)
-  const shownReviews = reviews.filter((r) => kind === 'all' || r.task.kind === kind)
   const count = (k: 'book' | 'lecture') => doing.filter((p) => p.task.kind === k).length
   const lateIn = (k: 'all' | 'book' | 'lecture') => doing.some((p) => p.vsExam === 'late' && (k === 'all' || p.task.kind === k))
 
@@ -362,6 +348,7 @@ export function Progress({ editTask }: { editTask: (t: Task | null) => void }) {
         {view === 'doing' && <StackCard s={s} today={today} />}
         <div role="tablist" aria-label="보기" className="segs">
           <button role="tab" aria-selected={view === 'doing'} className={view === 'doing' ? 'on' : ''} onClick={() => setView('doing')}>진행 중 {doing.length}</button>
+          <button role="tab" aria-selected={view === 'review'} className={view === 'review' ? 'on' : ''} onClick={() => setView('review')}>복습{tr.list.length > 0 && <span className="rv-badge">{tr.list.length}</span>}</button>
           <button role="tab" aria-selected={view === 'done'} className={view === 'done' ? 'on' : ''} onClick={() => setView('done')}>끝낸 것 {done.length}</button>
         </div>
         {view === 'doing' ? (
@@ -375,23 +362,8 @@ export function Progress({ editTask }: { editTask: (t: Task | null) => void }) {
             </div>
             {shown.length === 0 && <p className="empty">{tasks.length === 0 ? '책이나 인강 계획을 만들면\n진도가 여기에 보여요.' : '진행 중인 계획이 없어요'}</p>}
             {shown.map((p) => <PlanCard key={p.task.id} s={s} p={p} exam={exam} open={() => setDetail(p.task.id)} />)}
-            {shownReviews.length > 0 && (
-              <>
-                <div className="sec-h"><h2>복습할 때가 된 단원</h2><small>이해도 낮은 순</small></div>
-                <section className="tcard tight">
-                  {shownReviews.slice(0, 8).map((r) => (
-                    <div key={r.task.id + r.chapter.id} className="rv" role="button" tabIndex={0} onClick={() => setDetail(r.task.id)}>
-                      <i className="dot" style={{ background: colorOf(s, r.task) }} />
-                      <span className="grow"><b className="blk ell">{r.index + 1}단원 {r.chapter.name}</b><small className="blk ell">{r.task.name} · {mdS(r.chapter.doneDate!)} 끝 · {r.days}일 지남</small></span>
-                      {r.chapter.grade && <span className={`rv-g${r.chapter.grade === 'low' ? ' behind strong' : ''}`}>이해 {GRADE_KO[r.chapter.grade]} <GradeBars g={r.chapter.grade} /></span>}
-                      <button className="chip" onClick={(e) => { e.stopPropagation(); actions.addReview(r.task.id, r.chapter.id, today) }}>복습함</button>
-                    </div>
-                  ))}
-                </section>
-              </>
-            )}
           </>
-        ) : (
+        ) : view === 'review' ? <ReviewView s={s} today={today} /> : (
           <>
             <Shelf s={s} done={done} doing={doing} />
             <div className="sec-h"><h2>끝낸 계획</h2><small>최근 끝낸 순</small></div>
@@ -404,7 +376,7 @@ export function Progress({ editTask }: { editTask: (t: Task | null) => void }) {
                   <div key={t.id} className="rv" role="button" tabIndex={0} onClick={() => setDetail(t.id)}>
                     <span className="cn on" style={{ background: colorOf(s, t), width: 22, height: 22, borderRadius: 11 }}><Icon name="check" size={13} /></span>
                     <span className="grow"><b className="blk ell">{t.name}</b><small className="blk">{mdS(t.startDate)} ~ {mdS(end)} · {diffDays(t.startDate, end) + 1}일</small></span>
-                    <span className="rv-r"><span className="blk">{t.amount}{t.unit} · {hm(taskSec(s.recs[t.id] ?? {}))}</span>{g && <small>평균 이해 {GRADE_KO[g]} <GradeBars g={g} /></small>}</span>
+                    <span className="rv-r"><span className="blk">{t.amount}{t.unit} · {hm(taskSec(s.recs[t.id] ?? {}))}</span>{g && <small>평균 떠올리기 {GRADE_KO[g]} <GradeBars g={g} /></small>}</span>
                   </div>
                 )
               })}

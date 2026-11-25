@@ -1,4 +1,6 @@
 // 오늘 탭 맨 위에 때에 따라 나오는 카드들: 백업 알림 · 새 주 시작 · 목표 완료 · 쉬는 날 · 첫날 빈 화면
+import { reviewParts } from './recall.ts'
+import { Dur } from './ui.tsx'
 import { useRef, useState } from 'react'
 import { addDays, diffDays } from './date.ts'
 import { liveExpect } from './logic.ts'
@@ -7,7 +9,7 @@ import { bestDaySecBefore, lastWeekSummary, weekTargets } from './stats.ts'
 import { actions, downloadBackup, importBackup, offFor, uid, type State } from './store.ts'
 import { roundDecision, roundOffer, roundTask } from './rounds.ts'
 import { GuideCard } from './Guide.tsx'
-import { examProgress, habitDays, hm, streakInfo, type DayStats } from './todayData.ts'
+import { behindOf, examProgress, habitDays, hm, streakInfo, type DayStats } from './todayData.ts'
 import { Icon } from './Icon.tsx'
 import { colorOf } from './view.ts'
 
@@ -38,13 +40,14 @@ export function RoundCard({ s, today }: { s: State; today: string }) {
   const o = roundToday(s, today)
   if (!o) return null
   const second = o.kind === 'second'
+  const fog = second ? (o.task.chapters ?? []).filter((c) => c.grade === 'low').length : 0
   const answer = (yes: boolean) => {
     actions.saveTask({ ...o.task, rounds: roundDecision(o, yes) })
     if (yes) actions.saveTask(roundTask(o, uid(), Math.max(0, ...s.tasks.map((x) => x.order)) + 1, Date.now()))
   }
   return (
     <GuideCard lab={`${o.task.name} · ${o.task.completed ? '1회독 끝' : `1회독 ${o.daysLeft}일 남음`}`} head={second ? '2회독도 할까요?' : `틀린 ${o.amount}${o.task.unit}만 다시 풀까요?`}
-      body={`${second ? '다시 읽기보다 덮고 떠올리기 위주로 빠르게' : '맞힌 문항은 빼고 틀린 것만'} · ${md(o.from)} ~ ${md(o.to)}`}>
+      body={`${second ? '다시 읽기보다 덮고 떠올리기 위주로 빠르게' : '맞힌 문항은 빼고 틀린 것만'} · ${md(o.from)} ~ ${md(o.to)}${fog ? ` · 흐릿했던 ${fog}단원에 시간을 더 줘요` : ''}`}>
       <button className="g-s" onClick={() => answer(false)}>안 할래요</button>
       <button className="g-p" onClick={() => answer(true)}>{second ? '2회독 만들기' : '오답만 만들기'}</button>
     </GuideCard>
@@ -57,6 +60,11 @@ export function NewWeekCard({ s, today, goProgress }: { s: State; today: string;
   const targets = weekTargets(s, today)
   const exam = s.exams.find((e) => e.selected)
   const n = exam ? diffDays(today, exam.date) : null
+  // 지난주 떠올리기 결과와 가장 밀린 계획
+  const rc = { high: 0, mid: 0, low: 0 }
+  for (const t of s.tasks) for (const c of reviewParts(t)) for (const r of c.recalls ?? []) if (r.d >= last.period.from && r.d <= last.period.to) rc[r.g]++
+  const rcN = rc.high + rc.mid + rc.low
+  const worst = s.tasks.filter((t) => !t.archived && !t.completed).map((t) => ({ t, b: behindOf(s, t, today) })).filter((x) => x.b > 0 && x.t.type === 'amount').sort((a, b) => b.b / Math.max(b.t.amount, 1) - a.b / Math.max(a.t.amount, 1))[0]
   if (!s.tasks.length) return null
   return (
     <section className="tcard weekcard" role="region" aria-label="새 주 시작">
@@ -64,9 +72,15 @@ export function NewWeekCard({ s, today, goProgress }: { s: State; today: string;
       <h2 className="wk-h">새 주가 시작됐어요</h2>
       <div className="wk-last">
         <div className="tc-meta"><b>지난주 {last.period.from.slice(5).replace('-', '.')} ~ {last.period.to.slice(8).replace(/^0/, '')}</b><span>{last.rate === null ? '목표 없음' : `달성 ${Math.round(last.rate * 100)}%`}</span></div>
-        <div className="wk-nums"><div><b>{hm(last.sec)}</b><small>공부 시간</small></div><div><b>{last.goalTotal}개</b><small>목표 · 개수</small></div></div>
+        <div className="wk-nums"><div><b><Dur sec={last.sec} /></b><small>공부 시간</small></div><div><b>{last.goalTotal}개</b><small>목표 · 개수</small></div></div>
         {(last.units.length > 0 || last.chapters > 0) && <div className="tc-sub">쌓은 것 {[...last.units.map((u) => `${u.n}${u.unit}`), ...(last.chapters ? [`${last.chapters}단원 끝`] : [])].join(' · ')}</div>}
       </div>
+      {(rcN > 0 || worst) && (
+        <div className="wk-more">
+          {rcN > 0 && <div><span className="rv-ic sm"><Icon name="repeat" size={14} /></span><span className="grow">떠올리기 {rcN}번</span><span className="wk-g">잘 <b>{rc.high}</b> · 절반 <b>{rc.mid}</b> · 흐릿 <b>{rc.low}</b></span></div>}
+          {worst && <div><i className="dot" style={{ background: colorOf(s, worst.t) }} /><span className="grow ell">가장 밀린 계획 · {worst.t.name}</span><b>{worst.b}{worst.t.unit}</b></div>}
+        </div>
+      )}
       {last.missed.length > 0 && <p className="fnote">지난주에 못 한 {last.missed.map((m) => `${m.n}${m.unit}`).join(' · ')}은 이번 주 목표에 나눠 넣었어요.</p>}
       {targets.length > 0 && (
         <>

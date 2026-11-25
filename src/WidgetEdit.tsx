@@ -10,9 +10,7 @@ import { renderWidget } from './widgets.tsx'
 const INFO: Record<WidgetId, [string, string]> = {
   stack: ['스마트 스택', '한 칸에 여러 위젯을 겹쳐 넘겨요. 시간대에 맞는 장이 앞에'],
   progress: ['오늘 진행', '계획별 진행과 끝나는 시각, 다음 할 것'],
-  review: ['오늘 복습', '잊을 때쯤 다시 볼 단원'],
   slack: ['시험까지 여유', '계획별 여유 며칠, 가장 빠듯한 것'],
-  recall: ['떠올리기', '끝낸 단원을 덮고 떠올려 이해도 고르기'],
   wrong: ['다시 풀 문항', '틀린 문항을 단원별로, 오답만 풀기'],
   umap: ['이해도 지도', '단원별 이해도와 자신감 vs 정답률'],
   today: ['오늘 공부 시간', '과목별 도넛과 목표 시간'],

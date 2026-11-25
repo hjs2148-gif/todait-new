@@ -1,4 +1,5 @@
 // 앱 상태와 IndexedDB 저장. 서버 없이 이 기기 브라우저에만 저장된다.
+import { addRecall, syncUnits } from './recall.ts'
 import { useSyncExternalStore } from 'react'
 import { addDays, dow, todayISO } from './date.ts'
 import { applyBalance, balance } from './balance.ts'
@@ -156,7 +157,9 @@ const patchRec = (s: State, taskId: string, date: string, fn: (r: DayRec) => Day
 }
 const patchTask = (s: State, id: string, fn: (t: Task) => Task): State => ({ ...s, tasks: s.tasks.map((t) => (t.id === id ? fn(t) : t)) })
 const patchChapter = (s: State, taskId: string, chapterId: string, fn: (c: Chapter) => Chapter): State =>
-  patchTask(s, taskId, (t) => ({ ...t, chapters: t.chapters?.map((c) => (c.id === chapterId ? fn(c) : c)) }))
+  patchTask(s, taskId, (t) => (t.chapters?.some((c) => c.id === chapterId)
+    ? { ...t, chapters: t.chapters.map((c) => (c.id === chapterId ? fn(c) : c)) }
+    : { ...t, units: t.units?.map((c) => (c.id === chapterId ? fn(c) : c)) }))
 const upsert = <T extends { id: string }>(list: T[], item: T) =>
   list.some((x) => x.id === item.id) ? list.map((x) => (x.id === item.id ? item : x)) : [...list, item]
 
@@ -172,6 +175,10 @@ const syncCompleted = (s: State, taskId: string, date: string): State =>
         c.to <= pos ? (c.doneDate ? c : { ...c, doneDate: date }) : c.doneDate ? { ...c, doneDate: undefined, grade: undefined } : c
       )
       if (chapters.some((c, i) => c !== t.chapters![i])) next = { ...next, chapters }
+    } else if (s.settings.reviewOn) {
+      // 목차 없는 책·인강: 떠올리기 구간
+      const units = syncUnits(t, s.recs[taskId] ?? {}, date)
+      if (units !== t.units) next = { ...next, units }
     }
     const full = done >= t.amount
     if (full !== t.completed) next = { ...next, completed: full, completedDate: full ? date : null }
@@ -226,8 +233,12 @@ export const actions = {
   // 단원 이해도·복습
   setGrade: (taskId: string, chapterId: string, grade: Grade | undefined) =>
     setState((s) => patchChapter(s, taskId, chapterId, (c) => ({ ...c, grade }))),
-  addReview: (taskId: string, chapterId: string, date: string) =>
-    setState((s) => patchChapter(s, taskId, chapterId, (c) => ({ ...c, reviews: [...(c.reviews ?? []), date] }))),
+  /** 떠올리기 결과 기록 (흐릿·절반·잘). 다음 복습일이 이것으로 정해진다 */
+  recall: (taskId: string, chapterId: string, g: Grade, date: string) =>
+    setState((s) => patchChapter(s, taskId, chapterId, (c) => addRecall(c, date, g))),
+  /** 사다리와 상관없이 이 날부터 복습할 단원에 넣는다 */
+  pullReview: (taskId: string, chapterId: string, date: string) =>
+    setState((s) => patchChapter(s, taskId, chapterId, (c) => ({ ...c, pull: date }))),
   // 멈추기·다시 시작
   pauseTask: (id: string, date: string) =>
     setState((s) => patchTask(s, id, (t) => ({ ...t, archived: true, pauses: [...(t.pauses ?? []), { from: date, to: null }] }))),

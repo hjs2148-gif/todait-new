@@ -130,3 +130,11 @@ export function DateText({ value, onChange, label, min, empty = '', weekday }: {
     </span>
   )
 }
+
+/** 큰 숫자 + 작은 단위로 쓰는 길이 (예: 1<small>시간</small> 53<small>분</small>). 통계 칸·카드 숫자에 쓴다 */
+export function Dur({ sec }: { sec: number }) {
+  const m = Math.round(Math.max(0, sec) / 60)
+  const h = Math.floor(m / 60)
+  const r = m % 60
+  return <>{h > 0 && <>{h}<small>시간</small></>}{h > 0 && r > 0 && ' '}{(r > 0 || h === 0) && <>{r}<small>분</small></>}</>
+}

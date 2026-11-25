@@ -1,5 +1,6 @@
 // 진도 탭·진도 자세히가 쓰는 계산. React·IndexedDB와 무관해 node 테스트에서 바로 쓴다.
 // 원칙: %에는 늘 이름을 붙인다. 여기 숫자는 모두 "범위 진도"(분량 기준, 계획끼리는 예상 공부 시간 비중).
+import { ladder, nextDue, reviewParts } from './recall.ts'
 import { addDays, diffDays, dow } from './date.ts'
 import { doneInRange, futurePlan, secPerUnit, sumDone, type Chapter, type Grade, type OffFn, type Recs, type Task } from './logic.ts'
 import { offFor, type Exam, type State } from './model.ts'
@@ -164,25 +165,89 @@ export function examProgress(s: Pick<State, 'tasks' | 'recs'>, exam: Exam, today
 
 // ── 복습 ──────────────────────────────────────────────────
 
-/** 이해도별 복습 간격(일). 이해가 낮을수록 빨리 */
-export const REVIEW_GAP: Record<Grade | 'none', number> = { low: 3, mid: 7, high: 14, none: 7 }
-const GRADE_ORDER: Record<Grade | 'none', number> = { low: 0, none: 1, mid: 2, high: 3 }
+export interface ReviewItem { task: Task; chapter: Chapter; index: number; since: string; days: number; due: string; step: number; lastGrade: Grade | null; lowRun: number }
 
-export interface ReviewItem { task: Task; chapter: Chapter; index: number; since: string; days: number }
+const LAST_ORDER: Record<Grade | 'none', number> = { low: 0, none: 1, mid: 2, high: 3 }
 
-/** 복습할 때가 된 단원. 이해도 낮은 순, 같으면 오래된 순 */
-export function reviewDue(tasks: Task[], today: string): ReviewItem[] {
+/** 오늘(까지) 복습할 단원: 떠올리기 사다리로 다음 복습일이 된 단원. 지난번 흐릿 → 처음 → 절반 → 잘, 같으면 오래 밀린 순 */
+export function reviewDue(tasks: Task[], today: string, exam?: string | null): ReviewItem[] {
   const out: ReviewItem[] = []
   for (const t of tasks) {
-    if (t.archived) continue
-    t.chapters?.forEach((c, index) => {
-      if (!c.doneDate) return
-      const since = [c.doneDate, ...(c.reviews ?? [])].sort().pop()!
-      const days = diffDays(since, today)
-      if (days >= REVIEW_GAP[c.grade ?? 'none']) out.push({ task: t, chapter: c, index, since, days })
+    // 2회독 계획은 그 자체가 복습이라 따로 떠올리기를 묻지 않는다
+    if (t.archived || t.roundOf) continue
+    reviewParts(t).forEach((c, index) => {
+      const due = nextDue(c, exam)
+      if (!due || due > today) return
+      const l = ladder(c)!
+      out.push({ task: t, chapter: c, index, since: l.last, days: diffDays(l.last, today), due, step: l.step, lastGrade: l.lastGrade, lowRun: l.lowRun })
     })
   }
-  return out.sort((a, b) => GRADE_ORDER[a.chapter.grade ?? 'none'] - GRADE_ORDER[b.chapter.grade ?? 'none'] || b.days - a.days)
+  return out.sort((a, b) => LAST_ORDER[a.lastGrade ?? 'none'] - LAST_ORDER[b.lastGrade ?? 'none'] || a.due.localeCompare(b.due))
+}
+
+/** 복습 한 단원 예상 분: 그 단원을 공부하는 데 걸리는 시간의 약 15% (5~12분). 제품 가설값 */
+export function reviewMin(t: Task, c: Chapter, recs: Recs): number {
+  const sec = (c.to - c.from + 1) * secPerUnit(t, recs) * 0.15
+  return Math.max(5, Math.min(12, Math.round(sec / 60) || 8))
+}
+
+export type DueReview = ReviewItem & { min: number }
+
+/** 복습 기준 시험일: 고른 시험(오늘 이후)이 있으면 그 날 */
+export const reviewExam = (s: Pick<State, 'exams'>, today: string) => s.exams.find((e) => e.selected && e.date >= today)?.date ?? null
+
+/** 하루 복습 상한(분). 시험 2주 전부터 조금씩 늘어 시험 직전엔 1.5배 (제품 가설값) */
+export function reviewCap(s: Pick<State, 'exams' | 'settings'>, today: string) {
+  const exam = reviewExam(s, today)
+  const left = exam ? diffDays(today, exam) : 99
+  const boost = left < 14 ? 1 + 0.5 * ((14 - left) / 14) : 1
+  return Math.round(s.settings.reviewCapMin * boost)
+}
+
+/** 오늘 넣을 복습: 하루 상한(분)까지만. 오늘 이미 한 복습 시간은 상한에서 뺀다. 넘치는 것은 later */
+export function todayReviews(s: Pick<State, 'tasks' | 'recs' | 'settings' | 'exams'>, today: string) {
+  const empty = { list: [] as DueReview[], later: [] as DueReview[], min: 0, doneToday: 0, doneMin: 0 }
+  if (!s.settings.reviewOn) return empty
+  const tasks = s.tasks.filter((t) => !t.archived)
+  let doneToday = 0
+  let doneMin = 0
+  for (const t of tasks) for (const c of reviewParts(t)) if (c.recalls?.some((r) => r.d === today)) { doneToday++; doneMin += reviewMin(t, c, s.recs[t.id] ?? {}) }
+  const all = reviewDue(tasks, today, reviewExam(s, today)).map((r) => ({ ...r, min: reviewMin(r.task, r.chapter, s.recs[r.task.id] ?? {}) }))
+  const cap = Math.max(0, reviewCap(s, today) - doneMin)
+  let sum = 0
+  for (const r of all) {
+    if ((empty.list.length === 0 && doneToday === 0) || sum + r.min <= cap) { empty.list.push(r); sum += r.min } else empty.later.push(r)
+  }
+  return { ...empty, min: sum, doneToday, doneMin }
+}
+
+/** 앞으로 n일 동안 날마다 복습할 단원 수 (오늘 넘친 것은 내일에 더한다) */
+export function upcomingReviews(s: Pick<State, 'tasks' | 'recs' | 'settings' | 'exams'>, today: string, n = 7): { date: string; count: number }[] {
+  const days = Array.from({ length: n }, (_, i) => ({ date: addDays(today, i + 1), count: 0 }))
+  if (!s.settings.reviewOn) return days
+  for (const t of s.tasks) {
+    if (t.archived || t.roundOf) continue
+    for (const c of reviewParts(t)) {
+      const due = nextDue(c, reviewExam(s, today))
+      if (!due || due <= today) continue
+      const d = days.find((x) => x.date === due)
+      if (d) d.count++
+    }
+  }
+  if (days.length) days[0].count += todayReviews(s, today).later.length
+  return days
+}
+
+/** 달력용 날짜별 복습 단원 수: 지난날은 떠올린 단원, 오늘은 한 것 + 남은 것, 앞날은 다음 복습일이 그 날인 단원(단원마다 다음 한 번만) */
+export function reviewCounts(s: Pick<State, 'tasks' | 'recs' | 'settings' | 'exams'>, today: string, from: string, to: string): Record<string, number> {
+  const out: Record<string, number> = {}
+  const add = (d: string, n = 1) => { if (d >= from && d <= to) out[d] = (out[d] ?? 0) + n }
+  for (const t of s.tasks) for (const c of reviewParts(t)) for (const r of c.recalls ?? []) if (r.d < today) add(r.d)
+  if (!s.settings.reviewOn) return out
+  const tr = todayReviews(s, today)
+  add(today, tr.doneToday + tr.list.length)
+  for (const u of upcomingReviews(s, today, Math.max(0, diffDays(today, to)))) if (u.count) add(u.date, u.count)
+  return out
 }
 
 // ── 쌓은 것 ───────────────────────────────────────────────

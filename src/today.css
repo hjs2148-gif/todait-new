@@ -250,7 +250,6 @@ input.switch:disabled { opacity: .4; }
 .playbar span { display: block; height: 100%; border-radius: 3px; }
 .lec.big { display: grid; grid-template-columns: repeat(15, 1fr); gap: 3px; }
 .lec.big i { width: auto; height: 14px; border-radius: 3px; }
-.nowrap { white-space: nowrap; }
 
 /* 스톱워치 전체 화면 (RTimer) */
 .sw2 { justify-content: flex-start; gap: 0; padding: calc(10px + env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom)); }

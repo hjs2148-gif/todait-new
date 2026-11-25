@@ -4,6 +4,7 @@
 // - 장면이 바뀌거나 &reset 을 붙이면 다시 채운다. 같은 장면이면 고친 내용이 남는다.
 // 장면: mid(수요일 저녁) · done(목표 다 함) · monday(새 주) · catchup(어제 밀림) · rest(쉬는 날) · empty(첫날) · tight(공부 시간이 빠듯해 넘치는 날이 있음)
 // 예: http://localhost:5173/?demo=mid   ·   ?demo=done&t=23:30   ·   ?demo=mid&reset
+import { addRecall, nextDue } from './recall.ts'
 import { addDays, diffDays, dow } from './date.ts'
 import { liveExpect, secPerUnit, type Chapter, type Task } from './logic.ts'
 import { emptyState, offFor, type State, type TimeHistory } from './model.ts'
@@ -213,9 +214,17 @@ function build(sc: Scene): State {
         for (const c of t.chapters) {
           if (c.doneDate || c.to >= pos) continue
           c.doneDate = d
+          // 떠올리기 기록: 사다리대로 복습일이 올 때마다 한 번씩 (어제까지). 잘 아는 단원일수록 잘이 많다
           const g = rnd('grade' + c.id)
-          c.grade = g < 0.3 ? 'low' : g < 0.7 ? 'mid' : 'high'
-          if (diffDays(d, T) > 9 && g > 0.5) c.reviews = [addDays(d, 7)]
+          let cur: typeof c = c
+          for (let k = 0; k < 8; k++) {
+            const due = nextDue(cur)
+            if (!due || due >= T) break
+            const x = rnd('rc' + c.id + k)
+            cur = addRecall(cur, due, x < 0.55 - g * 0.4 ? 'low' : x < 0.85 - g * 0.3 ? 'mid' : 'high')
+          }
+          c.recalls = cur.recalls
+          if (cur.grade) c.grade = cur.grade
         }
       }
     }

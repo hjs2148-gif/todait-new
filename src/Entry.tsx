@@ -1,7 +1,8 @@
 // 분량 입력 시트, 스톱워치를 끝낸 뒤 기록 시트.
+import { EndRecall } from './ReviewTab.tsx'
 import { useState } from 'react'
 import { Icon } from './Icon.tsx'
-import { fmtDur } from './date.ts'
+import { fmtDur, todayISO } from './date.ts'
 import { sumDone, type Grade } from './logic.ts'
 import { actions, type State } from './store.ts'
 import { hm } from './todayData.ts'
@@ -168,6 +169,7 @@ export function EndSheet({ s, rec, tasks, onClose }: { s: State; rec: { id: stri
         )}
       </section>
       <div className="entry-rows"><label className="note"><Icon name="pencil" size={18} /><input value={note} maxLength={80} onChange={(e) => setNote(e.target.value)} placeholder="한 줄 메모 (선택)" aria-label="메모" /></label></div>
+      {rec.date === todayISO() && <EndRecall s={s} today={rec.date} />}
       <div className="two">
         <button type="button" className="ghost" onClick={() => finish(false)}>시간만 저장</button>
         <button type="button" className="primary" onClick={() => finish(true)}>저장</button>

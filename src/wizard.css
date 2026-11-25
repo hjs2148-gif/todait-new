@@ -14,7 +14,7 @@
 .wz-link { height: 44px; display: inline-flex; align-items: center; gap: 2px; color: var(--mu); font-size: 14px; }
 .wz-q { padding: 22px 4px 6px; }
 .wz-q h2 { font-size: 24px; line-height: 32px; font-weight: 700; letter-spacing: -0.2px; }
-.wz-q p { margin-top: 8px; color: var(--mu); font-size: 14px; line-height: 20px; }
+.wz-q p { margin-top: 8px; color: var(--mu); font-size: 15px; line-height: 22px; text-wrap: balance; }
 .wz-q.c { text-align: center; }
 .wz-note { padding: 0 4px; }
 .wz-lab { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 0 4px; }
@@ -52,10 +52,12 @@
 /* 2. 이름 */
 .wz-field { display: block; padding: 4px 4px 0; }
 .wz-big { display: flex; align-items: center; }
-input.wz-big, .wz-big input { width: 100%; border: 0; background: transparent; font-size: 22px; line-height: 30px; font-weight: 700; padding: 10px 2px; box-shadow: inset 0 -2px 0 var(--ink); border-radius: 0; outline: 0; min-width: 0; }
+input.wz-big, .wz-big input, input.wz-in { width: 100%; border: 0; background: var(--sf); font: inherit; font-size: 20px; line-height: 28px; font-weight: 700; color: var(--ink); padding: 14px 16px; border-radius: 14px; box-shadow: 0 1px 2px var(--shd); outline: none; box-sizing: border-box; }
+input.wz-big:focus, .wz-big input:focus, input.wz-in:focus { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ink) 45%, transparent); }
+input.wz-in::placeholder { color: var(--mu); font-weight: 500; opacity: .7; }
 .wz-big input { text-align: center; -moz-appearance: textfield; }
 .wz input::-webkit-outer-spin-button, .wz input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.wz-big.sm input { font-size: 18px; padding: 6px 2px; }
+.wz-big.sm input { font-size: 18px; padding: 10px 12px; }
 .wz-newcat { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
 .wz-newcat input { border: 0; background: var(--pg); border-radius: 12px; height: 44px; padding: 0 12px; outline: 0; }
 .wz-colors { display: flex; gap: 10px; }
@@ -250,3 +252,26 @@ input.chip.wz-unit { width: 72px; border: 0; outline: 0; box-shadow: inset 0 0 0
 .wz-hgrid span.c { background: color-mix(in srgb, var(--s-c) 30%, var(--sf)); box-shadow: none; }
 .wz-hgrid span.e { background: color-mix(in srgb, var(--s-e) 30%, var(--sf)); box-shadow: none; }
 .wz-hgrid span.out { opacity: .4; }
+
+/* 이름 칸 위 라벨 */
+.wz-field > small { display: block; margin: 0 2px 8px; color: var(--mu); }
+/* 고른 과목이 잘 보이게 */
+.wz-subj { height: 38px; padding: 0 14px; font-size: 15px; }
+.wz-subj.on { background: var(--ink); color: var(--bg); font-weight: 700; }
+.wz-plus { width: 38px; height: 38px; padding: 0; justify-content: center; background: transparent; box-shadow: inset 0 0 0 1.5px var(--hl); color: var(--ink); }
+.wz-picked { display: inline-flex; align-items: center; gap: 6px; color: var(--ink) !important; font-weight: 700; }
+.wz-addcat { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 56px; padding: 0 16px; border: 0; border-radius: 14px; background: var(--sf); box-shadow: 0 1px 2px var(--shd); color: var(--ink); font: inherit; font-size: 16px; font-weight: 600; text-align: left; }
+.wz-addcat small { color: var(--mu); font-weight: 400; font-size: 13px; }
+.wz-addcat > svg:last-child { color: var(--mu); }
+/* 날짜: 시작 → 끝 두 칸, 지금 고르는 칸이 진하게 */
+.wz-edge { display: flex; align-items: center; gap: 8px; }
+.wz-edge > svg { color: var(--mu); flex: none; }
+.wz-edge button { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 14px; border: 0; border-radius: 14px; background: var(--sf); box-shadow: 0 1px 2px var(--shd); color: var(--ink); font: inherit; text-align: left; }
+.wz-edge button small { font-size: 12px; line-height: 16px; color: var(--mu); white-space: nowrap; }
+.wz-edge button b { font-size: 17px; line-height: 24px; white-space: nowrap; }
+.wz-edge button.on { box-shadow: inset 0 0 0 2px var(--ink); }
+/* 시간대 머리글은 한 줄 */
+.wz-bandt { color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.wz-note { text-wrap: balance; }
+.wz-bands .wz-row2 { flex-wrap: wrap; }
+.wz-bands .wz-row2 .chip { flex: 1 1 auto; justify-content: center; }

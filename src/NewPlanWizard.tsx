@@ -10,7 +10,7 @@ import { Num } from './ui.tsx'
 import { Icon } from './Icon.tsx'
 import { PRESETS } from './presets.ts'
 import { autoNums, countLabel, lineSpans, normalize, parseTocText, patternLevels, resolveToc, shiftPattern, splitRow, type TocLine } from './toc.ts'
-import { bufferDates, clock, DEFAULT_WINDOWS, emptyWiz, pickDate, rangeOf, simpleTask, weekShape, windowsOn, winSum, wizardTask, type DayKind, type StudyWindows, type Win, type Wiz } from './wizard.ts'
+import { bufferDates, clock, DEFAULT_WINDOWS, emptyWiz, pickEdge, rangeKo, rangeOf, simpleTask, weekShape, windowsOn, winSum, wizardTask, type DayKind, type StudyWindows, type Win, type Wiz } from './wizard.ts'
 
 const TOTAL = 6
 const ORDER = [1, 2, 3, 4, 5, 6, 0] // 월 … 일
@@ -224,6 +224,7 @@ function PresetSheet({ onClose, onAdded }: { onClose: () => void; onAdded: (id: 
   const [cat, setCat] = useState(0)
   const [items, setItems] = useState<Record<string, PItem>>({})
   const [color, setColor] = useState<string | null>(null)
+  const [own, setOwn] = useState<{ name: string; color: string }>({ name: '', color: SUBJECTS[0].hex })
   const have = new Set(s.categories.map((c) => c.name))
   const list: [string, string][] = cat < PRESETS.length
     ? PRESETS[cat][1].map(([n, k]) => [n, SUBJECTS.find((x) => x.key === k)!.hex])
@@ -231,13 +232,14 @@ function PresetSheet({ onClose, onAdded }: { onClose: () => void; onAdded: (id: 
   const key = (i: number) => `${cat}:${i}`
   const item = (i: number): PItem => items[key(i)] ?? { on: false, name: list[i][0], color: list[i][1] }
   const put = (i: number, p: Partial<PItem>) => setItems({ ...items, [key(i)]: { ...item(i), ...p } })
-  const chosen = Object.values(items).filter((x) => x.on && x.name.trim() && !have.has(x.name.trim()))
+  const chosen = [...Object.values(items).filter((x) => x.on && x.name.trim() && !have.has(x.name.trim())), ...(own.name.trim() && !have.has(own.name.trim()) ? [{ on: true, ...own }] : [])]
   const add = () => {
     let first = ''
     for (const x of chosen) { const id = uid(); first ||= id; actions.saveCategory({ id, name: x.name.trim(), color: x.color }) }
     if (first) onAdded(first)
     onClose()
   }
+  if (color === 'own') return <ColorSheet name={own.name || '새 과목'} value={own.color} onPick={(c) => setOwn({ ...own, color: c })} onClose={() => setColor(null)} />
   const ci = color === null ? null : Number(color)
   if (ci !== null && list[ci]) return <ColorSheet name={item(ci).name} value={item(ci).color} onPick={(c) => put(ci, { color: c, on: true })} onClose={() => setColor(null)} />
   return (
@@ -259,6 +261,13 @@ function PresetSheet({ onClose, onAdded }: { onClose: () => void; onAdded: (id: 
             )
           })}
         </section>
+        <div className="wz-lab sh"><small>목록에 없으면</small></div>
+        <section className="fcard tight wz-plist">
+          <div className="frow">
+            <button className="wz-cdot" aria-label="새 과목 색" style={{ background: subjectVar(own.color) }} onClick={() => setColor('own')} />
+            <input className="wz-pname" value={own.name} onChange={(e) => setOwn({ ...own, name: e.target.value })} placeholder="과목 이름 직접 쓰기" aria-label="새 과목 이름" />
+          </div>
+        </section>
         <small>이미 있는 과목은 그대로 두고 새 것만 더해요. 이름과 색은 눌러서 바꿔요.</small>
       </WzSheet>
     </>
@@ -267,23 +276,14 @@ function PresetSheet({ onClose, onAdded }: { onClose: () => void; onAdded: (id: 
 
 function NameStep({ w, set, kind }: { w: Wiz; set: (p: Partial<Wiz>) => void; kind: 'amount' | Simple }) {
   const s = useStore()
-  const [adding, setAdding] = useState(false)
-  const [sheet, setSheet] = useState<null | 'preset' | 'color' | string>(null)
-  const [cn, setCn] = useState('')
-  const [cc, setCc] = useState<string>(SUBJECTS[0].hex)
+  const [sheet, setSheet] = useState<null | 'preset'>(null)
   const q = w.name.trim()
   const past = q.length >= 2 ? s.tasks.filter((t) => (kind === 'amount' ? t.type === 'amount' : t.kind === kind) && t.name.includes(q) && t.name !== q).slice(0, 3) : []
-  const addCat = () => {
-    if (!cn.trim()) return
-    const id = uid()
-    actions.saveCategory({ id, name: cn.trim(), color: cc })
-    set({ categoryId: id }); setAdding(false); setCn('')
-  }
-  const editing = sheet && sheet !== 'preset' && sheet !== 'color' ? s.categories.find((c) => c.id === sheet) : null
+  const picked = s.categories.find((c) => c.id === w.categoryId) ?? null
   return (
     <>
       <Q q={kind === 'amount' ? '무엇으로 공부하나요?' : KIND_Q[kind][0]} sub={kind === 'amount' ? '책이나 강의 이름과 과목을 정해 주세요.' : KIND_Q[kind][1]} />
-      <label className="wz-field"><small>이름</small><input className="wz-big" value={w.name} onChange={(e) => set({ name: e.target.value })} placeholder={kind === 'amount' ? '예) 수학의 정석 미적분' : KIND_Q[kind][2]} autoFocus /></label>
+      <label className="wz-field"><small>이름</small><input className="wz-in" value={w.name} onChange={(e) => set({ name: e.target.value })} placeholder={kind === 'amount' ? '예) 수학의 정석 미적분' : KIND_Q[kind][2]} autoFocus /></label>
       {past.length > 0 && (
         <section className="fcard tight">
           {past.map((t) => (
@@ -294,30 +294,22 @@ function NameStep({ w, set, kind }: { w: Wiz; set: (p: Partial<Wiz>) => void; ki
           ))}
         </section>
       )}
-      <div className="wz-lab"><small>과목</small><small>없어도 괜찮아요</small></div>
-      <div className="wz-chips" role="radiogroup" aria-label="과목">
-        {s.categories.map((c) => (
-          <button key={c.id} role="radio" aria-checked={w.categoryId === c.id} className={`chip${w.categoryId === c.id ? ' dark' : ''}`}
-            onClick={() => (w.categoryId === c.id ? setSheet(c.id) : set({ categoryId: c.id }))}>
-            <i className="wz-dot" style={{ background: subjectVar(c.color) }} />{c.name}
-          </button>
-        ))}
-        <button className="chip wz-add" onClick={() => setAdding(true)}><Icon name="plus" size={15} />새 과목</button>
-        <button className="chip" onClick={() => setSheet('preset')}>프리셋에서 고르기<Icon name="right" size={16} /></button>
-      </div>
-      {adding && (
-        <section className="fcard wz-newcat">
-          <div className="wz-row2">
-            <button className="wz-cdot lg" aria-label="과목 색" style={{ background: subjectVar(cc) }} onClick={() => setSheet('color')} />
-            <input value={cn} onChange={(e) => setCn(e.target.value)} placeholder="과목 이름" aria-label="과목 이름" autoFocus onKeyDown={(e) => e.key === 'Enter' && addCat()} />
-          </div>
-          <div className="wz-row2"><button className="chip" onClick={() => setAdding(false)}>취소</button><button className="chip dark" disabled={!cn.trim()} onClick={addCat}>더하기</button></div>
-        </section>
+      <div className="wz-lab"><small>과목</small>{picked ? <small className="wz-picked"><i className="wz-dot" style={{ background: subjectVar(picked.color) }} />{picked.name}</small> : <small>없어도 괜찮아요</small>}</div>
+      {s.categories.length === 0 ? (
+        <button className="wz-addcat" onClick={() => setSheet('preset')}><Icon name="plus" size={18} /><span className="grow">과목 더하기</span><small>국어 · 수학 · 영어 …</small><Icon name="right" size={16} /></button>
+      ) : (
+        <div className="wz-chips" role="radiogroup" aria-label="과목">
+          {s.categories.map((c) => (
+            <button key={c.id} role="radio" aria-checked={w.categoryId === c.id} className={`chip wz-subj${w.categoryId === c.id ? ' on' : ''}`}
+              onClick={() => (w.categoryId === c.id ? set({ categoryId: '' }) : set({ categoryId: c.id }))}>
+              {w.categoryId === c.id ? <Icon name="check" size={14} /> : <i className="wz-dot" style={{ background: subjectVar(c.color) }} />}{c.name}
+            </button>
+          ))}
+          <button className="chip wz-plus" onClick={() => setSheet('preset')} aria-label="과목 더하기"><Icon name="plus" size={16} /></button>
+        </div>
       )}
-      <small className="wz-note">{past.length > 0 ? '예전 이름을 고르면 과목과 단위도 그때처럼 채워요.' : w.categoryId ? '고른 과목을 한 번 더 누르면 색을 바꿔요.' : ''}</small>
-      {sheet === 'preset' && <PresetSheet onClose={() => setSheet(null)} onAdded={(id) => !w.categoryId && set({ categoryId: id })} />}
-      {sheet === 'color' && <ColorSheet name={cn} value={cc} onPick={setCc} onClose={() => setSheet(null)} />}
-      {editing && <ColorSheet name={editing.name} value={editing.color} onPick={(color) => actions.saveCategory({ ...(editing as Category), color })} onClose={() => setSheet(null)} />}
+      {past.length > 0 && <small className="wz-note">예전 이름을 고르면 과목과 단위도 그때처럼 채워요.</small>}
+      {sheet === 'preset' && <PresetSheet onClose={() => setSheet(null)} onAdded={(id) => set({ categoryId: id })} />}
     </>
   )
 }
@@ -340,10 +332,10 @@ function AmountStep({ w, set, openToc, editToc }: { w: Wiz; set: (p: Partial<Wiz
         <button role="radio" aria-checked={w.part} className={w.part ? 'on' : ''} onClick={() => set({ part: true })}>이미 한 부분이 있어요</button>
       </div>
       <div className="wz-range">
-        <span className="wz-big"><Num value={w.from} onChange={(v) => set({ from: v })} placeholder="1" /></span><span className="mu">~</span>
-        <span className="wz-big"><Num value={w.to} onChange={(v) => set({ to: v })} placeholder="232" /></span>
+        <span className="wz-big"><Num value={w.from} onChange={(v) => set({ from: v })} /></span><span className="mu">~</span>
+        <span className="wz-big"><Num value={w.to} onChange={(v) => set({ to: v })} /></span>
       </div>
-      {w.part && <label className="wz-done"><span>어디까지 했나요?</span><span className="wz-big sm"><Num value={w.done} onChange={(v) => set({ done: v })} placeholder={String(w.from ?? 1)} /></span><span className="mu">{w.unit}까지</span></label>}
+      {w.part && <label className="wz-done"><span>어디까지 했나요?</span><span className="wz-big sm"><Num value={w.done} onChange={(v) => set({ done: v })} /></span><span className="mu">{w.unit}까지</span></label>}
       <div className="wz-chips">
         {UNITS.map((u) => <button key={u} className={`chip${w.unit === u ? ' dark' : ''}`} onClick={() => set({ unit: u })}>{u}</button>)}
         {custom ? <input className="chip wz-unit" value={w.unit} onChange={(e) => set({ unit: e.target.value })} aria-label="단위" autoFocus /> : <button className="chip" onClick={() => set({ unit: '' })}>직접</button>}
@@ -537,10 +529,14 @@ function PeriodStep({ w, set, task, pending, setPending, examDate, today }: { w:
   const weeks = 5
   const from = addDays(first, page * 28)
   const buf = new Set(task ? bufferDates(w).filter((d) => task.custom[d] === 0) : [])
+  // 지금 고르는 칸: 시작은 보통 오늘이라 처음엔 끝을 고른다
+  const [mode, setMode] = useState<'start' | 'end'>('end')
+  useEffect(() => { if (pending) setPending(false) }, [pending, setPending])
   const tap = (d: string) => {
-    const r = pickDate({ start: w.startDate, end: pending ? null : w.endDate }, d)
-    if (r.end === null) { set({ startDate: r.start, endDate: r.start }); setPending(true) } else { set({ startDate: r.start, endDate: r.end }); setPending(false) }
+    const r = pickEdge({ start: w.startDate, end: w.endDate }, d, mode)
+    set({ startDate: r.start, endDate: r.end }); setMode(r.mode)
   }
+  const dk = (d: string) => `${Number(d.slice(5, 7))}.${Number(d.slice(8))} (${DOW[dow(d)]})`
   const days = Array.from({ length: weeks * 7 }, (_, i) => addDays(from, i))
   const mon = (d: string) => `${Number(d.slice(5, 7))}월`
   const title = mon(days[0]) === mon(days[days.length - 1]) ? mon(days[0]) : `${mon(days[0])} – ${mon(days[days.length - 1])}`
@@ -554,10 +550,11 @@ function PeriodStep({ w, set, task, pending, setPending, examDate, today }: { w:
   const ex = examDate ? addDays(examDate, -1) : null
   return (
     <>
-      <Q q="언제부터 언제까지 할까요?" sub={pending ? '끝나는 날을 눌러요.' : '달력에서 시작과 끝을 눌러요.'} />
-      <div className="wz-quick">
-        <div><small>시작</small><button className={`chip${w.startDate === today ? ' dark' : ''}`} onClick={() => set({ startDate: today })}>오늘 {md(today)}</button><button className={`chip${w.startDate === addDays(today, 1) ? ' dark' : ''}`} onClick={() => set({ startDate: addDays(today, 1) })}>내일</button></div>
-        <div><small>끝</small>{ex && <button className={`chip${w.endDate === ex ? ' dark' : ''}`} onClick={() => { set({ endDate: ex }); setPending(false) }}>시험 전날 {md(ex)}</button>}<button className={`chip${w.endDate === addDays(w.startDate, 27) ? ' dark' : ''}`} onClick={() => { set({ endDate: addDays(w.startDate, 27) }); setPending(false) }}>4주 뒤</button></div>
+      <Q q="언제부터 언제까지 할까요?" sub={mode === 'start' ? '달력에서 시작하는 날을 눌러요' : '달력에서 끝나는 날을 눌러요'} />
+      <div className="wz-edge" role="radiogroup" aria-label="고를 날">
+        <button role="radio" aria-checked={mode === 'start'} className={mode === 'start' ? 'on' : ''} onClick={() => setMode('start')}><small>시작</small><b>{w.startDate === today ? '오늘' : dk(w.startDate)}</b></button>
+        <Icon name="right" size={18} />
+        <button role="radio" aria-checked={mode === 'end'} className={mode === 'end' ? 'on' : ''} onClick={() => setMode('end')}><small>끝{ex && w.endDate === ex ? ' · 시험 전날' : ''}</small><b>{dk(w.endDate)}</b></button>
       </div>
       <section className="fcard wz-cal" aria-label="기간 달력">
         <div className="wz-cal-nav"><button className="fp-b" aria-label="이전 달" disabled={page === 0} onClick={() => setPage(page - 1)}><Icon name="left" size={20} /></button><b>{title}</b><button className="fp-b" aria-label="다음 달" disabled={page * 4 + 5 >= Math.max(allWeeks, 26)} onClick={() => setPage(page + 1)}><Icon name="right" size={20} /></button></div>
@@ -582,9 +579,8 @@ function PeriodStep({ w, set, task, pending, setPending, examDate, today }: { w:
       <div className="wz-lab"><small>공부하는 요일</small><small>누를 때마다 공부 → 예비 → 쉼</small></div>
       <section className="fcard wz-days">
         {ORDER.map((d) => <button key={d} className={`wz-dy ${w.days[d]}`} aria-label={`${DOW[d]}요일 ${w.days[d] === 'on' ? '공부' : w.days[d] === 'sp' ? '예비' : '쉼'}`} onClick={() => {
-          const k = NEXT_KIND[w.days[d]]
-          // 예비일은 한 요일만 (밀린 분량을 몰아 하는 날)
-          set({ days: w.days.map((x, i) => (i === d ? k : k === 'sp' && x === 'sp' ? 'on' : x)) })
+          // 예비일(밀린 분량을 몰아 하는 날)은 여러 요일 골라도 된다
+          set({ days: w.days.map((x, i) => (i === d ? NEXT_KIND[x] : x)) })
         }}>{DOW[d]}</button>)}
       </section>
       {task && shape && (
@@ -654,7 +650,7 @@ function Band({ label, ws, onChange }: { label: string; ws: Win[]; onChange: (ws
   }
   return (
     <div className="wz-band">
-      <div className="wz-lab"><b>{label}</b><small style={{ color: 'var(--ink)' }}>{sorted.length ? <>{sorted.map(([a, b]) => `${short(a)} ~ ${short(b)}`).join(' · ')} <span className="mu">· {winSum(sorted) % 60 ? dur(winSum(sorted)) : `${winSum(sorted) / 60}시간`}</span></> : <span className="mu">빈 곳을 눌러 더해요</span>}</small></div>
+      <div className="wz-lab"><b>{label}</b><small className="wz-bandt">{sorted.length ? <>{sorted.map(([a, b]) => rangeKo(a, b)).join(' · ')} <span className="mu">· {winSum(sorted) % 60 ? dur(winSum(sorted)) : `${winSum(sorted) / 60}시간`}</span></> : <span className="mu">빈 곳을 눌러 더해요</span>}</small></div>
       <div ref={track} className="wz-track" onClick={tapEmpty} onPointerMove={move} onPointerUp={up} onPointerCancel={up} role="group" aria-label={`${label} 시간대`}>
         {HRS.slice(1, -1).map((h) => <span key={h} className="wz-tick" style={{ left: pos(h * 60) }} />)}
         {sorted.map(([a, b], i) => (
@@ -665,7 +661,7 @@ function Band({ label, ws, onChange }: { label: string; ws: Win[]; onChange: (ws
         ))}
       </div>
       <div className="wz-hrs" aria-hidden="true">{HRS.map((h) => <small key={h} style={{ left: pos(h * 60), transform: `translateX(${h === 6 ? '0' : h === 24 ? '-100%' : '-50%'})` }}>{h}시</small>)}</div>
-      {sel !== null && sorted[sel] && <div className="wz-lab"><small>{clock(sorted[sel][0])} ~ {clock(sorted[sel][1])}</small><button className="chip" onClick={() => { onChange(sorted.filter((_, j) => j !== sel)); setSel(null) }}><Icon name="trash" size={16} />이 시간대 지우기</button></div>}
+      {sel !== null && sorted[sel] && <div className="wz-lab"><small>{rangeKo(sorted[sel][0], sorted[sel][1])}</small><button className="chip" onClick={() => { onChange(sorted.filter((_, j) => j !== sel)); setSel(null) }}><Icon name="trash" size={16} />이 시간대 지우기</button></div>}
     </div>
   )
 }
@@ -673,28 +669,38 @@ function TimeStep({ w, set, kind = 'amount' }: { w: Wiz; set: (p: Partial<Wiz>) 
   const win = w.windows
   const put = (p: Partial<StudyWindows>) => set({ windows: { ...win, ...p } })
   const per = win.perDay ?? null
+  // 처음엔 '매일' 막대 하나. 주말이 다르면 평일·주말 두 개
+  const same = JSON.stringify(win.weekday) === JSON.stringify(win.weekend)
+  const [split, setSplit] = useState(!same)
   const first = windowsOn(win, 1)[0] ?? null
   const firstEnd = windowsOn(win, 6)[0] ?? null
+  const startAt = (x: Win) => rangeKo(x[0], x[0] + 60).replace(/~.*$/, '').replace(/(\d)$/, '$1시')
+  const when = !first ? '시간대 없음' : split || per ? `평일 ${startAt(first)}${firstEnd ? ` · 주말 ${startAt(firstEnd)}` : ''}` : `매일 ${startAt(first)}`
   return (
     <>
-      <Q q={kind === 'habit' ? '보통 언제 해요?' : '보통 언제 공부해요?'} sub={kind === 'amount' ? '공부할 수 있는 시간대를 밀어서 정해요. 이 시간에 다음 공부를 띄우고, 하루에 넣을 양도 여기에 맞춰요.' : '공부할 수 있는 시간대를 밀어서 정해요. 시작할 때 알려 드리고, 다른 계획의 하루 분량도 여기에 맞춰요.'} />
+      <Q q={kind === 'habit' ? '보통 언제 해요?' : '보통 언제 공부해요?'} sub="막대를 밀어서 공부할 시간을 정해요" />
       <section className="fcard prev wz-bands">
         {per ? ORDER.map((d) => <Band key={d} label={`${DOW[d]}요일`} ws={per[d]} onChange={(ws) => put({ perDay: per.map((x, i) => (i === d ? ws : x)) })} />)
-          : <><Band label="평일" ws={win.weekday} onChange={(weekday) => put({ weekday })} /><Band label="주말" ws={win.weekend} onChange={(weekend) => put({ weekend })} /></>}
+          : split ? <><Band label="평일" ws={win.weekday} onChange={(weekday) => put({ weekday })} /><Band label="주말" ws={win.weekend} onChange={(weekend) => put({ weekend })} /></>
+          : <Band label="매일" ws={win.weekday} onChange={(ws) => put({ weekday: ws, weekend: ws })} />}
         <div className="wz-row2">
-          {!per && <button className="chip" onClick={() => { const slot = freeSlot(win.weekday, 1200); if (slot) put({ weekday: [...win.weekday, slot] }) }}><Icon name="plus" size={15} />시간대 더하기</button>}
-          <button className="chip" onClick={() => put({ perDay: per ? null : Array.from({ length: 7 }, (_, d) => windowsOn(win, d)) })}>{per ? '평일·주말로 묶기' : '요일마다 따로'}</button>
+          {!per && <button className="chip" onClick={() => { const slot = freeSlot(win.weekday, 1200); if (slot) put(split ? { weekday: [...win.weekday, slot] } : { weekday: [...win.weekday, slot], weekend: [...win.weekday, slot] }) }}><Icon name="plus" size={15} />시간대 더하기</button>}
+          {!per && <button className="chip" onClick={() => { if (split) put({ weekend: win.weekday }); setSplit(!split) }}>{split ? '매일 같게' : '주말은 따로'}</button>}
+          <button className="chip" onClick={() => put({ perDay: per ? null : Array.from({ length: 7 }, (_, d) => windowsOn(win, d)) })}>{per ? '요일 묶기' : '요일마다'}</button>
         </div>
       </section>
       <small className="wz-note">빨리 고르기</small>
       <div className="wz-chips">{QUICK.map(([l, k, v]) => <button key={l} className="chip" onClick={() => {
-        if (per) put({ perDay: per.map((x, d) => ((k === 'weekend') === (d === 0 || d === 6) && !x.some((y) => y[0] < v[1] && y[1] > v[0]) ? [...x, v] : x)) })
-        else if (!win[k].some((y) => y[0] < v[1] && y[1] > v[0])) put({ [k]: [...win[k], v] })
+        const free = (ws: Win[]) => !ws.some((y) => y[0] < v[1] && y[1] > v[0])
+        if (per) put({ perDay: per.map((x, d) => ((k === 'weekend') === (d === 0 || d === 6) && free(x) ? [...x, v] : x)) })
+        else if (!split) { if (free(win.weekday)) put({ weekday: [...win.weekday, v], weekend: [...win.weekday, v] }) }
+        else if (free(win[k])) put({ [k]: [...win[k], v] })
       }}>{l}</button>)}</div>
       <section className="fcard tight">
-        <label className="frow"><span className="grow"><span style={{ display: 'block' }}>시작할 때 알려 주기</span><small>{first ? `평일 ${short(first[0])}` : '평일 시간대 없음'}{firstEnd ? ` · 주말 ${short(firstEnd[0])}` : ''} · 앱이 꺼져 있으면 늦을 수 있어요</small></span>
+        <label className="frow"><span className="grow"><span style={{ display: 'block' }}>시작할 때 알려 주기</span><small>{when}</small></span>
           <input type="checkbox" className="switch" checked={w.notify} onChange={(e) => set({ notify: e.target.checked })} aria-label="시작할 때 알려 주기" /></label>
       </section>
+      <small className="wz-note">앱이 꺼져 있으면 알림이 조금 늦을 수 있어요</small>
     </>
   )
 }

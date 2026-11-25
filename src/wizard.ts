@@ -51,7 +51,8 @@ export interface Wiz {
   due: string
 }
 
-export const DEFAULT_WINDOWS: StudyWindows = { weekday: [[16 * 60, 18 * 60], [20 * 60, 22 * 60]], weekend: [[10 * 60, 13 * 60]] }
+/** 처음엔 매일 한 구간만 (저녁 8~10시). 주말·요일별은 사용자가 나눈다 */
+export const DEFAULT_WINDOWS: StudyWindows = { weekday: [[20 * 60, 22 * 60]], weekend: [[20 * 60, 22 * 60]] }
 export const DEFAULT_DAYS: DayKind[] = ['sp', 'on', 'on', 'on', 'on', 'on', 'on']
 
 export const emptyWiz = (today: string, endDate: string, examId = ''): Wiz => ({
@@ -140,6 +141,23 @@ export function weekShape(t: Task, today: string): (number | null)[] {
 }
 
 /** 날짜 고르기: 처음 누르면 시작, 다음에 누르면 끝 (시작보다 앞이면 시작을 바꾼다) */
+/** 달력에서 고르는 칸(시작/끝)을 정해 두고 누른 날로 그 칸만 바꾼다. 시작을 고르면 다음은 끝 */
+export function pickEdge(cur: { start: string; end: string }, d: string, mode: 'start' | 'end'): { start: string; end: string; mode: 'start' | 'end' } {
+  if (mode === 'start') return { start: d, end: d > cur.end ? d : cur.end, mode: 'end' }
+  return d < cur.start ? { start: d, end: cur.end < d ? d : cur.end, mode: 'end' } : { start: cur.start, end: d, mode: 'end' }
+}
+
+/** 시간대를 '오후 4~6시', '오전 10시~오후 1시', '오후 4시 30분~6시'처럼 */
+export function rangeKo(a: number, b: number): string {
+  const part = (m: number) => { const h = Math.floor(m / 60) % 24; return { ap: h < 12 ? '오전' : '오후', h: h % 12 || 12, mm: m % 60 } }
+  const x = part(a)
+  const y = part(b >= 1440 ? b - 1 : b)
+  const yh = b >= 1440 ? { ap: '밤', h: 12, mm: 0 } : y
+  const t = (p: { h: number; mm: number }, unit: boolean) => `${p.h}${unit || p.mm ? '시' : ''}${p.mm ? ` ${p.mm}분` : ''}`
+  if (x.ap === yh.ap) return `${x.ap} ${t(x, !!x.mm)}~${t(yh, true)}`
+  return `${x.ap} ${t(x, true)}~${yh.ap} ${t(yh, true)}`
+}
+
 export function pickDate(cur: { start: string; end: string | null }, d: string): { start: string; end: string | null } {
   if (cur.end !== null) return { start: d, end: null }
   return d < cur.start ? { start: d, end: null } : { start: cur.start, end: d }

@@ -184,9 +184,9 @@ function TypeCards({ pick }: { pick: (k: 'amount' | TaskKind) => void }) {
 // ── 2. 이름 + 과목 ──
 const swatchHex = (v: string, dark: boolean) => {
   const x = SUBJECTS.find((c) => c.hex === v)
-  if (x) return dark ? x.dark : x.hex
+  if (x) return dark ? x.dark : x.lt
   const h = Number(v.slice(4)) || 0
-  return dark ? `hsl(${h} 50% 72%)` : `hsl(${h} 40% 40%)`
+  return dark ? `hsl(${h} 85% 68%)` : `hsl(${h} 72% 48%)`
 }
 const HUES = [0, 30, 55, 90, 140, 175, 200, 225, 260, 290, 330, 360]
 /** 과목 색: 추천 16색 + 색상 띠. 밝기는 앱이 라이트·다크에 맞춘다 */
@@ -205,7 +205,7 @@ function ColorSheet({ name, value, onPick, onClose }: { name: string; value: str
         onChange={(e) => setV(`hue:${e.target.value}`)} />
       <div className="wz-pv">
         {[false, true].map((dk) => (
-          <div key={String(dk)} style={{ background: dk ? '#121110' : '#f3f0ea', color: dk ? '#f2eee7' : '#1f1c18' }}>
+          <div key={String(dk)} style={{ background: dk ? '#000000' : '#ffffff', color: dk ? '#f5f5f7' : '#1c1c1e' }}>
             <small style={{ color: dk ? '#a69f94' : '#655f56' }}>{dk ? '다크' : '라이트'}</small>
             <span><i className="wz-dot" style={{ background: swatchHex(v, dk) }} />{name || '과목'}</span>
             <i className="wz-pvbar" style={{ background: `linear-gradient(90deg,${swatchHex(v, dk)} 60%,${dk ? '#322e29' : '#ece7de'} 0)` }} />

@@ -81,12 +81,6 @@
 .t-tk span:last-child { transform: translateX(-100%); }
 .t-rowbtn { display: block; width: 100%; text-align: left; color: var(--ink); padding: 6px 0; box-shadow: inset 0 -1px 0 var(--hl); }
 /* 주인공 한 장: 먹색 */
-.tile.hero { background: var(--ink); color: var(--bg); }
-.hero .t-lab, .hero .t-r, .hero .t-sm, .hero .t-v, .hero .t-num small, .hero .t-sub { color: color-mix(in srgb, var(--bg) 72%, transparent); }
-.hero .t-r b { color: var(--bg); }
-.hero .t-ic { background: color-mix(in srgb, var(--bg) 18%, transparent); color: var(--bg); }
-.hero .t-bar, .hero .t-tl, .hero .t-seg i { background: color-mix(in srgb, var(--bg) 16%, transparent); }
-.hero .t-act { background: var(--bg); color: var(--ink); }
 /* 편집: One UI처럼 흔들지 않고 테두리만, 들어 올리면 커지고 그림자 */
 .wgrid.edit .we-cell { position: relative; min-width: 0; min-height: 0; display: flex; border-radius: 24px; box-shadow: 0 0 0 1.5px var(--hl); touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 .wgrid.edit .we-cell > .we-live { flex: 1; display: flex; min-width: 0; }
@@ -184,8 +178,21 @@
 /* 시간 줄: 남은 계획은 옅게, 지금 표시 */
 .t-tl i.plan { opacity: .38; }
 .t-tl .t-now { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--ink); }
-.hero .t-tl .t-now { background: var(--bg); }
 .t-tk span.now { font-weight: 700; color: var(--ink); }
 .t-tk span.now:not(:first-child):not(:last-child) { transform: translateX(-50%); }
-.hero .t-tk span { color: color-mix(in srgb, var(--bg) 72%, transparent); }
-.hero .t-tk span.now { color: var(--bg); }
+/* 오늘 진행 크게: 과목색 링 + 과목별 시간 */
+.t-today { display: flex; align-items: center; gap: 16px; margin: 6px 0 2px; flex: 1; min-height: 0; }
+.t-ring { width: 124px; height: 124px; flex: none; display: block; }
+.t-ring .r-n { font-size: 26px; font-weight: 800; fill: var(--ink); letter-spacing: -0.5px; }
+.t-ring .r-u { font-size: 14px; font-weight: 600; }
+.t-ring .r-l { font-size: 12px; fill: var(--mu); }
+.t-subj { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 0; display: grid; gap: 4px; font-size: 13px; line-height: 18px; }
+.t-subj li { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.t-subj i { width: 8px; height: 8px; border-radius: 4px; flex: none; }
+.t-subj span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.t-subj b { margin-left: auto; font-weight: 600; white-space: nowrap; }
+.t-subj .rest { color: var(--mu); }
+.t-subj .rest i { background: var(--trk); }
+.t-subj .rest b { color: var(--mu); }
+.t-goal { flex: none; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 13px; line-height: 18px; color: var(--mu); padding: 10px 0; margin-top: 8px; border-top: 1px solid var(--hl); }
+.t-goal b { color: var(--ink); }

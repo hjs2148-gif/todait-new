@@ -33,8 +33,8 @@ export function App() {
   const [form, setForm] = useState<{ task: Task | null; one?: TaskKind | true } | null>(null)
   const [draft, setDraft] = useState<Draft | null>(null)
   const [widgets, setWidgets] = useState(false)
-  const theme = useStore().settings.theme
-  useEffect(() => applyTheme(theme), [theme])
+  const { theme, paper } = useStore().settings
+  useEffect(() => applyTheme(theme, paper), [theme, paper])
 
   // 자정이 지나면 지난 날 목표를 고정하고 오늘 화면으로 넘긴다
   useEffect(() => {

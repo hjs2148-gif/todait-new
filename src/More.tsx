@@ -141,6 +141,14 @@ export function More({ editTask, openDiary }: { editTask: (t: Task) => void; ope
               ))}
             </div>
           </div>
+          <div className="mrow col">
+            <span className="mrow-in"><Icon name="palette" size={20} stroke={1.9} /><span className="grow mlabel">바탕</span></span>
+            <div className="segs" role="group" aria-label="바탕">
+              {([['cool', '차가운 회색'], ['warm', '따뜻하게']] as const).map(([v, l]) => (
+                <button key={v} className={s.settings.paper === v ? 'on' : ''} aria-pressed={s.settings.paper === v} onClick={() => actions.setSettings({ paper: v })}>{l}</button>
+              ))}
+            </div>
+          </div>
           <div className="mrow">
             <Icon name="bell" size={20} stroke={1.9} />
             <span className="grow"><span className="blk mlabel">남은 공부 알림</span><small className="blk mu">{perm === 'unsupported' ? '이 브라우저는 알림을 지원하지 않아요' : `${s.settings.dailyNotifyTime ?? '시각 없음'} · 앱이 열려 있을 때만`}</small></span>

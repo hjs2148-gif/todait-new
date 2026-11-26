@@ -163,7 +163,7 @@ input.chip.wz-unit { width: 72px; border: 0; outline: 0; box-shadow: inset 0 0 0
 .mc.ex b { font-size: 12px; }
 .mc.now { box-shadow: inset 0 0 0 2px var(--ink); }
 .mc.now > small:first-child { color: var(--ink); font-weight: 700; }
-.wz .rb { position: absolute; right: 5px; top: 0; width: 6px; height: 13px; background: var(--rib); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%); }
+.wz .rb { position: absolute; right: 5px; top: 5px; width: 6px; height: 6px; border-radius: 3px; background: var(--rib); }
 .wz-lgd .rb { position: static; display: inline-block; height: 11px; }
 .wz-path { position: relative; padding: 22px 0 22px; }
 .wz-path > span > i { position: absolute; top: 16px; width: 2px; height: 34px; margin-left: -1px; background: var(--ink); }
@@ -173,7 +173,7 @@ input.chip.wz-unit { width: 72px; border: 0; outline: 0; box-shadow: inset 0 0 0
 /* 7. 만들었어요 */
 .wz-book { display: flex; justify-content: center; padding: 28px 0 8px; }
 .wz-book span { position: relative; width: 96px; height: 120px; border-radius: 6px 10px 10px 6px; background: var(--sf); box-shadow: 0 2px 6px var(--shd), inset 6px 0 0 var(--s-m); }
-.wz-book i { position: absolute; right: 22px; top: -6px; width: 14px; height: 52px; background: var(--rib); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%); }
+.wz-book i { display: none; }
 .wz-today { font-size: 20px; line-height: 28px; }
 .wz-blocks { display: flex; gap: 3px; }
 .wz-blocks i { flex: 1; height: 18px; border-radius: 3px; background: var(--trk); }

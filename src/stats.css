@@ -11,14 +11,16 @@
 .c2.sel .n { box-shadow: 0 0 0 2px var(--ink); }
 .c2.now.sel .n { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ink); }
 .c2 em { font-style: normal; font-size: 12px; line-height: 6px; color: var(--mu); height: 6px; display: flex; align-items: center; }
-.cbar2 { width: 72%; max-width: 32px; height: 4px; border-radius: 2px; background: transparent; overflow: hidden; }
-.cbar2 i { display: block; height: 100%; border-radius: 3px; }
+.cbar2 { width: 72%; max-width: 32px; height: 5px; border-radius: 3px; background: var(--trk); overflow: hidden; }
+.cbar2 > span { display: flex; gap: 1px; height: 100%; border-radius: 3px; overflow: hidden; }
+.cbar2 i { display: block; height: 100%; flex-basis: 0; min-width: 1px; }
+.cbar2.low > span { opacity: .4; }
 .cbar2.off { background: transparent; }
 .c2 u { width: 6px; height: 6px; border-radius: 3px; text-decoration: none; }
 .cal2-leg { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; line-height: 16px; color: var(--mu); margin-top: 4px; }
 .cal2-leg span { display: inline-flex; align-items: center; gap: 6px; }
-.cal2-leg .b { width: 14px; height: 5px; border-radius: 3px; background: var(--ink); display: inline-block; }
-.cal2-leg .b.gray { background: var(--mu); }
+.cal2-leg .b { width: 14px; height: 5px; border-radius: 3px; background: linear-gradient(90deg, var(--s-m) 0 50%, var(--s-e) 50% 100%); display: inline-block; }
+.cal2-leg .b.gray { opacity: .4; }
 .cal2-leg u { width: 6px; height: 6px; border-radius: 3px; background: var(--s-m); display: inline-block; }
 .trio3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .trio3 .tcard { padding: 12px 14px; gap: 0; min-width: 0; }
@@ -48,16 +50,17 @@
 .sbars { position: relative; display: flex; align-items: flex-end; gap: 6px; height: 150px; padding-right: 40px; margin-top: 8px; }
 .sbars .ax { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--hl); }
 .sbars .ax b { position: absolute; right: 0; top: -8px; font-size: 12px; line-height: 14px; font-weight: 400; color: var(--mu); }
-.sb { flex: 1; min-width: 0; height: 100%; display: flex; align-items: flex-end; justify-content: center; position: relative; z-index: 1; }
-.stk { width: 62%; max-width: 30px; display: flex; flex-direction: column-reverse; gap: 2px; min-height: 0; }
-.stk i { display: block; width: 100%; border-radius: 3px; min-height: 2px; }
-.stk i:last-child { border-radius: 5px 5px 3px 3px; }
+.sb { flex: 1; min-width: 0; height: 100%; display: flex; align-items: flex-end; justify-content: center; position: relative; z-index: 1; padding: 0; opacity: .32; }
+.sb.on { opacity: 1; }
+.sb .sv { position: absolute; left: 50%; transform: translateX(-50%); font-size: 12px; line-height: 14px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+.stk { width: 62%; max-width: 30px; display: flex; flex-direction: column-reverse; gap: 2px; min-height: 0; border-radius: 7px; overflow: hidden; }
+.stk i { display: block; width: 100%; min-height: 2px; flex-basis: 0; }
 .sbl { margin-top: 4px; padding-right: 40px; gap: 6px; }
 .sbl span { min-width: 0; font-size: 12px; white-space: nowrap; }
 .ringrow { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
 .ringrow .wd-num { margin: 0; }
-.split { display: flex; gap: 3px; height: 12px; }
-.split i { display: block; border-radius: 3px; min-width: 3px; }
+.split { display: flex; gap: 2px; height: 14px; border-radius: 7px; overflow: hidden; }
+.split i { display: block; min-width: 3px; }
 .splist { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; margin-top: 8px; }
 .splist > div { display: flex; align-items: center; gap: 6px; min-height: 26px; font-size: 13px; min-width: 0; }
 .splist b { width: 34px; text-align: right; font-size: 13px; }
@@ -74,7 +77,7 @@
 .wkrow { display: flex; align-items: center; gap: 10px; min-height: 30px; font-size: 14px; }
 .wkrow > span { width: 18px; color: var(--mu); }
 .wkrow .track { flex: 1; margin: 0; height: 10px; }
-.wkrow b { width: 48px; text-align: right; font-size: 14px; }
+.wkrow b { min-width: 48px; text-align: right; font-size: 14px; white-space: nowrap; }
 .trend { display: block; overflow: visible; }
 .rank { width: 18px; color: var(--mu); }
 .dt { color: var(--mu); width: 40px; text-align: right; }
@@ -97,4 +100,9 @@
 .st-big b { font-size: 34px; line-height: 40px; letter-spacing: -0.03em; }
 .st-big span { font-size: 13px; font-weight: 700; }
 .ringrow { justify-content: space-between; }
-.split { gap: 3px; }
+.split { gap: 2px; }
+.sb-day { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 10px; font-size: 13px; line-height: 18px; color: var(--mu); }
+.sb-day > b { color: var(--ink); margin-right: 2px; }
+.sb-day span { display: inline-flex; align-items: center; gap: 5px; }
+.sb-day span b { color: var(--ink); font-weight: 600; }
+.sb-day i { width: 8px; height: 8px; border-radius: 4px; }

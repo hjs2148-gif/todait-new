@@ -8,7 +8,7 @@ import { nextDue } from './recall.ts'
 import { roundTask } from './rounds.ts'
 import { actions, uid, type State, type WidgetSize } from './store.ts'
 import { behindOf, finishClock, hm, remainSec, type DayStats } from './todayData.ts'
-import { colorOf, type Item } from './view.ts'
+import { categoryOf, colorOf, type Item } from './view.ts'
 import { examFor, SlackCal, slackRows } from './Guide.tsx'
 import { IconChip, WSec, WSheet, type WIconName } from './WSheet.tsx'
 
@@ -46,7 +46,6 @@ export function ProgressWidget({ s, size, date, today, stats }: { s: State; size
   const doneN = items.filter((i) => i.rate >= 1).length
   const end = date === today && stats.remain > 0 ? clockWord(finishClock(stats.remain)) : null
   const next = items.find((i) => i.rate < 1)
-  const hero = size === 's4'
   const plan = date === today ? items.filter((i) => i.rate < 1) : undefined
   const endText = end ? <>이대로면 <b>{end}</b> 끝</> : pct === 100 ? '오늘 다 했어요' : items.length ? '' : '오늘 할 계획이 없어요'
   const rows = (n: number, withV: boolean) => items.slice(0, n).map((i) => (
@@ -54,7 +53,7 @@ export function ProgressWidget({ s, size, date, today, stats }: { s: State; size
   ))
   return (
     <>
-      <Tile size={size} icon="progress" label="오늘 진행" hero={hero} onOpen={() => setOpen(true)} right={size !== 's1' && size !== 's2' && end ? <span className="t-r">{endText}</span> : undefined}>
+      <Tile size={size} icon="progress" label="오늘 진행" onOpen={() => setOpen(true)} right={size !== 's1' && size !== 's2' && end ? <span className="t-r">{endText}</span> : undefined}>
         {size === 's1' && <>
           <span className="t-num">{pct ?? '—'}<small>%</small></span>
           <div className="t-seg">{items.slice(0, 6).map((i) => <i key={i.task.id}><b style={{ width: `${Math.round(i.rate * 100)}%`, background: colorOf(s, i.task) }} /></i>)}</div>
@@ -62,14 +61,15 @@ export function ProgressWidget({ s, size, date, today, stats }: { s: State; size
         </>}
         {size === 's2' && <div className="t-cols"><div className="l"><span className="t-num">{pct ?? '—'}<small>%</small></span><span className="t-sub">{endText}</span></div><div className="r"><Sessions s={s} date={date} plan={plan} review={stats.reviewSec} /></div></div>}
         {size === 's4' && <>
-          <span className="t-num">{pct ?? '—'}<small>% · {items.length}개 중 {doneN}개 끝</small></span>
-          <Sessions s={s} date={date} plan={plan} ticks review={stats.reviewSec} />
-          <div className="t-kv">
-            <div><small>공부한 시간</small><b><Dur sec={stats.sec} /></b></div>
-            <div><small>남은 공부</small><b>{stats.remain > 0 ? <Dur sec={stats.remain} /> : '없음'}</b></div>
-            <div><small>남은 계획</small><b>{items.length - doneN}개</b></div>
+          <div className="t-today">
+            <TodayRing s={s} date={date} stats={stats} />
+            <ul className="t-subj">
+              {bySubject(s, date).map((x) => <li key={x.key}><i style={{ background: x.color }} /><span>{x.name}</span><b><Dur sec={x.sec} /></b></li>)}
+              <li className="rest"><i /><span>남은 공부</span><b>{stats.remain > 0 ? <Dur sec={stats.remain} /> : '없음'}</b></li>
+            </ul>
           </div>
-          {next && date === today && <button className="t-act" onClick={() => startTimer(s, next.task, today)}>다음: {next.task.name} 시작</button>}
+          <div className="t-goal"><span>공부한 시간 <b><Dur sec={stats.sec} /></b>{stats.target > 0 && <> / <Dur sec={stats.target} /></>}</span><span>목표 <b>{items.length}개 중 {doneN}개</b></span></div>
+          {next && date === today && <button className="t-act" onClick={() => startTimer(s, next.task, today)}>▶ {next.task.name} 이어서</button>}
         </>}
       </Tile>
       {open && (
@@ -81,6 +81,37 @@ export function ProgressWidget({ s, size, date, today, stats }: { s: State; size
         </WSheet>
       )}
     </>
+  )
+}
+/** 그날 공부한 시간을 과목별로 (지금 재는 공부 포함). 많은 순 */
+export function bySubject(s: State, date: string) {
+  const m = new Map<string, { key: string; name: string; color: string; sec: number }>()
+  const add = (taskId: string, sec: number) => {
+    const t = s.tasks.find((y) => y.id === taskId)
+    const c = t ? categoryOf(s, t) : undefined
+    const key = c?.id ?? '_'
+    const x = m.get(key) ?? { key, name: c?.name ?? '기타', color: t ? colorOf(s, t) : 'var(--s-g)', sec: 0 }
+    x.sec += sec; m.set(key, x)
+  }
+  for (const h of s.histories) if (h.date === date) add(h.taskId, (h.endedAt - h.startedAt) / 1000)
+  if (s.timer && s.timer.date === date && s.timer.pausedAt === undefined) add(s.timer.taskId, (Date.now() - s.timer.startedAt) / 1000)
+  return [...m.values()].filter((x) => x.sec >= 60).sort((a, b) => b.sec - a.sec)
+}
+/** 오늘 링: 목표 시간 한 바퀴를 과목색 조각으로 채운다. 가운데는 시간 % */
+function TodayRing({ s, date, stats }: { s: State; date: string; stats: DayStats }) {
+  const R = 54, SW = 16, C = 2 * Math.PI * R, GAP = 3
+  const total = Math.max(stats.target, stats.sec, 1)
+  let acc = 0
+  const segs = bySubject(s, date).map((x) => { const len = (x.sec / total) * C; const seg = { ...x, len, off: acc }; acc += len; return seg })
+  const pct = stats.timeRate === null ? null : Math.round(stats.timeRate * 100)
+  return (
+    <svg className="t-ring" viewBox="0 0 132 132" role="img" aria-label={`목표 시간의 ${pct ?? 0}% 공부`}>
+      <circle cx="66" cy="66" r={R} fill="none" stroke="var(--trk)" strokeWidth={SW} />
+      {segs.map((x) => <circle key={x.key} cx="66" cy="66" r={R} fill="none" stroke={x.color} strokeWidth={SW} strokeLinecap="round"
+        strokeDasharray={`${Math.max(0.01, x.len - GAP - (segs.length > 1 || x.len < C - 1 ? SW : 0))} ${C}`} strokeDashoffset={-(x.off + (segs.length > 1 || x.len < C - 1 ? SW / 2 : 0))} transform="rotate(-90 66 66)" />)}
+      <text x="66" y="68" textAnchor="middle" className="r-n">{pct ?? '—'}<tspan className="r-u">%</tspan></text>
+      <text x="66" y="88" textAnchor="middle" className="r-l">시간</text>
+    </svg>
   )
 }
 /** 오늘 공부한 때: 6시~24시 줄에 과목색 블록 */

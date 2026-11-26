@@ -91,7 +91,7 @@
 .cells > button, .cells > span:not(.rib) { flex: 1; min-width: 0; height: 40px; padding: 0; border-radius: 6px 6px 4px 4px; background: var(--pg); color: var(--mu); font-size: 13px; font-weight: 600; box-shadow: inset 0 -3px 0 var(--hl); display: inline-flex; align-items: center; justify-content: center; }
 .cells > .on { color: var(--bg); box-shadow: inset 0 -3px 0 rgba(0,0,0,.12); }
 .cells > button { height: 48px; }
-.cells .rib { position: absolute; top: -4px; width: 9px; height: 52px; margin-left: -4.5px; background: var(--rib); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%); pointer-events: none; }
+.cells .rib { position: absolute; top: -3px; bottom: -3px; width: 4px; margin-left: -2px; border-radius: 2px; background: var(--ink); box-shadow: 0 0 0 2px var(--sf); pointer-events: none; }
 .qs { display: flex; flex-wrap: wrap; gap: 5px; }
 .qs i { width: 14px; height: 14px; border-radius: 7px; box-shadow: inset 0 0 0 1.5px var(--trk); }
 .qs i.on { box-shadow: none; }

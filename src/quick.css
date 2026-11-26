@@ -14,13 +14,13 @@
 /* 연속 책갈피 */
 .th-s { padding: 0 20px 2px; }
 .rib-b { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 10px; border-radius: 10px; border: 0; background: var(--ribt); color: var(--rib); font: inherit; font-size: 14px; font-weight: 700; }
-.bm { display: inline-block; width: 12px; height: 16px; background: currentColor; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%); }
+.bm { display: inline-block; width: 10px; height: 10px; border-radius: 5px; background: currentColor; }
 .sgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 .sgrid span { height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--mu); background: var(--pg); }
 .sgrid span.h { background: none; height: 20px; }
 .sgrid span.fut { background: none; }
 .sgrid span.ok { background: var(--ribt); color: var(--rib); }
-.sgrid span.ok i { width: 10px; height: 13px; background: var(--rib); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%); }
+.sgrid span.ok i { width: 8px; height: 8px; border-radius: 4px; background: var(--rib); }
 .sgrid span.rest { background: repeating-linear-gradient(135deg, var(--trk) 0 3px, transparent 3px 6px); box-shadow: inset 0 0 0 1px var(--trk); }
 .sgrid span.tdy { box-shadow: inset 0 0 0 2px var(--ink); color: var(--ink); font-weight: 700; }
 .sleg { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 12px 0 4px; font-size: 13px; color: var(--mu); }
@@ -31,7 +31,7 @@
 
 /* 하루 끝: 책갈피가 꽂힌다 (한 번만) */
 .cheer { position: relative; overflow: hidden; }
-.cheer-rib { position: absolute; top: 0; right: 22px; width: 24px; height: 44px; background: var(--rib); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%); animation: rib-drop .6s cubic-bezier(.2, .9, .3, 1.1) both; }
+.cheer-rib { display: none; }
 @keyframes rib-drop { from { transform: translateY(-48px); } }
 .tick.on { animation: tick-pop .3s ease-out; }
 @keyframes tick-pop { 40% { transform: scale(1.18); } }
@@ -176,7 +176,6 @@
 
 /* 숫자 칸: 큰 숫자 + 작은 단위 (화면마다 같은 모양) */
 .t-kv b small, .sw-stats b small, .trio b small, .trio3 b small, .wk-nums b small, .st-big b small, .trio3.flat b small { display: inline; font-size: 12px; line-height: 1; font-weight: 500; color: var(--mu); margin: 0 1px; }
-.hero .t-kv b small { color: color-mix(in srgb, var(--bg) 65%, transparent); }
 
 /* 새 버전 알림: 맨 위에 얇게 */
 .upd { position: fixed; left: 50%; transform: translateX(-50%); top: calc(8px + env(safe-area-inset-top)); width: calc(100% - 24px); max-width: 496px; z-index: 40; box-sizing: border-box; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 6px 0 14px; border-radius: 14px; background: var(--ink); color: var(--bg); font-size: 14px; box-shadow: 0 6px 20px rgba(0,0,0,.2); }

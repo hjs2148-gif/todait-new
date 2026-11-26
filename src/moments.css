@@ -30,7 +30,7 @@
 .dc-hero h2 { font-size: 22px; line-height: 30px; margin-top: 10px; }
 .dc-hero small { color: var(--mu); font-size: 13px; line-height: 18px; }
 .dc-book { position: relative; width: 64px; height: 76px; border-radius: 6px 12px 12px 6px; box-shadow: inset 5px 0 0 rgba(0,0,0,.15); }
-.dc-book i { position: absolute; right: 14px; top: -5px; width: 13px; height: 42px; background: var(--rib); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%); }
+.dc-book i { display: none; }
 .dc-book b { position: absolute; left: 14px; bottom: 12px; font-size: 22px; line-height: 26px; color: #fff; }
 .trio3.flat { background: var(--bg); border-radius: 16px; padding: 12px 0; gap: 0; margin: 12px 0; }
 .trio3.flat > div { text-align: center; min-width: 0; }
@@ -63,7 +63,7 @@
 .rest-top { display: flex; align-items: center; gap: 14px; }
 .rest-top h2 { font-size: 20px; line-height: 28px; }
 .rest-book { position: relative; width: 52px; height: 64px; border-radius: 4px 10px 10px 4px; background: var(--pg); box-shadow: inset 4px 0 0 var(--hl), 0 1px 2px var(--shd); flex: none; }
-.rest-book i { position: absolute; left: 10px; top: -4px; width: 11px; height: 30px; background: var(--rib); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%); }
+.rest-book i { display: none; }
 .restcard .two { margin-top: 0; }
 .rest-bar { position: relative; height: 8px; border-radius: 4px; background: var(--trk); margin-top: auto; }
 .rest-bar span { display: block; height: 100%; border-radius: 4px; background: var(--ink); }

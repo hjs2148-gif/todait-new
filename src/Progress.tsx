@@ -36,38 +36,60 @@ const vsExamText = (d: string, exam: Exam) => {
   return n > 0 ? `시험 ${n}일 전` : n === 0 ? '시험 당일' : `시험 ${-n}일 뒤`
 }
 
-/** 단원으로 나뉜 막대 + 리본(지금 위치) + 예정 세로선. 인강은 강의 칸 */
+/** 지금~오늘 예정 사이 빗금 (과목색) */
+const stripe = (color: string) => `repeating-linear-gradient(135deg, color-mix(in srgb, ${color} 55%, transparent) 0 2.5px, color-mix(in srgb, ${color} 16%, transparent) 2.5px 6px)`
+/** 예정 꼬리표: 위치(%)에 따라 가운데·왼쪽·오른쪽 맞춤 */
+function PlanTag({ x, text }: { x: number; text: string }) {
+  const side = x < 18 ? 'l' : x > 82 ? 'r' : 'c'
+  return <>
+    <span className={`ptag ${side}`} style={side === 'c' ? { left: `${x}%` } : undefined}>{text}</span>
+    <i className="ptag-c" style={{ left: `${x}%` }} aria-hidden="true" />
+  </>
+}
+
+/** 단원 블록(안에 단원 번호) + 지금~예정 빗금 + 예정 꼬리표. 인강은 한 강 = 한 칸 */
 export function PlanBar({ s, p, tall }: { s: State; p: PlanProgress; tall?: boolean }) {
   const t = p.task
   const color = colorOf(s, t)
   const start = t.startPoint ?? 1
-  const pos = start + p.done - 1
-  const plannedX = (p.planned / Math.max(t.amount, 1)) * 100
-  const ribX = (p.done / Math.max(t.amount, 1)) * 100
-  const h = tall ? 14 : 10
-  if (t.kind === 'lecture' && t.amount <= 60)
+  const amount = Math.max(t.amount, 1)
+  const showTag = !t.completed && p.planned > 0 && p.planned < amount && p.planned !== p.done
+  if (t.kind === 'lecture' && t.amount <= 60) {
+    const cols = Math.min(t.amount, 15)
+    const ti = p.planned - 1
+    const tx = ((ti % cols) + 0.5) / cols * 100
     return (
-      <div className="pbar" role="img" aria-label={`${t.amount}강 중 ${p.done}강 끝, 예정 ${p.planned}강`}>
-        {Array.from({ length: t.amount }, (_, i) => <span key={i} style={{ flex: 1, height: h, borderRadius: 2, background: i < p.done ? color : 'var(--trk)', boxShadow: i >= p.done && i < p.planned ? `inset 0 0 0 1.5px ${color}` : undefined }} />)}
-        <i className="pline" style={{ left: `${plannedX}%` }} />
+      <div className={`pwrap${showTag ? ' tagged' : ''}`}>
+        {showTag && <PlanTag x={tx} text={`오늘 ${p.planned}강까지`} />}
+        <div className="plec" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }} role="img" aria-label={`${t.amount}강 중 ${p.done}강 끝, 오늘 예정 ${p.planned}강`}>
+          {Array.from({ length: t.amount }, (_, i) => <span key={i} className={i === ti && showTag ? 'at' : ''} style={{ background: i < p.done ? color : i < p.planned ? stripe(color) : undefined }} />)}
+        </div>
       </div>
     )
-  const parts = t.chapters?.length ? t.chapters.map((c) => ({ key: c.id, len: c.to - c.from + 1, from: c.from })) : [{ key: 'all', len: t.amount, from: start }]
+  }
+  const parts = t.chapters?.length ? t.chapters.map((c, i) => ({ key: c.id, len: c.to - c.from + 1, from: c.from, label: /^[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+/.exec(c.name)?.[0] ?? String(i + 1) })) : [{ key: 'all', len: amount, from: start, label: '' }]
+  const inside = parts.length > 1 && parts.length <= 12
+  const done = start + p.done - 1
+  const plan = start + p.planned - 1
+  const frac = (v: number, c: { from: number; len: number }) => Math.max(0, Math.min(1, (v - c.from + 1) / c.len))
+  const tx = (p.planned / amount) * 100
   return (
-    <>
-      <div className="pbar" role="img" aria-label={`${t.amount}${t.unit} 중 ${p.done}${t.unit}, 예정 ${p.planned}${t.unit}`}>
-        {parts.map((c) => (
-          <span key={c.key} style={{ flex: c.len, height: h }}>
-            <span style={{ width: `${Math.max(0, Math.min(1, (pos - c.from + 1) / c.len)) * 100}%`, background: color }} />
-          </span>
-        ))}
-        <i className="pline" style={{ left: `${plannedX}%` }} />
-        {p.done > 0 && p.done < t.amount && <i className="prib" style={{ left: `${ribX}%`, height: h + 10 }} />}
+    <div className={`pwrap${showTag ? ' tagged' : ''}`}>
+      {showTag && <PlanTag x={tx} text={`오늘 ${t.kind === 'lecture' ? `${p.planned}강` : `${plan}${t.unit}`}까지`} />}
+      <div className={`pbar${inside ? ' in' : ''}${tall ? ' tall' : ''}`} role="img" aria-label={`${t.amount}${t.unit} 중 ${p.done}${t.unit}, 오늘 예정 ${p.planned}${t.unit}`}>
+        {parts.map((c) => {
+          const f = frac(done, c), pf = frac(plan, c)
+          return (
+            <span key={c.key} style={{ flex: c.len }}>
+              {pf > f && <span className="st" style={{ left: `${f * 100}%`, width: `${(pf - f) * 100}%`, background: stripe(color) }} />}
+              <span className="fd" style={{ width: `${f * 100}%`, background: color }} />
+              {inside && <b className={f >= 0.5 ? 'on' : ''}>{c.label}</b>}
+            </span>
+          )
+        })}
       </div>
-      {t.chapters?.length ? (
-        <div className="pnums">{t.chapters.map((c, i) => <span key={c.id} style={{ flex: c.to - c.from + 1 }}>{/^[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+/.exec(c.name)?.[0] ?? i + 1}</span>)}</div>
-      ) : null}
-    </>
+      {parts.length > 12 && <div className="pnums">{parts.map((c) => <span key={c.key} style={{ flex: c.len }}>{c.label}</span>)}</div>}
+    </div>
   )
 }
 

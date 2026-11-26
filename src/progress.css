@@ -12,11 +12,23 @@
 .pc-2 > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pc-2 b { color: var(--ink); }
 .pc-foot { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--hl); }
-.pbar { position: relative; display: flex; gap: 3px; }
-.pbar > span { display: block; border-radius: 3px; background: var(--trk); overflow: hidden; min-width: 2px; }
-.pbar > span > span { display: block; height: 100%; }
-.pline { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--ink); }
-.prib { position: absolute; top: -5px; width: 8px; margin-left: -4px; background: var(--rib); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%); }
+.pwrap { position: relative; }
+.pwrap.tagged { padding-top: 28px; }
+.pbar { position: relative; display: flex; gap: 4px; }
+.pbar > span { position: relative; display: block; height: 12px; border-radius: 6px; background: var(--trk); overflow: hidden; min-width: 3px; }
+.pbar.in > span { height: 30px; border-radius: 7px; }
+.pbar.tall > span { height: 14px; }
+.pbar.in.tall > span { height: 34px; }
+.pbar > span > .fd, .pbar > span > .st { position: absolute; top: 0; bottom: 0; left: 0; }
+.pbar > span > b { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--mu); }
+.pbar > span > b.on { color: #fff; }
+.ptag { position: absolute; top: 0; height: 22px; padding: 0 10px; border-radius: 11px; background: var(--ink); color: var(--sf); font-size: 12px; line-height: 22px; font-weight: 600; white-space: nowrap; transform: translateX(-50%); }
+.ptag.l { left: 0; transform: none; }
+.ptag.r { right: 0; transform: none; }
+.ptag-c { position: absolute; top: 21px; margin-left: -4px; width: 8px; height: 5px; background: var(--ink); clip-path: polygon(0 0, 100% 0, 50% 100%); }
+.plec { display: grid; gap: 4px; }
+.plec > span { height: 18px; border-radius: 4px; background: var(--trk); }
+.plec > span.at { box-shadow: 0 0 0 2px var(--sf), 0 0 0 3.5px var(--ink); }
 .pnums { display: flex; gap: 3px; margin-top: 6px; font-size: 12px; line-height: 14px; color: var(--mu); }
 .pnums span { text-align: center; min-width: 0; }
 .suggest { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: var(--cur); font-size: 13px; line-height: 18px; }

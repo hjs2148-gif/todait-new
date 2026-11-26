@@ -75,6 +75,8 @@ export interface Settings {
   notifyOn: boolean
   dailyNotifyTime: string | null
   theme: 'system' | 'light' | 'dark'
+  /** 바탕: 차가운 회색 · 따뜻하게 */
+  paper: 'cool' | 'warm'
   /** 연속 공부로 치는 하루 최소 공부 시간(초) */
   streakMinSec: number
   /** 떠올리기 복습을 쓸지 (끄면 오늘 탭 복습 줄·복습 시간이 빠진다) */
@@ -120,25 +122,26 @@ export interface State {
   timer: Timer | null
 }
 
-/** 과목 추천색 16가지. 저장은 라이트 값(hex)으로 하고, 화면에서는 subjectVar()로 다크 모드 색을 따라간다.
+/** 과목 추천색 16가지. hex는 저장용 이름표(예전 색 값)이고 화면 색은 lt·dark (styles.css --s-*와 같음).
+ * 저장은 hex로 하고, 화면에서는 subjectVar()로 다크 모드 색을 따라간다.
  * 직접 고른 색은 'hue:28'처럼 색상만 저장하고 밝기는 라이트·다크에 맞춘다 (--cs, --cl) */
 export const SUBJECTS = [
-  { key: 'm', name: '파랑', hex: '#4a67ad', dark: '#8ea6ea' },
-  { key: 's', name: '하늘', hex: '#2b77a8', dark: '#79b8e3' },
-  { key: 'c', name: '청록', hex: '#2c7f8c', dark: '#6cc4cf' },
-  { key: 'k', name: '초록', hex: '#3d8762', dark: '#85c2a0' },
-  { key: 'l', name: '연두', hex: '#557d2e', dark: '#a6cf7a' },
-  { key: 'o', name: '올리브', hex: '#6e7a2c', dark: '#bcc777' },
-  { key: 'd', name: '황토', hex: '#8a7350', dark: '#cdb48a' },
-  { key: 'b', name: '갈색', hex: '#8a5d3b', dark: '#d6a682' },
-  { key: 'y', name: '주황', hex: '#a85a2c', dark: '#e7a679' },
-  { key: 'r', name: '장미', hex: '#a8435a', dark: '#e8909f' },
-  { key: 'p', name: '자주', hex: '#a24d76', dark: '#e391b8' },
-  { key: 'e', name: '보라', hex: '#8d5aa0', dark: '#c79ad8' },
-  { key: 'i', name: '남색', hex: '#5a54a8', dark: '#aaa4ec' },
-  { key: 't', name: '청회', hex: '#56677a', dark: '#a9b8c9' },
-  { key: 'g', name: '회색', hex: '#6d675e', dark: '#b3ab9f' },
-  { key: 'a', name: '먹색', hex: '#3f3b36', dark: '#d8d2c8' },
+  { key: 'm', name: '파랑', hex: '#4a67ad', lt: '#2f6fec', dark: '#5b8eff' },
+  { key: 's', name: '하늘', hex: '#2b77a8', lt: '#1a8ad0', dark: '#5cb6f0' },
+  { key: 'c', name: '청록', hex: '#2c7f8c', lt: '#0e98ae', dark: '#3cc4d8' },
+  { key: 'k', name: '초록', hex: '#3d8762', lt: '#1f9d5c', dark: '#3fc67e' },
+  { key: 'l', name: '연두', hex: '#557d2e', lt: '#4f9a22', dark: '#8fd45a' },
+  { key: 'o', name: '올리브', hex: '#6e7a2c', lt: '#83921a', dark: '#c3d054' },
+  { key: 'd', name: '황토', hex: '#8a7350', lt: '#b8851a', dark: '#e8b54a' },
+  { key: 'b', name: '갈색', hex: '#8a5d3b', lt: '#9a6036', dark: '#d39a6c' },
+  { key: 'y', name: '주황', hex: '#a85a2c', lt: '#e8730c', dark: '#ff9a3d' },
+  { key: 'r', name: '장미', hex: '#a8435a', lt: '#dc3f74', dark: '#ff7aa3' },
+  { key: 'p', name: '자주', hex: '#a24d76', lt: '#bf3f97', dark: '#ea7cc6' },
+  { key: 'e', name: '보라', hex: '#8d5aa0', lt: '#9a55e0', dark: '#b98af5' },
+  { key: 'i', name: '남색', hex: '#5a54a8', lt: '#5b52e0', dark: '#8f88ff' },
+  { key: 't', name: '청회', hex: '#56677a', lt: '#5f7a95', dark: '#9fb6cc' },
+  { key: 'g', name: '회색', hex: '#6d675e', lt: '#8e8e93', dark: '#98989f' },
+  { key: 'a', name: '먹색', hex: '#3f3b36', lt: '#3a3a3c', dark: '#d1d1d6' },
 ] as const
 export const COLORS: string[] = SUBJECTS.map((x) => x.hex)
 
@@ -160,6 +163,7 @@ export const defaultSettings = (): Settings => ({
   notifyOn: false,
   dailyNotifyTime: '08:00',
   theme: 'system',
+  paper: 'cool',
   streakMinSec: 600,
   reviewOn: true,
   reviewCapMin: 30,

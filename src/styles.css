@@ -1,19 +1,22 @@
-/* 디자인 토큰: 따뜻한 종이색 바탕, 먹색 글자, 과목색은 작게. 다크는 따뜻한 검정. 값은 design/DECISIONS.md 5번 */
+/* 디자인 토큰: 깔끔한 기본 앱 느낌. 바탕은 차가운 회색(기본)·따뜻하게(data-paper=warm) 중 설정에서 고른다.
+   과목색은 맑고 선명하게, 과목과 무관한 공부량 그림(히트맵·잔디·목표 링)은 --heat 주황. 값은 design/DECISIONS.md 12번 */
 :root {
-  --bg: #f3f0ea; --sf: #fffdf9; --chip: #e8e3da; --segon: #ffffff;
-  --ink: #1f1c18; --mu: #655f56; --hl: #ebe6dd; --trk: #ece7de; --pg: #f3efe7; --cur: #f6f1e6;
-  --s-m: #4a67ad; --s-k: #3d8762; --s-e: #8d5aa0; --s-c: #2c7f8c; --s-g: #6d675e;
-  --s-s: #2b77a8; --s-l: #557d2e; --s-y: #a85a2c; --s-r: #a8435a; --s-i: #5a54a8; --s-t: #56677a; --s-d: #8a7350; --s-a: #3f3b36; --s-p: #a24d76; --s-o: #6e7a2c; --s-b: #8a5d3b;
-  --cs: 40%; --cl: 40%;
-  --rib: #b0750f; --bad: #b03a2a;
-  --shd: rgba(60,45,20,.07); --scrim: rgba(31,28,24,.45); --inv: #fffdf9;
+  --bg: #f2f2f7; --sf: #ffffff; --chip: #e5e5ea; --segon: #ffffff;
+  --ink: #1c1c1e; --mu: #6c6c72; --hl: #e3e3e8; --trk: #ebebf0; --pg: #f2f2f7; --cur: #eeeef3;
+  --s-m: #2f6fec; --s-s: #1a8ad0; --s-c: #0e98ae; --s-k: #1f9d5c; --s-l: #4f9a22; --s-o: #83921a; --s-d: #b8851a; --s-b: #9a6036; --s-y: #e8730c; --s-r: #dc3f74; --s-p: #bf3f97; --s-e: #9a55e0; --s-i: #5b52e0; --s-t: #5f7a95; --s-g: #8e8e93; --s-a: #3a3a3c;
+  --cs: 72%; --cl: 48%;
+  --rib: #c45f0a; --heat: #f07a12; --bad: #d4291f;
+  --shd: rgba(0,0,0,.06); --scrim: rgba(0,0,0,.4); --inv: #ffffff;
   --tabs: 68px;
   color-scheme: light;
 }
+:root[data-paper=warm] { --bg: #f5f4f1; --chip: #e8e6e1; --mu: #6b675f; --hl: #e6e3de; --trk: #ece9e4; --pg: #f3f1ed; --cur: #f0eee9; }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme=light]) { --bg: #121110; --sf: #1d1b18; --chip: #2a2723; --segon: #4a4640; --ink: #f2eee7; --mu: #a69f94; --hl: #2c2925; --trk: #322e29; --pg: #272420; --cur: #25221e; --s-m: #8ea6ea; --s-k: #85c2a0; --s-e: #c79ad8; --s-c: #6cc4cf; --s-g: #b3ab9f; --s-s: #79b8e3; --s-l: #a6cf7a; --s-y: #e7a679; --s-r: #e8909f; --s-i: #aaa4ec; --s-t: #a9b8c9; --s-d: #cdb48a; --s-a: #d8d2c8; --s-p: #e391b8; --s-o: #bcc777; --s-b: #d6a682; --cs: 50%; --cl: 72%; --rib: #e2ac48; --bad: #ff8a75; --shd: rgba(0,0,0,.4); --scrim: rgba(0,0,0,.6); --inv: #121110; color-scheme: dark; }
+  :root:not([data-theme=light]) { --bg: #000000; --sf: #1c1c1e; --chip: #2c2c2e; --segon: #48484a; --ink: #f5f5f7; --mu: #a1a1a8; --hl: #2c2c2f; --trk: #2c2c2e; --pg: #242426; --cur: #232325; --s-m: #5b8eff; --s-s: #5cb6f0; --s-c: #3cc4d8; --s-k: #3fc67e; --s-l: #8fd45a; --s-o: #c3d054; --s-d: #e8b54a; --s-b: #d39a6c; --s-y: #ff9a3d; --s-r: #ff7aa3; --s-p: #ea7cc6; --s-e: #b98af5; --s-i: #8f88ff; --s-t: #9fb6cc; --s-g: #98989f; --s-a: #d1d1d6; --cs: 85%; --cl: 68%; --rib: #ff9f4a; --heat: #ff9a3d; --bad: #ff6b5f; --shd: rgba(0,0,0,.4); --scrim: rgba(0,0,0,.6); --inv: #000000; color-scheme: dark; }
+  :root[data-paper=warm]:not([data-theme=light]) { --bg: #121110; --sf: #1f1d1b; --chip: #2e2b28; --segon: #4a4640; --hl: #2f2c29; --trk: #2f2c29; --pg: #272421; --cur: #25221f; --mu: #a69f94; }
 }
-:root[data-theme=dark] { --bg: #121110; --sf: #1d1b18; --chip: #2a2723; --segon: #4a4640; --ink: #f2eee7; --mu: #a69f94; --hl: #2c2925; --trk: #322e29; --pg: #272420; --cur: #25221e; --s-m: #8ea6ea; --s-k: #85c2a0; --s-e: #c79ad8; --s-c: #6cc4cf; --s-g: #b3ab9f; --s-s: #79b8e3; --s-l: #a6cf7a; --s-y: #e7a679; --s-r: #e8909f; --s-i: #aaa4ec; --s-t: #a9b8c9; --s-d: #cdb48a; --s-a: #d8d2c8; --s-p: #e391b8; --s-o: #bcc777; --s-b: #d6a682; --cs: 50%; --cl: 72%; --rib: #e2ac48; --bad: #ff8a75; --shd: rgba(0,0,0,.4); --scrim: rgba(0,0,0,.6); --inv: #121110; color-scheme: dark; }
+:root[data-theme=dark] { --bg: #000000; --sf: #1c1c1e; --chip: #2c2c2e; --segon: #48484a; --ink: #f5f5f7; --mu: #a1a1a8; --hl: #2c2c2f; --trk: #2c2c2e; --pg: #242426; --cur: #232325; --s-m: #5b8eff; --s-s: #5cb6f0; --s-c: #3cc4d8; --s-k: #3fc67e; --s-l: #8fd45a; --s-o: #c3d054; --s-d: #e8b54a; --s-b: #d39a6c; --s-y: #ff9a3d; --s-r: #ff7aa3; --s-p: #ea7cc6; --s-e: #b98af5; --s-i: #8f88ff; --s-t: #9fb6cc; --s-g: #98989f; --s-a: #d1d1d6; --cs: 85%; --cl: 68%; --rib: #ff9f4a; --heat: #ff9a3d; --bad: #ff6b5f; --shd: rgba(0,0,0,.4); --scrim: rgba(0,0,0,.6); --inv: #000000; color-scheme: dark; }
+:root[data-theme=dark][data-paper=warm] { --bg: #121110; --sf: #1f1d1b; --chip: #2e2b28; --segon: #4a4640; --hl: #2f2c29; --trk: #2f2c29; --pg: #272421; --cur: #25221f; --mu: #a69f94; }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/22px 'Pretendard Variable', Pretendard, system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; overflow-x: clip; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; letter-spacing: -0.005em; }

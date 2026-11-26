@@ -20,40 +20,53 @@ const GRADE_KO = { high: '잘', mid: '절반', low: '흐릿' } as Record<string,
 const KINDS: [PeriodKind, string][] = [['week', '이번 주'], ['month', '이번 달'], ['exam', '시험까지']]
 const hourName = (h: number) => (h === 24 ? '자정' : h < 12 ? `오전 ${h}시` : h === 12 ? '낮 12시' : `${h < 18 ? '오후' : '저녁'} ${h - 12}시`)
 
-/** 날짜별 공부 시간 막대 (과목색으로 쌓음). 31일이 넘으면 주 단위로 묶는다 */
+/** 날짜별 공부 시간 막대: 과목색으로 쌓되(순서는 과목 순서 고정) 고른 날만 진하게, 나머지는 연하게.
+ * 막대를 누르면 그날을 고르고 아래에 과목별 시간을 보여 준다. 31일이 넘으면 주 단위로 묶는다 */
 function DayBars({ s, p }: { s: State; p: Period }) {
   const dates = datesBetween(p.from, p.to)
   const weekly = dates.length > 31
   const groups = weekly
     ? Array.from({ length: Math.ceil(dates.length / 7) }, (_, i) => dates.slice(i * 7, i * 7 + 7))
     : dates.map((d) => [d])
+  const order = (k: string) => { const i = s.categories.findIndex((c) => c.id === k); return i < 0 ? 999 : i }
   const data = groups.map((g) => {
     const by: Record<string, number> = {}
     for (const d of g) for (const [k, v] of Object.entries(secByDaySubject(s, d))) by[k] = (by[k] ?? 0) + v
-    return { g, by, sum: Object.values(by).reduce((a, b) => a + b, 0) }
+    return { g, by: Object.entries(by).filter(([, v]) => v > 0).sort((a, b) => order(a[0]) - order(b[0])), sum: Object.values(by).reduce((a, b) => a + b, 0) }
   })
   const rawMax = Math.max(...data.map((x) => x.sum), 1)
   const stepH = Math.max(1, Math.ceil(rawMax / 3600 / 2))
   const max = Math.max(stepH * 2 * 3600, rawMax)
   const today = todayISO()
-  const colorFor = (k: string) => subjectVar(s.categories.find((c) => c.id === k)?.color)
+  const todayIdx = data.findIndex((x) => x.g.includes(today))
+  const [pick, setPick] = useState<number | null>(null)
+  const sel = pick ?? (todayIdx >= 0 ? todayIdx : data.length - 1)
+  const cat = (k: string) => s.categories.find((c) => c.id === k)
+  const colorFor = (k: string) => subjectVar(cat(k)?.color)
+  const label = (x: (typeof data)[number], i: number) => weekly ? (i % 2 === 0 ? mdS(x.g[0]) : '') : dates.length <= 7 ? DOW_KO[dow(x.g[0])] : Number(x.g[0].slice(8)) % 5 === 0 ? Number(x.g[0].slice(8)) : ''
+  const cur = data[sel]
   return (
     <>
       <div className="sbars" role="img" aria-label={`공부 시간 합계 ${hm(data.reduce((a, x) => a + x.sum, 0))}`}>
         {[1, 2].map((k) => <span key={k} className="ax" style={{ bottom: `${((stepH * k * 3600) / max) * 100}%` }}><b>{stepH * k}시간</b></span>)}
-        {data.map((x) => (
-          <span key={x.g[0]} className="sb" title={`${mdS(x.g[0])} ${hm(x.sum)}`}>
+        {data.map((x, i) => (
+          <button key={x.g[0]} className={`sb${i === sel ? ' on' : ''}`} aria-label={`${mdS(x.g[0])} ${hm(x.sum)}`} aria-pressed={i === sel} onClick={() => setPick(i)}>
+            {i === sel && x.sum > 0 && !weekly && dates.length <= 14 && <small className="sv" style={{ bottom: `calc(${(x.sum / max) * 100}% + 4px)` }}>{hm(x.sum)}</small>}
             <span className="stk" style={{ height: `${(x.sum / max) * 100}%` }}>
-              {Object.entries(x.by).sort((a, b) => b[1] - a[1]).map(([k, v]) => <i key={k} style={{ height: `${(v / x.sum) * 100}%`, background: colorFor(k) }} />)}
+              {x.by.map(([k, v]) => <i key={k} style={{ flexGrow: v, background: colorFor(k) }} />)}
             </span>
-          </span>
+          </button>
         ))}
       </div>
       <div className="wlab sbl">
-        {data.map((x, i) => (
-          <span key={x.g[0]} className={x.g.includes(today) ? 'on' : ''}>{weekly ? (i % 2 === 0 ? mdS(x.g[0]) : '') : dates.length <= 7 ? DOW_KO[dow(x.g[0])] : Number(x.g[0].slice(8)) % 5 === 0 ? Number(x.g[0].slice(8)) : ''}</span>
-        ))}
+        {data.map((x, i) => <span key={x.g[0]} className={i === sel ? 'on' : ''}>{label(x, i)}</span>)}
       </div>
+      {cur && (
+        <div className="sb-day">
+          <b>{weekly ? `${mdS(cur.g[0])} 주` : cur.g[0] === today ? '오늘' : mdS(cur.g[0])}</b>
+          {cur.by.length === 0 ? <span className="mu">공부 기록 없음</span> : cur.by.map(([k, v]) => <span key={k}><i style={{ background: colorFor(k) }} />{cat(k)?.name ?? '기타'} <b>{hm(v)}</b></span>)}
+        </div>
+      )}
     </>
   )
 }
@@ -108,14 +121,14 @@ export function Stats() {
         <section className="tcard" aria-label="공부 시간">
           <div className="wd-t">{back > 0 ? '이 기간 공부' : kind === 'week' ? '이번 주 공부' : kind === 'month' ? '이번 달 공부' : '시험까지 공부'}</div>
           <div className="st-big"><b><Dur sec={total} /></b>{diff !== null && <span>{diff >= 0 ? '↑' : '↓'} {kind === 'week' ? '지난주' : '지난달'}보다 {hm(Math.abs(diff))}</span>}</div>
-          <DayBars s={s} p={p} />
+          <DayBars key={p.from + p.to} s={s} p={p} />
         </section>
         <div className="wd-grid">
           <section className="wd" aria-label="목표 달성">
             <div className="wd-t">목표 달성 · 개수</div>
             <div className="ringrow">
               <b className="wd-num">{pctS(goals.rate)}<small>%</small></b>
-              <svg width="52" height="52" viewBox="0 0 56 56" aria-hidden="true"><g transform="rotate(-90 28 28)" fill="none" strokeWidth="7" strokeLinecap="round"><circle cx="28" cy="28" r={R} stroke="var(--trk)" /><circle cx="28" cy="28" r={R} stroke="var(--ink)" strokeDasharray={`${(C * (goals.rate ?? 0)).toFixed(1)} ${C.toFixed(1)}`} /></g></svg>
+              <svg width="52" height="52" viewBox="0 0 56 56" aria-hidden="true"><g transform="rotate(-90 28 28)" fill="none" strokeWidth="7" strokeLinecap="round"><circle cx="28" cy="28" r={R} stroke="var(--trk)" /><circle cx="28" cy="28" r={R} stroke="var(--heat)" strokeDasharray={`${(C * (goals.rate ?? 0)).toFixed(1)} ${C.toFixed(1)}`} /></g></svg>
             </div>
             <div className="wd-sub">목표 {goals.total}개 중 {goals.done}개</div>
           </section>
@@ -155,7 +168,7 @@ export function Stats() {
             {rowOrder.map((d) => (
               <span key={d} style={{ display: 'contents' }}>
                 <small className="hl">{DOW_KO[d]}</small>
-                {bins.map((h) => <i key={h} style={{ background: `color-mix(in srgb, var(--ink) ${Math.round((cell(d, h) / maxCell) * 85)}%, var(--trk))` }} />)}
+                {bins.map((h) => <i key={h} style={{ background: `color-mix(in srgb, var(--heat) ${Math.round((cell(d, h) / maxCell) * 90)}%, var(--trk))` }} />)}
               </span>
             ))}
           </div>
@@ -232,7 +245,7 @@ function StatsMore({ s, today, onBack }: { s: State; today: string; onBack: () =
               const d = grass[(i % gridWeeks) * 7 + Math.floor(i / gridWeeks)]
               const future = d > today
               const lv = future ? -1 : grassLevel(secOn(s, d), grassMax)
-              return <i key={d} className={d === today ? 'gnow' : ''} style={{ background: lv < 0 ? 'transparent' : `color-mix(in srgb, var(--ink) ${[0, 25, 50, 75, 100][lv]}%, var(--trk))` }} />
+              return <i key={d} className={d === today ? 'gnow' : ''} style={{ background: lv < 0 ? 'transparent' : `color-mix(in srgb, var(--heat) ${[0, 25, 50, 75, 100][lv]}%, var(--trk))` }} />
             })}
           </div>
           <div className="tc-meta small"><span>{md(start)}</span><span>적게 → 많이</span><span>오늘</span></div>
@@ -245,15 +258,15 @@ function StatsMore({ s, today, onBack }: { s: State; today: string; onBack: () =
         <section className="tcard" aria-label="요일별 평균">
           <div className="tc-meta"><b className="big16">요일별 평균</b><span>{total > 0 ? `${DOW_KO[topDay]}요일에 가장 많이` : ''}</span></div>
           {[1, 2, 3, 4, 5, 6, 0].map((d) => (
-            <div key={d} className="wkrow"><span>{DOW_KO[d]}</span><div className="track"><div style={{ width: `${(avg[d] / maxAvg) * 100}%`, background: d === topDay && total > 0 ? 'var(--ink)' : 'var(--mu)' }} /></div><b>{hm(avg[d])}</b></div>
+            <div key={d} className="wkrow"><span>{DOW_KO[d]}</span><div className="track"><div style={{ width: `${(avg[d] / maxAvg) * 100}%`, background: d === topDay && total > 0 ? 'var(--heat)' : 'var(--mu)' }} /></div><b>{hm(avg[d])}</b></div>
           ))}
         </section>
         <section className="tcard" aria-label="목표 달성 추이">
           <div className="tc-meta"><b className="big16">목표 달성 추이 · 개수</b><span>{avgTrend === null ? '' : `${weeks}주 평균 ${Math.round(avgTrend * 100)}%`}</span></div>
           <svg viewBox={`-6 -6 ${W + 12} ${H + 12}`} width="100%" role="img" aria-label="주별 목표 달성 추이" className="trend">
             <line x1="0" x2={W} y1={H * 0.2} y2={H * 0.2} stroke="var(--mu)" strokeDasharray="4 4" strokeWidth="1.2" />
-            {valid.length > 1 && <polyline points={valid.map((x) => x.join(',')).join(' ')} fill="none" stroke="var(--ink)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />}
-            {valid.map((x, i) => <circle key={i} cx={x[0]} cy={x[1]} r={i === valid.length - 1 ? 5 : 3.5} fill={i === valid.length - 1 ? 'var(--ink)' : 'var(--sf)'} stroke="var(--ink)" strokeWidth="2" />)}
+            {valid.length > 1 && <polyline points={valid.map((x) => x.join(',')).join(' ')} fill="none" stroke="var(--heat)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />}
+            {valid.map((x, i) => <circle key={i} cx={x[0]} cy={x[1]} r={i === valid.length - 1 ? 5 : 3.5} fill={i === valid.length - 1 ? 'var(--heat)' : 'var(--sf)'} stroke="var(--heat)" strokeWidth="2" />)}
           </svg>
           <div className="tc-meta small"><span>{weeks - 1}주 전</span><span>목표 80%</span><span>이번 주 {pctS(trend[trend.length - 1])}%</span></div>
         </section>

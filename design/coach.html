@@ -1,0 +1,208 @@
+<title>Todait 코치 시안</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap">
+<style>
+/* 폰 폭 카드 세 장: 오늘 탭 입구 · 코치 화면 · 위젯 프리셋. 앱의 새 색(차가운 회색 바탕, 과목색, 공부량 주황) */
+:root {
+  --bg: #f2f2f7; --sf: #ffffff; --ink: #1c1c1e; --mu: #6c6c72; --line: #e3e3e8; --trk: #ebebf0; --chip: #e5e5ea;
+  --math: #2f6fec; --eng: #9a55e0; --kor: #1f9d5c; --sci: #0e98ae; --heat: #f07a12; --heatT: #c45f0a; --bad: #d4291f;
+  --font: 'Pretendard Variable', Pretendard, 'Noto Sans KR', system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #000; --sf: #1c1c1e; --ink: #f5f5f7; --mu: #a1a1a8; --line: #2c2c2f; --trk: #2c2c2e; --chip: #2c2c2e;
+  --math: #5b8eff; --eng: #b98af5; --kor: #3fc67e; --sci: #3cc4d8; --heat: #ff9a3d; --heatT: #ff9f4a; --bad: #ff6b5f; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #000; --sf: #1c1c1e; --ink: #f5f5f7; --mu: #a1a1a8; --line: #2c2c2f; --trk: #2c2c2e; --chip: #2c2c2e;
+  --math: #5b8eff; --eng: #b98af5; --kor: #3fc67e; --sci: #3cc4d8; --heat: #ff9a3d; --heatT: #ff9f4a; --bad: #ff6b5f; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/22px var(--font); margin: 0; -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 48px; }
+header { max-width: 1240px; margin: 0 auto 20px; }
+h1 { font-size: 22px; line-height: 28px; margin: 0 0 4px; font-weight: 800; letter-spacing: -0.02em; }
+header p { margin: 0; color: var(--mu); font-size: 14px; max-width: 70ch; }
+.cols { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, minmax(0, 390px)); gap: 24px; justify-content: center; }
+@media (max-width: 1260px) { .cols { grid-template-columns: repeat(2, minmax(0, 390px)); } }
+@media (max-width: 840px) { .cols { grid-template-columns: minmax(0, 390px); } }
+.col { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.col > h2 { font-size: 13px; color: var(--mu); margin: 0; font-weight: 600; display: flex; gap: 8px; align-items: center; }
+.col > h2 b { font-size: 12px; color: var(--sf); background: var(--ink); border-radius: 6px; padding: 0 7px; }
+.col > p { margin: 0 0 4px; font-size: 13px; line-height: 19px; color: var(--mu); }
+.card { background: var(--sf); border-radius: 14px; padding: 14px 16px; }
+.mu { color: var(--mu); font-size: 13px; }
+.top { display: flex; align-items: center; justify-content: space-between; padding: 4px 2px 6px; }
+.top h3 { margin: 0; font-size: 22px; font-weight: 800; }
+.coachbtn { position: relative; height: 34px; padding: 0 12px 0 10px; border-radius: 17px; background: var(--sf); border: 0; font: 600 14px var(--font); color: var(--ink); display: inline-flex; align-items: center; gap: 6px; }
+.coachbtn::after { content: ""; position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 4px; background: var(--heat); box-shadow: 0 0 0 2px var(--sf); }
+.ghost-ring { display: flex; align-items: center; gap: 14px; }
+.ghost-ring svg { width: 84px; flex: none; }
+/* 기능 소개 카드 */
+.intro { display: flex; gap: 12px; align-items: flex-start; }
+.intro .ic { width: 36px; height: 36px; border-radius: 10px; background: color-mix(in srgb, var(--heat) 16%, var(--sf)); color: var(--heatT); display: grid; place-items: center; flex: none; font-weight: 800; }
+.intro b { display: block; font-size: 15px; }
+.intro .tag { font-size: 12px; color: var(--heatT); font-weight: 700; }
+.acts { display: flex; gap: 8px; margin-top: 12px; }
+.btn { height: 38px; padding: 0 14px; border-radius: 10px; border: 0; font: 700 14px var(--font); background: var(--ink); color: var(--sf); }
+.btn.sub { background: var(--chip); color: var(--ink); font-weight: 600; }
+.btn.full { width: 100%; height: 46px; border-radius: 12px; font-size: 15px; }
+/* 코치 */
+.state { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+.state div { background: var(--bg); border-radius: 10px; padding: 8px 10px; }
+.state small { display: block; font-size: 12px; color: var(--mu); line-height: 16px; }
+.state b { font-size: 16px; line-height: 22px; }
+.phase { display: flex; gap: 4px; margin-top: 12px; }
+.phase span { flex: 1; text-align: center; font-size: 12px; line-height: 16px; color: var(--mu); padding-top: 8px; position: relative; }
+.phase span::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 5px; border-radius: 3px; background: var(--trk); }
+.phase span.done::before { background: color-mix(in srgb, var(--ink) 35%, var(--trk)); }
+.phase span.on { color: var(--ink); font-weight: 700; }
+.phase span.on::before { background: var(--ink); }
+.mood { display: flex; gap: 8px; margin-top: 10px; }
+.mood button { flex: 1; height: 64px; border-radius: 12px; border: 0; background: var(--bg); font: 500 13px var(--font); color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.mood button i { font-style: normal; font-size: 20px; line-height: 24px; }
+.mood button.on { background: var(--ink); color: var(--sf); }
+.recs { padding: 2px 16px; }
+.rec { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); align-items: center; }
+.rec:last-child { border: 0; }
+.rec .n { width: 26px; height: 26px; border-radius: 13px; background: var(--trk); font-size: 13px; font-weight: 800; display: grid; place-items: center; flex: none; }
+.rec.top .n { background: var(--ink); color: var(--sf); }
+.rec .t { flex: 1; min-width: 0; }
+.rec .t b { display: block; font-size: 15px; line-height: 21px; }
+.rec .t small { display: block; font-size: 12.5px; line-height: 17px; color: var(--mu); }
+.rec .go { height: 32px; padding: 0 12px; border-radius: 16px; border: 0; background: var(--chip); font: 700 13px var(--font); color: var(--ink); flex: none; }
+.rec.top .go { background: var(--ink); color: var(--sf); }
+.vtag { display: inline-block; font-size: 11.5px; line-height: 16px; padding: 0 6px; border-radius: 5px; background: var(--ink); color: var(--sf); margin-left: 4px; vertical-align: 1px; }
+.bat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+.bat button { height: 64px; border-radius: 12px; border: 2px solid transparent; background: var(--bg); font: 600 13px var(--font); color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; cursor: pointer; }
+.bat button.on { border-color: var(--ink); background: var(--sf); }
+.bat .cell { position: relative; display: flex; gap: 2px; padding: 2px; width: 34px; height: 16px; border-radius: 4px; box-shadow: inset 0 0 0 1.5px var(--mu); }
+.bat .cell::after { content: ""; position: absolute; right: -4px; top: 5px; width: 2px; height: 6px; border-radius: 0 1px 1px 0; background: var(--mu); }
+.bat .cell i { flex: 1; border-radius: 1.5px; }
+.bat .cell i.f { background: var(--heat); }
+.bat button.on .cell { box-shadow: inset 0 0 0 1.5px var(--ink); } .bat button.on .cell::after { background: var(--ink); }
+.lvl { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 12px; }
+.lvl button { height: 30px; border: 0; border-radius: 7px; background: var(--trk); cursor: pointer; }
+.lvl button.f { background: color-mix(in srgb, var(--heat) 45%, var(--trk)); }
+.lvl button.cur { background: var(--heat); box-shadow: 0 0 0 2px var(--sf), 0 0 0 3.5px var(--ink); }
+.lvl-l { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--mu); }
+.lvl-l b { font-size: 13px; color: var(--ink); }
+.why { font-size: 12px; color: var(--mu); margin-top: 6px; line-height: 17px; }
+.fl { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.fl span { font-size: 13px; padding: 5px 10px; border-radius: 14px; background: var(--bg); }
+.fl span.new { background: color-mix(in srgb, var(--heat) 14%, var(--sf)); color: var(--heatT); font-weight: 600; }
+.cap { font-size: 13px; color: var(--mu); font-weight: 600; display: flex; justify-content: space-between; gap: 8px; }
+/* 프리셋 */
+.presets { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pre { background: var(--sf); border-radius: 14px; padding: 10px; border: 2px solid transparent; text-align: left; font: inherit; color: inherit; }
+.pre.on { border-color: var(--ink); }
+.pre b { display: flex; align-items: center; justify-content: space-between; font-size: 14px; margin-top: 8px; }
+.pre b em { font-style: normal; font-size: 11.5px; font-weight: 700; color: var(--heatT); background: color-mix(in srgb, var(--heat) 14%, var(--sf)); border-radius: 6px; padding: 0 6px; line-height: 18px; }
+.pre small { display: block; font-size: 12px; line-height: 16px; color: var(--mu); margin-top: 2px; }
+.mini { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 22px; gap: 4px; background: var(--bg); border-radius: 9px; padding: 6px; }
+.mini i { border-radius: 5px; background: color-mix(in srgb, var(--ink) 14%, var(--sf)); font-style: normal; font-size: 12px; line-height: 14px; color: var(--mu); padding: 4px 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.mini i.w { grid-column: span 2; } .mini i.b { grid-column: span 2; grid-row: span 2; }
+.mini i.k { background: color-mix(in srgb, var(--ink) 24%, var(--sf)); color: var(--ink); }
+.note { max-width: 1240px; margin: 24px auto 0; font-size: 13.5px; line-height: 21px; color: var(--mu); }
+.note b { color: var(--ink); }
+.seg { display: inline-flex; background: var(--line); border-radius: 9px; padding: 2px; gap: 2px; margin-top: 10px; }
+.seg button { border: 0; background: none; color: var(--ink); font: 500 13px/1 var(--font); height: 30px; padding: 0 12px; border-radius: 7px; cursor: pointer; }
+.seg button[aria-pressed=true] { background: var(--sf); font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+</style>
+
+<header>
+  <h1>코치와 프리셋</h1>
+  <p>기능은 숨기지 않고, 쓸 때가 된 기능을 그때 한 번씩 소개해요. 지금 상태(시험까지 남은 날, 밀린 양, 연속 공부, 컨디션)를 보고 오늘 할 일 세 가지를 추천해요.</p>
+  <div class="seg" id="thSeg"><button data-v="" aria-pressed="true">기기 설정</button><button data-v="light" aria-pressed="false">라이트</button><button data-v="dark" aria-pressed="false">다크</button></div>
+</header>
+
+<div class="cols">
+  <!-- 1. 오늘 탭 -->
+  <section class="col">
+    <h2><b>1</b>오늘 탭 · 입구와 기능 소개</h2>
+    <p>날짜 옆에 작은 '코치' 버튼을 둬요. 새 추천이 있으면 주황 점이 붙어요. 쓸 때가 된 기능은 오늘 탭에 소개 카드로 한 번만 떠요.</p>
+    <div class="top"><h3>11월 26일 목요일</h3><button class="coachbtn">✦ 코치</button></div>
+    <div class="card intro">
+      <span class="ic">↺</span>
+      <div style="flex:1;min-width:0">
+        <span class="tag">새 기능 소개 · 1번만 떠요</span>
+        <b>단원을 끝내면 떠올리기 복습이 생겨요</b>
+        <span class="mu">어제 '도함수의 활용'을 끝냈어요. 사흘 뒤, 일주일 뒤에 5분씩 떠올려 보면 시험 때 덜 잊어요.</span>
+        <div class="acts"><button class="btn">켜기</button><button class="btn sub">나중에</button><button class="btn sub">안 쓸래요</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cap"><span>오늘 진행</span><span>이대로면 밤 10시 40분 끝</span></div>
+      <div class="ghost-ring" style="margin-top:6px">
+        <svg viewBox="0 0 132 132"><circle cx="66" cy="66" r="54" fill="none" stroke="var(--trk)" stroke-width="16"/><circle cx="66" cy="66" r="54" fill="none" stroke="var(--math)" stroke-width="16" stroke-linecap="round" stroke-dasharray="70 400" transform="rotate(-90 66 66)"/><circle cx="66" cy="66" r="54" fill="none" stroke="var(--sci)" stroke-width="16" stroke-linecap="round" stroke-dasharray="30 400" stroke-dashoffset="-92" transform="rotate(-90 66 66)"/><text x="66" y="74" text-anchor="middle" style="font:800 26px var(--font);fill:var(--ink)">36%</text></svg>
+        <div class="mu">수학 52분 · 과학 25분<br>남은 공부 2시간 20분</div>
+      </div>
+    </div>
+    <p style="margin-top:6px"><b style="color:var(--ink)">소개 카드가 뜨는 때 (예)</b><br>
+      · 첫 단원을 끝냄 → 떠올리기 복습<br>
+      · 문제집에 틀린 수를 처음 적음 → 다시 풀 문항<br>
+      · 시험을 처음 넣음 → 시험까지 여유 · 시험 모드 프리셋<br>
+      · 사흘 연속 공부 → 연속 공부 기준(하루 10분)<br>
+      · 이틀 이상 밀림 → 밀린 분량 나누기<br>
+      · 일주일 사용 → 위젯 편집과 프리셋</p>
+  </section>
+
+  <!-- 2. 코치 -->
+  <section class="col">
+    <h2><b>2</b>코치 화면</h2>
+    <p>위에서부터 지금 상태 → 오늘 컨디션 → 추천 세 가지 → 아직 안 써 본 기능 순서예요.</p>
+    <div class="card">
+      <div class="cap"><span>지금 나는</span><span>2학기 기말고사 D-16</span></div>
+      <div class="phase"><span class="done">평소</span><span class="on">시험 3주 전</span><span>시험 1주 전</span><span>시험 끝</span></div>
+      <div class="state">
+        <div><small>이번 주 페이스</small><b>지난주 82%</b></div>
+        <div><small>밀린 양</small><b>3개 계획</b></div>
+        <div><small>연속 공부</small><b>41일</b></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cap"><span>오늘 공부할 힘은?</span><span>애매할 때만 하루 한 번</span></div>
+      <div class="lvl" role="radiogroup" aria-label="오늘 공부할 힘">
+        <button aria-label="1" class="f"></button><button aria-label="2" class="f"></button><button aria-label="3" class="f cur"></button><button aria-label="4"></button><button aria-label="5"></button>
+      </div>
+      <div class="lvl-l"><span>바닥</span><b>보통 · 평소대로 해 볼게요</b><span>가득</span></div>
+      <div class="why">어제 공부가 평소의 40%였고 오늘 아직 시작 전이라 물어봤어요.</div>
+    </div>
+    <div class="card recs">
+      <div class="rec top"><span class="n">1</span><div class="t"><b>수학의 정석부터 30분</b><small>여유 0일. 오늘 5쪽만 하면 예정대로예요</small></div><button class="go">▶ 시작</button></div>
+      <div class="rec"><span class="n">2</span><div class="t"><b>밀린 21쪽, 남은 날에 나누기</b><small>국어 비문학 · 하루 2쪽씩 늘어요</small></div><button class="go">나누기</button></div>
+      <div class="rec"><span class="n">3</span><div class="t"><b>위젯을 '시험 모드'로</b><small>시험까지 여유와 다시 풀 문항이 위로 와요</small></div><button class="go">바꾸기</button></div>
+    </div>
+    <div class="card">
+      <div class="cap"><span>아직 안 써 본 기능</span><span>눌러서 짧은 소개</span></div>
+      <div class="fl"><span class="new">다시 풀 문항</span><span class="new">이해도 지도</span><span>집중 화면</span><span>쉬는 날</span><span>체험 모드</span></div>
+    </div>
+  </section>
+
+  <!-- 3. 프리셋 -->
+  <section class="col">
+    <h2><b>3</b>위젯 편집 · 프리셋</h2>
+    <p>위젯 편집 맨 위에 네 가지 배치를 둬요. 고르면 그 배치로 바뀌고, 그다음엔 지금처럼 직접 고칠 수 있어요. 지금 상황에 맞는 것에 '추천' 표시가 붙어요.</p>
+    <div class="presets">
+      <button class="pre"><div class="mini"><i class="b k">오늘 진행</i><i class="w">바로 시작</i></div><b>가볍게</b><small>오늘 진행 하나와 바로 시작</small></button>
+      <button class="pre on"><div class="mini"><i class="b k">오늘 진행</i><i>최근 7일</i><i>연속</i><i class="w">내일 미리 보기</i></div><b>평소</b><small>진행 · 7일 · 연속 · 내일</small></button>
+      <button class="pre"><div class="mini"><i class="w k">시험까지 여유</i><i>시험 진도</i><i>다시 풀기</i><i class="w">이해도 지도</i><i class="w">오늘 진행</i></div><b>시험 모드 <em>추천</em></b><small>D-16이라 추천해요</small></button>
+      <button class="pre"><div class="mini"><i class="w k">연속 공부</i><i class="w">바로 시작</i><i class="w">오늘 메모</i></div><b>다시 시작</b><small>숫자는 적게, 시작은 쉽게</small></button>
+    </div>
+    <div class="card" style="margin-top:4px">
+      <div class="cap"><span>시험 모드로 바꿀까요?</span></div>
+      <div class="mu" style="margin-top:4px">지금 배치(위젯 4개)는 '내 배치'로 남겨 둬서 언제든 되돌릴 수 있어요.</div>
+      <div class="acts"><button class="btn">바꾸기</button><button class="btn sub">취소</button></div>
+    </div>
+  </section>
+</div>
+
+<div class="note">
+  <b>추천은 이렇게 골라요.</b> 시험까지 남은 날(평소 → 3주 전 → 1주 전 → 시험 끝), 밀린 양과 여유, 최근 공부 시간 흐름, 연속 공부, 오늘 컨디션을 함께 봐요.
+  예를 들어 힘을 <b>1~2칸</b>으로 고르면 1번 추천이 "가장 짧은 것 10분만"으로 바뀌고, 숫자가 적은 '다시 시작' 배치를 권해요. <b>4~5칸</b>이면 내일 분량 미리 하기를 권해요.
+  추천은 늘 <b>세 개까지</b>, 문장 하나에 버튼 하나예요. 실제로 바꾸는 건 언제나 버튼을 누를 때만이에요.
+</div>
+<script>
+const R=document.documentElement, el=document.getElementById('thSeg');
+el.addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; el.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed', x===b)); b.dataset.v? R.setAttribute('data-theme',b.dataset.v) : R.removeAttribute('data-theme'); });
+document.querySelectorAll('.bat').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; g.querySelectorAll('button').forEach(x=>{x.classList.toggle('on',x===b); x.setAttribute('aria-checked',x===b)});}));
+const W=['바닥 · 10분만 해 볼까요','조금 · 짧은 것부터','보통 · 평소대로 해 볼게요','좋아요 · 조금 더 해 볼까요','가득 · 내일 분량도 당겨 볼까요'];
+document.querySelectorAll('.lvl').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; const i=[...g.children].indexOf(b); [...g.children].forEach((x,j)=>{x.classList.toggle('f',j<=i); x.classList.toggle('cur',j===i)}); g.nextElementSibling.querySelector('b').textContent=W[i];}));
+</script>
